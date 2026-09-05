@@ -81,6 +81,130 @@ let tests = (
   "FurlDocument",
   [
     test_case(
+      "inspector counts the underlying program once",
+      `Quick,
+      () => {
+        let m =
+          start("let first = case missing | 0 => 7 | _ => 8 end in first");
+        let counts = FurlInspector.summary(m);
+        check(int, "one shared scrutinee error", 1, counts.errors);
+        let one = m |> update(MatchMode(false));
+        let code = one |> update(ToggleScope(key(whole)));
+        check(
+          bool,
+          "projection reuses problem summary",
+          true,
+          counts === FurlInspector.summary(code),
+        );
+        check(
+          int,
+          "all-source agrees",
+          1,
+          FurlInspector.summary(code).errors,
+        );
+        let fixed = replace_text(whole, "1", code);
+        check(
+          int,
+          "editing updates totals",
+          0,
+          FurlInspector.summary(fixed).errors,
+        );
+        check(
+          int,
+          "undo restores totals",
+          1,
+          FurlInspector.summary(update(Undo, fixed)).errors,
+        );
+        let hole =
+          start("1")
+          |> update(Edit(whole, Perform(Select(All))))
+          |> update(Edit(whole, Perform(Destruct(Left))));
+        check(
+          int,
+          "empty hole separate from errors",
+          0,
+          FurlInspector.summary(hole).errors,
+        );
+        check(
+          int,
+          "empty hole counted",
+          1,
+          FurlInspector.summary(hole).holes,
+        );
+        let syntax =
+          Parser.to_zipper(~root=Sort.Exp, "1 2")
+          |> Option.get
+          |> Zipper.unselect_and_zip
+          |> init;
+        check(
+          bool,
+          "missing operator appears in total",
+          true,
+          FurlInspector.summary(syntax).errors > 0,
+        );
+      },
+    ),
+    test_case(
+      "inspector follows the native caret and projected typing context",
+      `Quick,
+      () => {
+        let m = start("let x = 1 in x + 2");
+        let counts = FurlInspector.summary(m);
+        let p = named("x", m);
+        let focused =
+          m
+          |> update(FocusView(p, row_id(rhs("x", m)) ++ ":pat"))
+          |> at_col(p, 0);
+        let cursor = FurlInspector.cursor(focused) |> Option.get;
+        check(
+          bool,
+          "native pattern information",
+          true,
+          Option.get(cursor.info) |> Language.Info.sort_of == Sort.Pat,
+        );
+        let moved = update(Navigate(p, Across(Right)), focused);
+        check(
+          bool,
+          "caret motion reuses problem summary",
+          true,
+          counts === FurlInspector.summary(moved),
+        );
+        check(
+          bool,
+          "no evaluation for inspection",
+          true,
+          m.samples === moved.samples,
+        );
+        let selected = update(SelectValue(Some("value")), focused);
+        check(
+          bool,
+          "value focus does not report stale code",
+          true,
+          FurlInspector.cursor(selected) == None,
+        );
+        let edited = replace_text(rhs("x", m), "missing", m);
+        let before =
+          cell(rhs("x", edited), edited).editor.editor.state.zipper;
+        let info =
+          FurlInspector.cursor(edited)
+          |> Option.get
+          |> (c => Option.get(c.info));
+        check(
+          bool,
+          "fresh pasted error has native explanation",
+          true,
+          Language.Info.is_error(info),
+        );
+        check(
+          bool,
+          "inspection retains the editing zipper",
+          true,
+          before
+          === cell(rhs("x", edited), edited).editor.editor.state.zipper,
+        );
+      },
+    ),
+    test_case(
       "value inspection preserves code focus and evaluation",
       `Quick,
       () => {

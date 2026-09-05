@@ -62,11 +62,14 @@ Browser navigation checks use Playwright with Chrome installed (or make Playwrig
 ```sh
 TEST_URL=http://localhost:8000/live/ node furl/live/test-navigation.cjs
 node furl/live/test-navigation-study.cjs
+TEST_URL=http://localhost:8000/live/ node furl/live/test-inspector.cjs
 ```
 
-The first checks value inspection, caret restoration, branch gestures, nested call contexts, and control geometry. The second opens the study from `file://` with network requests blocked and exercises all three concepts. Both save light/dark screenshots in a temporary directory.
+The first checks value inspection, caret restoration, branch gestures, nested call contexts, and control geometry. The second opens the study from `file://` with network requests blocked and exercises all three concepts. The inspector check covers caret/type/error information, shared-source error counts, holes, and evaluation feedback. All save light/dark screenshots in a temporary directory.
 
 Before publishing, run `python3 furl/live/build.py --check` to verify the generated live bundle. Commit live sources and `docs/live` together, then push to `furl`. The page uses only local assets; clipboard access depends on the browser's permissions.
+
+The footer follows the caret with Hazel's syntactic form, type, and error explanation. The right side counts whole-program errors, with holes and warnings shown separately when present.
 
 The live projection expands lets, function parameters/bodies, and match arms, including nesting. Repeated match inputs and result bindings share syntax/editor state with distinct visual focus. Branch navigation changes presentation; call navigation changes inspected samples. Syntax-moving gestures, cross-cell selections, and the reference's more advanced comb variations remain future work. Evaluation runs on the UI thread with a 20,000-step limit, suitable for these small studies. Undo history is session-local; each example's program is saved in browser storage. See the [architecture](furl/design/architecture.md), [layout invariants](furl/design/layout.md), and [source notes](furl/design/sources.md).
 

@@ -588,13 +588,6 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
     + (model.values ? 12 : 0)
     + max(0, List.length(columns) - 1)
     * 2;
-  let status =
-    model.message != ""
-      ? model.message
-      : model.statics.error_ids != []
-          ? string_of_int(List.length(model.statics.error_ids))
-            ++ " incomplete or inconsistent term(s)"
-          : "";
   Node.div(
     ~attrs=[
       Attr.id("furl-app"),
@@ -843,15 +836,7 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
               ),
             ],
           ),
-          status == ""
-            ? Node.none
-            : Node.div(
-                ~attrs=[
-                  Attr.class_("furl-status"),
-                  Attr.create("role", "status"),
-                ],
-                [Node.text(status)],
-              ),
+          FurlInspector.view(~globals, model),
           Node.p(
             ~attrs=[Attr.class_("furl-help")],
             [
