@@ -19,7 +19,7 @@ def document():
         cells = [first] + [escape(item[key]) for key in ('mouse', 'keyboard', 'rule')]
         rows.append('<tr data-origin="' + escape(item['origin'], quote=True) + '">' + ''.join('<td>' + cell + '</td>' for cell in cells) + '</tr>')
     styles = (REPO / 'furl/reference/book.css').read_text() + '\n' + (HERE / 'style.css').read_text()
-    scripts = '\n'.join((HERE / name).read_text() for name in ('stories.js', 'study.js'))
+    scripts = '\n'.join((HERE / name).read_text() for name in ('stories.js', 'wire.js', 'study.js'))
     result = (HERE / 'page.html').read_text().replace('{{styles}}', styles).replace('{{scripts}}', scripts).replace('{{inventory}}', '\n'.join(rows))
     assert '{{' not in result, 'Unresolved template'
     return result

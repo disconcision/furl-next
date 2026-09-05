@@ -770,141 +770,274 @@
       history = [],
       picked = null,
       drag = null,
+      hovered = null,
+      aimed = null,
+      freePoint = null,
+      landing = null,
+      landingTimer = 0,
+      suppressClick = false,
+      suspended = false,
       controls;
+    const hoverOption = $("[data-hover-links]", root);
+    const anchorOption = $("[data-wire-anchor]", root);
+    let style = "line";
+    const names = new Map(),
+      holes = [];
+    const wire = new FurlReferenceWire(program);
+    const token = (text) => el("span", "ref-token", text);
+    const valueCell = (text) => {
+      const n = el("span", "ref-value");
+      n.append(token(text));
+      return n;
+    };
+    const result = valueCell("?");
+    for (const b of bindings) {
+      const row = el("div", "reference-row"),
+        name = el("button", "ref-name");
+      name.type = "button";
+      name.dataset.binder = b.id;
+      name.setAttribute("aria-label", `Use ${b.name}`);
+      name.append(token(b.name));
+      name.addEventListener("click", (e) => {
+        if (!controls.active() || suppressClick) return;
+        pick(b.id, e.detail ? { x: e.clientX, y: e.clientY } : null);
+      });
+      name.addEventListener("pointerdown", (e) => {
+        if (e.button || !controls.active()) return;
+        e.preventDefault();
+        name.focus({ preventScroll: true });
+        clearLanding();
+        drag = { id: b.id, x: e.clientX, y: e.clientY, moved: false };
+        controls.latch(true);
+      });
+      names.set(b.id, name);
+      row.append(name, token(String(b.value)), valueCell(String(b.value)));
+      program.append(row);
+    }
+    const row = el("div", "reference-row"),
+      pattern = el("span", "ref-name");
+    pattern.append(token("area"));
+    const expression = el("span", "reference-expression");
+    for (let i = 0; i < 2; i++) {
+      if (i) expression.append(token(" * "));
+      const hole = el("button", "hole");
+      hole.type = "button";
+      hole.dataset.hole = i;
+      hole.append(token("□"));
+      hole.addEventListener("click", () => {
+        if (suppressClick) return;
+        if (picked) place(i);
+        else if (controls.active()) status(root, "Choose a binding first.");
+      });
+      hole.addEventListener("pointerenter", () => {
+        hovered = i;
+        updateLink();
+      });
+      hole.addEventListener("pointerleave", () => {
+        if (hovered === i) hovered = null;
+        updateLink();
+      });
+      hole.addEventListener("focus", () => {
+        if (picked) aimed = i;
+        updateLink();
+      });
+      hole.addEventListener("blur", () => {
+        if (aimed === i && !drag) aimed = null;
+        // focus-visible updates after the focus event sequence finishes.
+        queueMicrotask(updateLink);
+      });
+      holes.push(hole);
+      expression.append(hole);
+    }
+    row.append(pattern, expression, result);
+    program.append(row, comb(66));
+    function updateLink() {
+      if (suspended) {
+        wire.clear();
+        return;
+      }
+      let id, target, kind;
+      if (picked) {
+        id = picked;
+        target = aimed === null ? null : holes[aimed];
+        kind = "drag";
+      } else if (landing !== null) {
+        id = slots[landing];
+        target = holes[landing];
+        kind = "landing";
+      } else if (hoverOption.checked) {
+        const focused = holes.findIndex((n) => n.matches(":focus-visible"));
+        const index =
+          hovered !== null ? hovered : focused >= 0 ? focused : null;
+        if (index !== null) {
+          id = slots[index];
+          target = holes[index];
+          kind = "hover";
+        }
+      }
+      if (!id) {
+        wire.clear();
+        return;
+      }
+      wire.set({
+        source: names.get(id),
+        target,
+        pointer: freePoint,
+        style,
+        anchor: anchorOption.value,
+        kind,
+      });
+    }
+    function clearLanding() {
+      clearTimeout(landingTimer);
+      landingTimer = 0;
+      landing = null;
+    }
     function render() {
-      program.replaceChildren();
       for (const b of bindings) {
-        const row = el("div", "reference-row"),
-          name = el("button", "ref-name", b.name);
-        name.type = "button";
-        name.dataset.binder = b.id;
+        const name = names.get(b.id);
         name.disabled = !controls?.active();
         name.classList.toggle("picked", picked === b.id);
-        name.setAttribute("aria-label", `Use ${b.name}`);
-        name.addEventListener("click", () => {
-          if (drag?.moved) return;
-          pick(b.id);
-        });
-        name.addEventListener("pointerdown", (e) => {
-          if (e.button || !controls.active()) return;
-          drag = { id: b.id, x: e.clientX, y: e.clientY, moved: false };
-        });
-        row.append(
-          name,
-          el("span", "", String(b.value)),
-          el("span", "ref-value", String(b.value)),
-        );
-        program.append(row);
       }
-      const row = el("div", "reference-row");
-      row.append(el("span", "ref-name", "area"));
-      const expression = el("span");
-      slots.forEach((id, i) => {
-        if (i) expression.append(document.createTextNode(" * "));
-        const b = bindings.find((b) => b.id === id),
-          hole = el("button", `hole${b ? " filled" : ""}`, b?.name || "□");
-        hole.type = "button";
-        hole.dataset.hole = i;
-        hole.disabled = !controls?.active();
+      holes.forEach((hole, i) => {
+        const b = bindings.find((b) => b.id === slots[i]);
+        const word = $(".ref-token", hole);
+        if (word.textContent !== (b?.name || "□"))
+          word.textContent = b?.name || "□";
+        hole.classList.toggle("filled", !!b);
+        hole.classList.toggle("target", !!picked && aimed === i);
+        // Filled references remain hoverable/focusable outside Structure mode.
+        hole.disabled = !controls?.active() && !b;
+        if (b) hole.dataset.reference = b.id;
+        else delete hole.dataset.reference;
         hole.setAttribute(
           "aria-label",
-          `${i ? "Second" : "First"} factor${b ? `: ${b.name}` : ": empty"}`,
+          `${i ? "Second" : "First"} factor: ${b?.name || "empty"}`,
         );
-        hole.addEventListener("click", () => place(i));
-        expression.append(hole);
       });
-      row.append(
-        expression,
-        el(
-          "span",
-          "ref-value",
-          slots.every(Boolean)
-            ? String(
-                slots.reduce(
-                  (v, id) => v * bindings.find((b) => b.id === id).value,
-                  1,
-                ),
-              )
-            : "?",
-        ),
-      );
-      program.append(row, comb(66));
+      $(".ref-token", result).textContent = slots.every(Boolean)
+        ? String(
+            slots.reduce(
+              (v, id) => v * bindings.find((b) => b.id === id).value,
+              1,
+            ),
+          )
+        : "?";
       $("[data-action=undo]", root).disabled = !history.length;
+      updateLink();
     }
-    function pick(id) {
+    function pick(id, point = null) {
+      clearLanding();
       picked = id;
+      aimed = null;
+      freePoint = point;
       controls.latch(true);
       render();
-      $(`[data-binder="${id}"]`, root)?.focus({ preventScroll: true });
+      names.get(id).focus({ preventScroll: true });
       status(
         root,
-        `Carrying a reference to ${bindings.find((b) => b.id === id).name}. Choose a factor; Escape cancels.`,
+        `Connect ${bindings.find((b) => b.id === id).name} to a factor. The binding stays in place; Escape cancels.`,
       );
     }
     function place(index) {
-      if (!picked) {
-        status(root, "Choose a binding first.");
-        return;
+      if (!picked) return;
+      const hole = holes[index],
+        previousWidth = hole.getBoundingClientRect().width;
+      const changed = slots[index] !== picked;
+      if (changed) {
+        history.push([...slots]);
+        slots[index] = picked;
       }
-      history.push([...slots]);
-      slots[index] = picked;
+      clearLanding();
+      landing = index;
       picked = null;
+      drag = null;
+      aimed = null;
       controls.latch(false);
       render();
-      $(`[data-hole="${index}"]`, root).focus({ preventScroll: true });
+      hole.focus({ preventScroll: true });
+      if (changed && !reduced()) {
+        hole.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+        const width = hole.getBoundingClientRect().width;
+        const timing = { duration: 180, easing: "cubic-bezier(.2,0,0,1)" };
+        hole.animate(
+          [{ width: `${previousWidth}px` }, { width: `${width}px` }],
+          timing,
+        );
+        $(".ref-token", hole).animate(
+          [
+            { opacity: 0, transform: "scaleX(.75)" },
+            { opacity: 1, transform: "none" },
+          ],
+          timing,
+        );
+      }
+      updateLink();
+      landingTimer = setTimeout(
+        () => {
+          landing = null;
+          updateLink();
+        },
+        reduced() ? 0 : 220,
+      );
       status(
         root,
-        slots.every(Boolean)
-          ? "Both uses are in place. The original bindings remain; area has a value."
-          : "Inserted the reference. The defining row stayed in place.",
+        !changed
+          ? "That factor already refers to this binding."
+          : slots.every(Boolean)
+            ? "Both uses are in place. Hover a reference to see its binding; area has a value."
+            : "Connected. The reference opened in the hole; its binding stayed in place.",
       );
     }
-    window.addEventListener("pointermove", (e) => {
-      if (!drag) return;
-      if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5)
-        return;
-      if (!drag.moved) {
-        drag.moved = true;
-        picked = drag.id;
-        controls.latch(true);
-        drag.ghost = el(
-          "div",
-          "drag-ghost",
-          bindings.find((b) => b.id === picked).name,
-        );
-        document.body.append(drag.ghost);
-      }
-      drag.ghost.style.left = `${e.clientX + 12}px`;
-      drag.ghost.style.top = `${e.clientY - 10}px`;
+    function aimAt(e) {
+      freePoint = { x: e.clientX, y: e.clientY };
       const target = document
         .elementFromPoint(e.clientX, e.clientY)
         ?.closest("#reference-lab [data-hole]");
-      $$("[data-hole]", root).forEach((n) =>
-        n.classList.toggle("target", n === target),
+      aimed = target ? Number(target.dataset.hole) : null;
+      holes.forEach((hole, i) =>
+        hole.classList.toggle("target", !!picked && aimed === i),
       );
-      drag.target = target ? Number(target.dataset.hole) : null;
+      updateLink();
+    }
+    window.addEventListener("pointermove", (e) => {
+      if (drag) {
+        if (
+          !drag.moved &&
+          Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5
+        )
+          return;
+        if (!drag.moved) {
+          drag.moved = true;
+          picked = drag.id;
+          controls.latch(true);
+          names.forEach((n, id) => n.classList.toggle("picked", picked === id));
+        }
+      }
+      if (picked) aimAt(e);
     });
-    window.addEventListener("pointerup", () => {
+    window.addEventListener("pointerup", (e) => {
       if (!drag) return;
-      const d = drag;
-      if (d.moved) {
-        d.ghost?.remove();
-        if (d.target !== null && d.target !== undefined) place(d.target);
-        else {
-          picked = null;
-          controls.latch(false);
-          render();
-          status(root, "Canceled. No reference was inserted.");
-        } // Suppress the synthetic click after a completed drag.
+      const moved = drag.moved;
+      drag = null;
+      if (moved) {
+        aimAt(e);
+        if (aimed !== null) place(aimed);
+        else cancel();
+        // A completed drag must not also fire a binder/hole click.
+        suppressClick = true;
         setTimeout(() => {
-          drag = null;
+          suppressClick = false;
         }, 0);
-      } else drag = null;
+      } else controls.latch(false);
     });
     function cancel() {
-      drag?.ghost?.remove();
+      clearLanding();
       drag = null;
       picked = null;
+      aimed = null;
+      freePoint = null;
+      hovered = null;
       controls.latch(false);
       render();
       status(root, "Canceled. Bindings and references are unchanged.");
@@ -920,13 +1053,34 @@
       }
     });
     window.addEventListener("pointercancel", () => {
-      if (drag) cancel();
+      if (drag || picked) cancel();
     });
     window.addEventListener("blur", () => {
+      suspended = true;
       if (drag || picked) cancel();
+      else wire.clear();
     });
+    window.addEventListener("focus", () => {
+      suspended = false;
+      updateLink();
+    });
+    document.addEventListener("visibilitychange", () => {
+      suspended = document.hidden;
+      if (suspended && (drag || picked)) cancel();
+      else updateLink();
+    });
+    root.addEventListener("pointerleave", () => {
+      hovered = null;
+      updateLink();
+    });
+    window.addEventListener("scroll", () => wire.request(), true);
+    new ResizeObserver(() => wire.request()).observe(program);
     function undo() {
       if (drag || picked) cancel();
+      clearLanding();
+      holes.forEach((n) =>
+        n.getAnimations({ subtree: true }).forEach((a) => a.cancel()),
+      );
       if (history.length) {
         slots = history.pop();
         render();
@@ -936,11 +1090,25 @@
     $("[data-action=undo]", root).addEventListener("click", undo);
     $("[data-action=reset]", root).addEventListener("click", () => {
       cancel();
+      holes.forEach((n) =>
+        n.getAnimations({ subtree: true }).forEach((a) => a.cancel()),
+      );
       history.push([...slots]);
       slots = [null, null];
       render();
       status(root, "The two factors are empty again.");
     });
+    hoverOption.addEventListener("change", updateLink);
+    anchorOption.addEventListener("change", updateLink);
+    $$("[data-wire-style]", root).forEach((button) =>
+      button.addEventListener("click", () => {
+        style = button.dataset.wireStyle;
+        $$("[data-wire-style]", root).forEach((n) =>
+          n.setAttribute("aria-pressed", String(n === button)),
+        );
+        updateLink();
+      }),
+    );
     controls = mode(root, (active) => {
       if (!active && !drag) picked = null;
       render();

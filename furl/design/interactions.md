@@ -110,6 +110,8 @@ The standalone row study now moves the actual complete row with the pointer and 
 
 This study uses ordinary HTML inputs and a local arithmetic parser, not any part of Hazel's editor/evaluator. Its small refactor gate ignores fully empty draft bindings, which introduce no names or uses, so independent rows can cross them. The drafts remain visibly incomplete; their insertion is not reclassified as a semantic no-op. Other invalid arithmetic remains outside this prototype's refactor guarantee.
 
+Reference creation now explores a connector gesture: the binding stays put while an SVG endpoint follows the pointer, snaps to a target hole, and inserts the reference there. The name opens into that slot, smoothly moving following expression material horizontally. References retain binder IDs. Optional hover/focus links trace uses back to their binding outside Structure mode as well. Line and Wire share text-based anchors; the user can compare word centers and first-character centers. Edges sit behind the text. Wire uses two damped spring control points for bend and inertia, with exact endpoints, bounded integration, and no perpetual animation once settled. Reduced motion retains a static curve. This is an isolated visual experiment, not a Hazel integration or a full rope simulation.
+
 ## Branch and upstream policy
 
 Keep `furl` as the integration/deployment branch. Bring a chosen Hazel feature snapshot into a temporary integration branch, resolve there, run both suites, then merge. Record imported source SHAs and follow-up Furl fixes. Preserve a merge commit for feature imports; avoid rebasing public shared history or repeatedly squash-importing the same branch.

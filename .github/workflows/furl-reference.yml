@@ -20,3 +20,4 @@ jobs:
       - run: node --check furl/reference/study.js
       - run: node --check furl/interactions/stories.js
       - run: node --check furl/interactions/study.js
+      - run: node --check furl/interactions/wire.js

@@ -360,25 +360,56 @@ kbd {
   border-radius: 3px;
   white-space: nowrap;
 }
-.drag-ghost {
-  position: fixed;
-  z-index: 1000;
-  pointer-events: none;
-  background: var(--well);
-  color: var(--blue);
-  font: 14px/22px var(--mono);
-  padding: 0 6px;
-  box-shadow: 0 2px 8px #0002;
-  border-radius: 3px;
-}
 .reference-program {
   padding-left: 48px;
   min-width: 440px;
+  isolation: isolate;
 }
 .reference-row {
   display: grid;
   grid-template-columns: 14ch 29ch 1fr;
   height: 22px;
+  position: relative;
+  z-index: 1;
+}
+.wire-options {
+  display: flex;
+  gap: 4px;
+}
+.reference-wire {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 0;
+  color: var(--purple);
+}
+.reference-wire path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.15;
+  stroke-linecap: round;
+  stroke-opacity: 0.72;
+}
+.reference-wire[data-kind="hover"] path {
+  stroke-opacity: 0.38;
+}
+.reference-wire[data-kind="landing"] path {
+  stroke-opacity: 0.5;
+}
+.reference-wire circle {
+  fill: currentColor;
+  fill-opacity: 0.75;
+}
+.ref-token {
+  display: inline-block;
+  white-space: pre;
+  transform-origin: left center;
+}
+.reference-row > .ref-token {
+  justify-self: start;
 }
 .ref-name {
   color: var(--blue);
@@ -416,6 +447,8 @@ button.ref-name.picked {
   vertical-align: top;
   color: var(--purple);
   touch-action: none;
+  overflow: hidden;
+  white-space: nowrap;
 }
 .hole.target {
   background: var(--accent-fill);
@@ -701,9 +734,9 @@ footer {
 <div class="input-notes"><p><strong>Mouse</strong> · In Structure mode, drag anywhere on a row, including over its name, expression, or value. Double-click a cell to edit; double-click a value to select and copy it. The active cell supports ordinary text selection until you leave it or press Escape. Gaps insert; release commits one move.</p><p><strong>Keyboard</strong> · <kbd>⌘/Ctrl</kbd> <kbd>Enter</kbd> inserts below the active row; add <kbd>Shift</kbd> for above. Tab to a row: <kbd>Space</kbd> picks up, <kbd>↑</kbd> <kbd>↓</kbd> previews, <kbd>Enter</kbd> drops. <kbd>Escape</kbd> cancels. When no move is active, <kbd>Enter</kbd> or <kbd>F2</kbd> edits the expression; Tab into any cell to activate it. Newly inserted expressions are ready to type into.</p></div>
 <p class="note">The refactor gate here is deliberately small: unique names, valid arithmetic, and preserved lexical dependencies. Completely empty draft rows do not block independent moves; their holes remain visible. It is not Hazel’s refactor checker. New rows contain holes and are ordinary source edits, not guaranteed semantic no-ops. Source: old Furl’s row handlers; Big Book 84–88, 94.</p>
 </section>
-<section class="chapter" id="references"><div class="chapter-copy"><h2><span>02</span> Carry a reference, leave the binding</h2><p>With Structure active, pull a name into a hole. This differs from moving its defining row. Both the drag and the keyboard operation carry the binding’s identity.</p></div>
-<div class="lab" id="reference-lab"><div class="toolbar"><button class="structure-toggle" aria-pressed="false">Structure</button><span class="mode-note">Editing cells</span><button data-action="undo" disabled>Undo</button><button data-action="reset">Reset</button></div><div class="program-scroll"><div class="reference-program" aria-label="Reference creation experiment"></div></div><div class="lab-status" role="status" aria-live="polite">Turn on Structure, then drag width and height to the two holes.</div></div>
-<div class="input-notes"><p><strong>Mouse</strong> · Drag <code>width</code> or <code>height</code> to a hole. Click-to-pick and click-to-place work too.</p><p><strong>Keyboard</strong> · Tab to a binding; <kbd>Enter</kbd> or <kbd>Space</kbd> picks it up. Tab to a hole and press <kbd>Enter</kbd>. Escape cancels. In the live editor, an “Insert reference” chooser at the caret would list in-scope names.</p></div><p class="note">Old Furl implements this for names in later rows. The full editor needs lexical resolution across nested functions, matches, and shadowing. Creating a new use is an edit, not a refactor.</p></section>
+<section class="chapter" id="references"><div class="chapter-copy"><h2><span>02</span> Carry a reference, leave the binding</h2><p>With Structure active, pull a connection from a binding to a hole. The endpoint follows you; the name opens in the hole when you connect it. Hover a completed reference to trace it back to its binding.</p></div>
+<div class="lab" id="reference-lab"><div class="toolbar"><button class="structure-toggle" aria-pressed="false">Structure</button><span class="mode-note">Editing cells</span><div class="wire-options" role="group" aria-label="Connection style"><button data-wire-style="line" aria-pressed="true">Line</button><button data-wire-style="wire" aria-pressed="false">Wire</button></div><label><input type="checkbox" data-hover-links checked> Hover links</label><label>Anchor <select data-wire-anchor aria-label="Connection anchor"><option value="center">Word center</option><option value="first">First character</option></select></label><button data-action="undo" disabled>Undo</button><button data-action="reset">Reset</button></div><div class="program-scroll"><div class="reference-program" aria-label="Reference creation experiment"></div></div><div class="lab-status" role="status" aria-live="polite">Turn on Structure, then connect width and height to the two holes.</div></div>
+<div class="input-notes"><p><strong>Mouse</strong> · Pull from <code>width</code> or <code>height</code> to a hole. Try Line for a direct connection, or Wire for a bend with momentum. Hover links use the same style behind the text; the anchor control compares word centers with first characters. Click-to-pick and click-to-place work too.</p><p><strong>Keyboard</strong> · Tab to a binding; <kbd>Enter</kbd> or <kbd>Space</kbd> picks it up. Tab to a hole and press <kbd>Enter</kbd>. Escape cancels. In the live editor, an “Insert reference” chooser at the caret would list in-scope names.</p></div><p class="note">Old Furl implements this for names in later rows. The full editor needs lexical resolution across nested functions, matches, and shadowing. Creating a new use is an edit, not a refactor.</p></section>
 <section class="chapter" id="transformations"><div class="chapter-copy"><h2><span>03</span> The same grid can change shape</h2><p>The Big Book’s larger moves turn rows into blocks, parameters, and branches. Step between the states below. The wording outside the program proposes the gesture; these are before-and-after studies, not general implementations of the transforms.</p></div>
 <div class="lab" id="story-lab"><div class="toolbar"><label>Action <select id="story-choice" aria-label="Transformation"></select></label><div class="story-position"><button data-step="0" aria-pressed="true">Before</button><button data-step="1" aria-pressed="false">After</button></div><label class="motion-label"><input type="checkbox" id="motion" checked> Motion</label></div><div class="program-scroll"><div class="story-program" role="img" aria-label="Transformation preview"></div></div><div class="lab-status story-status" role="status" aria-live="polite"></div><details class="source-details"><summary>Source before and after</summary><div class="source-pair"><div><span>Before</span><pre class="story-before"></pre></div><div><span>After</span><pre class="story-after"></pre></div></div></details></div>
 <div class="input-notes"><p class="story-mouse"></p><p class="story-keyboard"></p></div><p class="note story-rule"></p><p class="note story-evidence"></p>
@@ -711,7 +744,7 @@ footer {
 <section class="chapter" id="inventory"><div class="chapter-copy"><h2><span>04</span> What there is to build</h2><p>The inventory separates working paths in the old editor, proposals in the slides, reusable Hazel transformations, and current Furl behavior. Every row includes a mouse and keyboard path. “Next” and “Soon” are a proposed sequence, not a delivery estimate.</p></div><div class="inventory-controls"><label>Filter <input type="search" id="inventory-search" placeholder="Try: scope, branch, keyboard…"></label><label>Source <select id="inventory-origin"><option value="">All sources</option><option>Old Furl</option><option>Big Book</option><option>Hazel branch</option><option>Current Furl</option><option>New proposal</option></select></label><span id="inventory-count" role="status"></span></div><div class="table-scroll"><table><caption class="sr-only">Furl interaction inventory and proposed controls</caption><thead><tr><th>Action / evidence</th><th>Mouse</th><th>Keyboard</th><th>Constraint</th></tr></thead><tbody><tr data-origin="Old Furl"><td><strong>Insert a binding row</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/view/BlockView.re#L27">BlockView.re:27; Update.re:161–177; Big Book 65, 94</a></span></td><td>Structure: hover a row boundary, then click. Held Option/Alt temporarily reveals the same targets.</td><td>⌘/Ctrl+Enter below; add Shift for above. Enter keeps its native cell meaning.</td><td>Focus the new expression. Insert in a named lexical scope, never at an alignment spacer. A draft row is an edit, not a proven no-op.</td></tr>
 <tr data-origin="Old Furl"><td><strong>Move a row</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L179">BlockView.re:50; Update.re:179–225; Big Book 84–88</a></span></td><td>Structure: drag anywhere on a binding row; double-click a cell for text editing or value interaction. Preview the destination before release.</td><td>Focus the row; Space picks up, ↑/↓ chooses a destination, Enter drops, Escape cancels.</td><td>Refactor offers checked destinations. Free edit permits scope/dependency changes but always produces valid structural syntax. The final result is not an ordinary movable let.</td></tr>
 <tr data-origin="Old Furl"><td><strong>Copy a row</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L205">Update.re:205–210; Big Book 87–88</a></span></td><td>Choose Copy in the structure commands; later compare Shift-drag with the deck’s left-then-down gesture.</td><td>Row command “Duplicate below”; then use the same keyboard pickup.</td><td>Fresh syntax IDs and a fresh binder; redirect references inside the copied subtree only. Copying evaluation is not generally a refactor.</td></tr>
-<tr data-origin="Old Furl"><td><strong>Create a reference from a binding</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L246">PatView.re:43; Update.re:246–327</a></span></td><td>Drag a binder to a hole or insertion slot. The binding stays where it was.</td><td>“Insert reference” at the caret opens in-scope bindings; arrows and Enter choose. Study: pick a binder, Tab to a hole, Enter.</td><td>Resolve by binder identity and lexical context, not matching spelling. Never silently capture a different same-named binding.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Create a reference from a binding</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L246">PatView.re:43; Update.re:246–327</a></span></td><td>Pull a connection from a binder to a hole or insertion slot. The binding stays put; its name opens at the target. The study compares a line with a flexible wire, plus optional hover links.</td><td>“Insert reference” at the caret opens in-scope bindings; arrows and Enter choose. Study: pick a binder, Tab to a hole, Enter.</td><td>Resolve by binder identity and lexical context, not matching spelling. Never silently capture a different same-named binding.</td></tr>
 <tr data-origin="Old Furl"><td><strong>Move or copy an expression</strong><span class="origin">Old Furl · Soon</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/view/ExpView.re#L23">ExpView.re:23; Update.re:246–327</a></span></td><td>Structure: drag an indicated expression to a typed slot; explicit Copy variant.</td><td>Native structural cut/copy/paste; command “Move expression” can reuse destination picking.</td><td>Old Furl moved single words, not arbitrary Hazel subtrees. Expand to subterms only with source-slot and capture rules.</td></tr>
 <tr data-origin="Old Furl"><td><strong>Extract a literal or subexpression</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L193">Update.re:193–203; Big Book 47–48, 55</a></span></td><td>Pull the selected expression to an earlier binding boundary.</td><td>Command “Extract binding”; reuse Hazel’s refactor chord where available.</td><td>Old implementation only extracted a literal immediately above its own row. Hazel ExtractLet/Explode can supply broader candidates.</td></tr>
 <tr data-origin="Old Furl"><td><strong>Define an unresolved name</strong><span class="origin">Old Furl · Soon</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L187">Update.re:187–192</a></span></td><td>Drag an unresolved occurrence to the boundary above its row.</td><td>At that occurrence, command “Create binding above”.</td><td>Keep the occurrence; create a binder of that name with a hole. Check for collisions.</td></tr>
@@ -1038,6 +1071,140 @@ const FURL_INTERACTION_STORIES = [
     codeAfter: "let f =\n  let x = 3 in\n  let delta = 4 in x + delta\nin f",
   },
 ];
+
+// A connection renderer for the standalone reference study. Endpoints are
+// measured from text, never from the width of a button or editor cell.
+class FurlReferenceWire {
+  constructor(program) {
+    this.program = program;
+    this.svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    this.svg.classList.add("reference-wire");
+    this.svg.setAttribute("aria-hidden", "true");
+    this.path = document.createElementNS(this.svg.namespaceURI, "path");
+    this.tip = document.createElementNS(this.svg.namespaceURI, "circle");
+    this.tip.setAttribute("r", "2.3");
+    this.svg.append(this.path, this.tip);
+    program.prepend(this.svg);
+    this.motion = matchMedia("(prefers-reduced-motion: reduce)");
+    this.motion.addEventListener("change", () => {
+      this.points = null;
+      this.request();
+    });
+    this.connection = null;
+    this.frame = 0;
+    this.points = null;
+  }
+  set(connection) {
+    const sameSource =
+      this.connection?.source === connection?.source &&
+      this.connection?.style === connection?.style &&
+      this.connection?.anchor === connection?.anchor;
+    this.connection = connection;
+    if (!sameSource) this.points = null;
+    this.changedAt = performance.now();
+    this.request();
+  }
+  request() {
+    if (!this.frame) this.frame = requestAnimationFrame((t) => this.draw(t));
+  }
+  clear() {
+    this.connection = null;
+    this.points = null;
+    cancelAnimationFrame(this.frame);
+    this.frame = 0;
+    this.lastTime = null;
+    this.svg.style.display = "none";
+    this.path.removeAttribute("d");
+  }
+  anchor(node, origin, first) {
+    const text = node.querySelector(".ref-token") || node;
+    const range = document.createRange();
+    range.selectNodeContents(text);
+    if (first && text.firstChild?.nodeType === Node.TEXT_NODE)
+      range.setEnd(text.firstChild, Math.min(1, text.firstChild.length));
+    const r = range.getBoundingClientRect();
+    return {
+      x: r.left + r.width / 2 - origin.left,
+      y: r.top + r.height / 2 - origin.top,
+    };
+  }
+  draw(time) {
+    this.frame = 0;
+    const c = this.connection;
+    if (!c || !c.source.isConnected) {
+      this.clear();
+      return;
+    }
+    const origin = this.program.getBoundingClientRect();
+    const a = this.anchor(c.source, origin, c.anchor === "first");
+    const b = c.target?.isConnected
+      ? this.anchor(c.target, origin, c.anchor === "first")
+      : c.pointer
+        ? { x: c.pointer.x - origin.left, y: c.pointer.y - origin.top }
+        : a;
+    this.svg.style.display = "block";
+    this.svg.dataset.kind = c.kind;
+    this.svg.dataset.style = c.style;
+    this.tip.style.display = c.kind === "drag" ? "" : "none";
+    this.tip.setAttribute("cx", b.x);
+    this.tip.setAttribute("cy", b.y);
+    let moving = false;
+    if (c.style === "wire") {
+      const distance = Math.hypot(b.x - a.x, b.y - a.y);
+      const sag = Math.min(32, distance * 0.14);
+      const targets = [1 / 3, 2 / 3].map((f) => ({
+        x: a.x + (b.x - a.x) * f,
+        y: a.y + (b.y - a.y) * f + sag,
+      }));
+      if (!this.points || this.motion.matches)
+        this.points = targets.map((p) => ({ ...p, vx: 0, vy: 0 }));
+      // Two damped spring masses control a cubic curve. The endpoints remain
+      // exact; only its interior lags and swings. Bounded substeps avoid a kick
+      // after an idle/background frame, and stationary wires stop requesting RAF.
+      const dt = Math.min((time - (this.lastTime || time - 16)) / 1000, 1 / 30);
+      const steps = Math.max(1, Math.ceil(dt * 120)),
+        h = dt / steps;
+      for (let step = 0; step < steps && !this.motion.matches; step++) {
+        this.points.forEach((p, i) => {
+          const target = targets[i];
+          for (const axis of ["x", "y"]) {
+            const v = `v${axis}`;
+            p[v] += (220 * (target[axis] - p[axis]) - 18 * p[v]) * h;
+            p[axis] += p[v] * h;
+            p[axis] = Math.max(
+              target[axis] - 90,
+              Math.min(target[axis] + 90, p[axis]),
+            );
+          }
+        });
+      }
+      moving =
+        !this.motion.matches &&
+        this.points.some(
+          (p, i) =>
+            Math.hypot(p.x - targets[i].x, p.y - targets[i].y) > 0.08 ||
+            Math.hypot(p.vx, p.vy) > 0.4,
+        );
+      if (!moving || time - this.changedAt > 1800) {
+        this.points = targets.map((p) => ({ ...p, vx: 0, vy: 0 }));
+        moving = false;
+      }
+      const [p, q] = this.points;
+      this.path.setAttribute(
+        "d",
+        `M ${a.x} ${a.y} C ${p.x} ${p.y} ${q.x} ${q.y} ${b.x} ${b.y}`,
+      );
+    } else {
+      this.points = null;
+      this.path.setAttribute("d", `M ${a.x} ${a.y} L ${b.x} ${b.y}`);
+    }
+    this.lastTime = time;
+    // A newly filled hole changes width briefly. Follow its actual text while
+    // it opens, in either style; do not leave the endpoint at an obsolete slot.
+    const resizing = !!c.target?.getAnimations({ subtree: true }).length;
+    if (moving || resizing) this.request();
+  }
+}
 
 (() => {
   "use strict";
@@ -1811,141 +1978,274 @@ const FURL_INTERACTION_STORIES = [
       history = [],
       picked = null,
       drag = null,
+      hovered = null,
+      aimed = null,
+      freePoint = null,
+      landing = null,
+      landingTimer = 0,
+      suppressClick = false,
+      suspended = false,
       controls;
+    const hoverOption = $("[data-hover-links]", root);
+    const anchorOption = $("[data-wire-anchor]", root);
+    let style = "line";
+    const names = new Map(),
+      holes = [];
+    const wire = new FurlReferenceWire(program);
+    const token = (text) => el("span", "ref-token", text);
+    const valueCell = (text) => {
+      const n = el("span", "ref-value");
+      n.append(token(text));
+      return n;
+    };
+    const result = valueCell("?");
+    for (const b of bindings) {
+      const row = el("div", "reference-row"),
+        name = el("button", "ref-name");
+      name.type = "button";
+      name.dataset.binder = b.id;
+      name.setAttribute("aria-label", `Use ${b.name}`);
+      name.append(token(b.name));
+      name.addEventListener("click", (e) => {
+        if (!controls.active() || suppressClick) return;
+        pick(b.id, e.detail ? { x: e.clientX, y: e.clientY } : null);
+      });
+      name.addEventListener("pointerdown", (e) => {
+        if (e.button || !controls.active()) return;
+        e.preventDefault();
+        name.focus({ preventScroll: true });
+        clearLanding();
+        drag = { id: b.id, x: e.clientX, y: e.clientY, moved: false };
+        controls.latch(true);
+      });
+      names.set(b.id, name);
+      row.append(name, token(String(b.value)), valueCell(String(b.value)));
+      program.append(row);
+    }
+    const row = el("div", "reference-row"),
+      pattern = el("span", "ref-name");
+    pattern.append(token("area"));
+    const expression = el("span", "reference-expression");
+    for (let i = 0; i < 2; i++) {
+      if (i) expression.append(token(" * "));
+      const hole = el("button", "hole");
+      hole.type = "button";
+      hole.dataset.hole = i;
+      hole.append(token("□"));
+      hole.addEventListener("click", () => {
+        if (suppressClick) return;
+        if (picked) place(i);
+        else if (controls.active()) status(root, "Choose a binding first.");
+      });
+      hole.addEventListener("pointerenter", () => {
+        hovered = i;
+        updateLink();
+      });
+      hole.addEventListener("pointerleave", () => {
+        if (hovered === i) hovered = null;
+        updateLink();
+      });
+      hole.addEventListener("focus", () => {
+        if (picked) aimed = i;
+        updateLink();
+      });
+      hole.addEventListener("blur", () => {
+        if (aimed === i && !drag) aimed = null;
+        // focus-visible updates after the focus event sequence finishes.
+        queueMicrotask(updateLink);
+      });
+      holes.push(hole);
+      expression.append(hole);
+    }
+    row.append(pattern, expression, result);
+    program.append(row, comb(66));
+    function updateLink() {
+      if (suspended) {
+        wire.clear();
+        return;
+      }
+      let id, target, kind;
+      if (picked) {
+        id = picked;
+        target = aimed === null ? null : holes[aimed];
+        kind = "drag";
+      } else if (landing !== null) {
+        id = slots[landing];
+        target = holes[landing];
+        kind = "landing";
+      } else if (hoverOption.checked) {
+        const focused = holes.findIndex((n) => n.matches(":focus-visible"));
+        const index =
+          hovered !== null ? hovered : focused >= 0 ? focused : null;
+        if (index !== null) {
+          id = slots[index];
+          target = holes[index];
+          kind = "hover";
+        }
+      }
+      if (!id) {
+        wire.clear();
+        return;
+      }
+      wire.set({
+        source: names.get(id),
+        target,
+        pointer: freePoint,
+        style,
+        anchor: anchorOption.value,
+        kind,
+      });
+    }
+    function clearLanding() {
+      clearTimeout(landingTimer);
+      landingTimer = 0;
+      landing = null;
+    }
     function render() {
-      program.replaceChildren();
       for (const b of bindings) {
-        const row = el("div", "reference-row"),
-          name = el("button", "ref-name", b.name);
-        name.type = "button";
-        name.dataset.binder = b.id;
+        const name = names.get(b.id);
         name.disabled = !controls?.active();
         name.classList.toggle("picked", picked === b.id);
-        name.setAttribute("aria-label", `Use ${b.name}`);
-        name.addEventListener("click", () => {
-          if (drag?.moved) return;
-          pick(b.id);
-        });
-        name.addEventListener("pointerdown", (e) => {
-          if (e.button || !controls.active()) return;
-          drag = { id: b.id, x: e.clientX, y: e.clientY, moved: false };
-        });
-        row.append(
-          name,
-          el("span", "", String(b.value)),
-          el("span", "ref-value", String(b.value)),
-        );
-        program.append(row);
       }
-      const row = el("div", "reference-row");
-      row.append(el("span", "ref-name", "area"));
-      const expression = el("span");
-      slots.forEach((id, i) => {
-        if (i) expression.append(document.createTextNode(" * "));
-        const b = bindings.find((b) => b.id === id),
-          hole = el("button", `hole${b ? " filled" : ""}`, b?.name || "□");
-        hole.type = "button";
-        hole.dataset.hole = i;
-        hole.disabled = !controls?.active();
+      holes.forEach((hole, i) => {
+        const b = bindings.find((b) => b.id === slots[i]);
+        const word = $(".ref-token", hole);
+        if (word.textContent !== (b?.name || "□"))
+          word.textContent = b?.name || "□";
+        hole.classList.toggle("filled", !!b);
+        hole.classList.toggle("target", !!picked && aimed === i);
+        // Filled references remain hoverable/focusable outside Structure mode.
+        hole.disabled = !controls?.active() && !b;
+        if (b) hole.dataset.reference = b.id;
+        else delete hole.dataset.reference;
         hole.setAttribute(
           "aria-label",
-          `${i ? "Second" : "First"} factor${b ? `: ${b.name}` : ": empty"}`,
+          `${i ? "Second" : "First"} factor: ${b?.name || "empty"}`,
         );
-        hole.addEventListener("click", () => place(i));
-        expression.append(hole);
       });
-      row.append(
-        expression,
-        el(
-          "span",
-          "ref-value",
-          slots.every(Boolean)
-            ? String(
-                slots.reduce(
-                  (v, id) => v * bindings.find((b) => b.id === id).value,
-                  1,
-                ),
-              )
-            : "?",
-        ),
-      );
-      program.append(row, comb(66));
+      $(".ref-token", result).textContent = slots.every(Boolean)
+        ? String(
+            slots.reduce(
+              (v, id) => v * bindings.find((b) => b.id === id).value,
+              1,
+            ),
+          )
+        : "?";
       $("[data-action=undo]", root).disabled = !history.length;
+      updateLink();
     }
-    function pick(id) {
+    function pick(id, point = null) {
+      clearLanding();
       picked = id;
+      aimed = null;
+      freePoint = point;
       controls.latch(true);
       render();
-      $(`[data-binder="${id}"]`, root)?.focus({ preventScroll: true });
+      names.get(id).focus({ preventScroll: true });
       status(
         root,
-        `Carrying a reference to ${bindings.find((b) => b.id === id).name}. Choose a factor; Escape cancels.`,
+        `Connect ${bindings.find((b) => b.id === id).name} to a factor. The binding stays in place; Escape cancels.`,
       );
     }
     function place(index) {
-      if (!picked) {
-        status(root, "Choose a binding first.");
-        return;
+      if (!picked) return;
+      const hole = holes[index],
+        previousWidth = hole.getBoundingClientRect().width;
+      const changed = slots[index] !== picked;
+      if (changed) {
+        history.push([...slots]);
+        slots[index] = picked;
       }
-      history.push([...slots]);
-      slots[index] = picked;
+      clearLanding();
+      landing = index;
       picked = null;
+      drag = null;
+      aimed = null;
       controls.latch(false);
       render();
-      $(`[data-hole="${index}"]`, root).focus({ preventScroll: true });
+      hole.focus({ preventScroll: true });
+      if (changed && !reduced()) {
+        hole.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+        const width = hole.getBoundingClientRect().width;
+        const timing = { duration: 180, easing: "cubic-bezier(.2,0,0,1)" };
+        hole.animate(
+          [{ width: `${previousWidth}px` }, { width: `${width}px` }],
+          timing,
+        );
+        $(".ref-token", hole).animate(
+          [
+            { opacity: 0, transform: "scaleX(.75)" },
+            { opacity: 1, transform: "none" },
+          ],
+          timing,
+        );
+      }
+      updateLink();
+      landingTimer = setTimeout(
+        () => {
+          landing = null;
+          updateLink();
+        },
+        reduced() ? 0 : 220,
+      );
       status(
         root,
-        slots.every(Boolean)
-          ? "Both uses are in place. The original bindings remain; area has a value."
-          : "Inserted the reference. The defining row stayed in place.",
+        !changed
+          ? "That factor already refers to this binding."
+          : slots.every(Boolean)
+            ? "Both uses are in place. Hover a reference to see its binding; area has a value."
+            : "Connected. The reference opened in the hole; its binding stayed in place.",
       );
     }
-    window.addEventListener("pointermove", (e) => {
-      if (!drag) return;
-      if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5)
-        return;
-      if (!drag.moved) {
-        drag.moved = true;
-        picked = drag.id;
-        controls.latch(true);
-        drag.ghost = el(
-          "div",
-          "drag-ghost",
-          bindings.find((b) => b.id === picked).name,
-        );
-        document.body.append(drag.ghost);
-      }
-      drag.ghost.style.left = `${e.clientX + 12}px`;
-      drag.ghost.style.top = `${e.clientY - 10}px`;
+    function aimAt(e) {
+      freePoint = { x: e.clientX, y: e.clientY };
       const target = document
         .elementFromPoint(e.clientX, e.clientY)
         ?.closest("#reference-lab [data-hole]");
-      $$("[data-hole]", root).forEach((n) =>
-        n.classList.toggle("target", n === target),
+      aimed = target ? Number(target.dataset.hole) : null;
+      holes.forEach((hole, i) =>
+        hole.classList.toggle("target", !!picked && aimed === i),
       );
-      drag.target = target ? Number(target.dataset.hole) : null;
+      updateLink();
+    }
+    window.addEventListener("pointermove", (e) => {
+      if (drag) {
+        if (
+          !drag.moved &&
+          Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5
+        )
+          return;
+        if (!drag.moved) {
+          drag.moved = true;
+          picked = drag.id;
+          controls.latch(true);
+          names.forEach((n, id) => n.classList.toggle("picked", picked === id));
+        }
+      }
+      if (picked) aimAt(e);
     });
-    window.addEventListener("pointerup", () => {
+    window.addEventListener("pointerup", (e) => {
       if (!drag) return;
-      const d = drag;
-      if (d.moved) {
-        d.ghost?.remove();
-        if (d.target !== null && d.target !== undefined) place(d.target);
-        else {
-          picked = null;
-          controls.latch(false);
-          render();
-          status(root, "Canceled. No reference was inserted.");
-        } // Suppress the synthetic click after a completed drag.
+      const moved = drag.moved;
+      drag = null;
+      if (moved) {
+        aimAt(e);
+        if (aimed !== null) place(aimed);
+        else cancel();
+        // A completed drag must not also fire a binder/hole click.
+        suppressClick = true;
         setTimeout(() => {
-          drag = null;
+          suppressClick = false;
         }, 0);
-      } else drag = null;
+      } else controls.latch(false);
     });
     function cancel() {
-      drag?.ghost?.remove();
+      clearLanding();
       drag = null;
       picked = null;
+      aimed = null;
+      freePoint = null;
+      hovered = null;
       controls.latch(false);
       render();
       status(root, "Canceled. Bindings and references are unchanged.");
@@ -1961,13 +2261,34 @@ const FURL_INTERACTION_STORIES = [
       }
     });
     window.addEventListener("pointercancel", () => {
-      if (drag) cancel();
+      if (drag || picked) cancel();
     });
     window.addEventListener("blur", () => {
+      suspended = true;
       if (drag || picked) cancel();
+      else wire.clear();
     });
+    window.addEventListener("focus", () => {
+      suspended = false;
+      updateLink();
+    });
+    document.addEventListener("visibilitychange", () => {
+      suspended = document.hidden;
+      if (suspended && (drag || picked)) cancel();
+      else updateLink();
+    });
+    root.addEventListener("pointerleave", () => {
+      hovered = null;
+      updateLink();
+    });
+    window.addEventListener("scroll", () => wire.request(), true);
+    new ResizeObserver(() => wire.request()).observe(program);
     function undo() {
       if (drag || picked) cancel();
+      clearLanding();
+      holes.forEach((n) =>
+        n.getAnimations({ subtree: true }).forEach((a) => a.cancel()),
+      );
       if (history.length) {
         slots = history.pop();
         render();
@@ -1977,11 +2298,25 @@ const FURL_INTERACTION_STORIES = [
     $("[data-action=undo]", root).addEventListener("click", undo);
     $("[data-action=reset]", root).addEventListener("click", () => {
       cancel();
+      holes.forEach((n) =>
+        n.getAnimations({ subtree: true }).forEach((a) => a.cancel()),
+      );
       history.push([...slots]);
       slots = [null, null];
       render();
       status(root, "The two factors are empty again.");
     });
+    hoverOption.addEventListener("change", updateLink);
+    anchorOption.addEventListener("change", updateLink);
+    $$("[data-wire-style]", root).forEach((button) =>
+      button.addEventListener("click", () => {
+        style = button.dataset.wireStyle;
+        $$("[data-wire-style]", root).forEach((n) =>
+          n.setAttribute("aria-pressed", String(n === button)),
+        );
+        updateLink();
+      }),
+    );
     controls = mode(root, (active) => {
       if (!active && !drag) picked = null;
       render();

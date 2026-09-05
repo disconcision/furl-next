@@ -36,6 +36,8 @@ const url =
       await page.goto(url);
     };
     await reset();
+    await require("./wire-test.cjs")(page, output);
+    await reset();
     await require("./cell-mode-test.cjs")(page, output);
     await reset();
     await require("./motion-test.cjs")(page, output);
@@ -213,6 +215,13 @@ const url =
     );
     await page.keyboard.press("Enter");
     assert.equal(await hole(0).textContent(), "width");
+    // Let the first word finish opening before sampling the next hole's
+    // coordinates; the second factor deliberately moves during that tween.
+    await page
+      .locator("#reference-lab .reference-program")
+      .evaluate((n) =>
+        Promise.all(n.getAnimations({ subtree: true }).map((a) => a.finished)),
+      );
     await binder("height").scrollIntoViewIfNeeded();
     const b = await binder("height").boundingBox(),
       target = await hole(1).boundingBox();

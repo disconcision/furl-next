@@ -32,7 +32,7 @@
   {
     "action": "Create a reference from a binding",
     "origin": "Old Furl",
-    "mouse": "Drag a binder to a hole or insertion slot. The binding stays where it was.",
+    "mouse": "Pull a connection from a binder to a hole or insertion slot. The binding stays put; its name opens at the target. The study compares a line with a flexible wire, plus optional hover links.",
     "keyboard": "“Insert reference” at the caret opens in-scope bindings; arrows and Enter choose. Study: pick a binder, Tab to a hole, Enter.",
     "rule": "Resolve by binder identity and lexical context, not matching spelling. Never silently capture a different same-named binding.",
     "source": "PatView.re:43; Update.re:246–327",
