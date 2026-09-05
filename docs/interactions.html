@@ -718,59 +718,181 @@ footer {
 .gap::after {
   pointer-events: none;
 }
+
+/* Tool primacy and transaction policy are independent, outside the code grid. */
+.tool-desk {
+  margin: 0 0 36px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--panel);
+  font-size: 12px;
+}
+.tool-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 28px;
+  align-items: center;
+  padding: 12px 14px;
+}
+.tool-buttons,
+.drag-options {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.tool-buttons button,
+.structure-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.tool-buttons button {
+  padding: 7px 10px;
+}
+.tool-icon {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: var(--purple);
+  vertical-align: middle;
+}
+.structure-toggle .tool-icon {
+  width: 17px;
+  height: 17px;
+  flex-basis: 17px;
+}
+.tool-description {
+  margin: 0;
+  padding: 0 14px 12px;
+  color: var(--muted-text);
+  max-width: 85ch;
+}
+.tool-desk details {
+  padding: 10px 14px;
+  border-top: 1px solid var(--rule);
+  color: var(--muted-text);
+}
+.tool-desk details > p {
+  max-width: 90ch;
+}
+.tool-families {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 22px;
+  margin: 20px 0;
+}
+.tool-families strong {
+  display: block;
+  color: var(--text);
+  margin-top: 7px;
+}
+.tool-families p {
+  margin: 7px 0;
+  font-size: 12px;
+}
+.tool-families small {
+  color: var(--muted-text);
+  font-weight: normal;
+}
+.tool-family {
+  display: block;
+  color: var(--muted-text);
+  font-size: 11px;
+  margin-top: 4px;
+}
+.drag-options > span {
+  color: var(--muted-text);
+  margin-right: 3px;
+}
+.delete-preview .program-scroll {
+  box-shadow: inset 0 0 0 2px var(--danger);
+}
+.delete-preview .edit-row[data-picked="true"],
+.hole.unplugging .ref-token {
+  opacity: 0.3;
+}
+.delete-blocked .program-scroll {
+  box-shadow: inset 0 0 0 1px var(--purple);
+}
+.reference-wire[data-kind="drag"],
+.reference-wire[data-kind="retract"] {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+}
+.reference-floating {
+  display: none;
+  position: fixed;
+  z-index: 30;
+  pointer-events: none;
+  font: 14px/22px var(--mono);
+  color: var(--blue);
+  transform: translate(-50%, -50%);
+  white-space: pre;
+}
+.armed .hole.filled {
+  cursor: grab;
+}
 </style></head>
 <body><a class="skip" href="#rows">Skip to the interactions</a><div class="book">
 <header class="masthead"><a class="wordmark" href="./index.html">f<span>u</span>rl</a><nav aria-label="Study links"><a href="./live/">Live editor</a><a href="./index.html">Reference</a><a href="./interactions.html" download="furl-interactions.html">Save HTML</a><a href="https://github.com/disconcision/furl-next/blob/furl/furl/design/interactions.md">Design notes</a></nav></header>
 <main>
 <div class="introduction"><p class="eyebrow">Interaction study · 5 September 2026</p><h1>Writing and reshaping programs.</h1><p>The old Furl editor makes rows and names tangible. The Big Book extends that idea to scopes, parameters, branches, and helpers. These studies bring those actions together with mouse and keyboard controls.</p><p class="note">Proposed interactions, separate from the live Hazel editor. The row lab uses ordinary HTML text inputs and a small JavaScript arithmetic parser, with no Hazel editor or backend. The other examples use fixed programs and preset values. This entire page works offline.</p></div>
 <nav class="contents" aria-label="On this page"><a href="#rows">01 Rows</a><a href="#references">02 References</a><a href="#transformations">03 Transformations</a><a href="#inventory">04 Inventory</a><a href="#foundation">05 Implementation</a><a href="#voice">06 Voice</a></nav>
-<section class="chapter" id="rows"><div class="chapter-copy"><h2><span>01</span> Quiet until you reach for structure</h2><p>Turn on <strong>Structure</strong>, or hold <strong>Option / Alt</strong> while pointing here. Gaps insert; drag anywhere on a binding row to move it. Double-click a cell to edit or interact with its value. There is no separate row handle or action gutter.</p><p class="try">Try moving <code>bonus</code> above <code>n</code>. Then try moving <code>twice</code> above <code>n</code>. Refactor blocks the dependency break; Free edit lets you see it.</p></div>
+<aside class="tool-desk" aria-label="Interaction tools"><div class="tool-strip"><div class="tool-buttons" role="group" aria-label="Pointer tool"><button data-tool="edit" aria-pressed="true" title="Text selection and cell editing"><svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8M12 3v18M8 21h8M4 8v8M2 8h4M2 16h4"/></svg><span>Edit</span></button><button data-tool="rows" aria-pressed="false" title="Whole-row gestures in study 01"><svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h11M3 12h11M3 19h11M19 4v16m-3-13 3-3 3 3m-6 10 3 3 3-3"/></svg><span>Rows</span></button><button data-tool="connect" aria-pressed="false" title="Binding and reference gestures in study 02"><svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6c15-4-14 17 10 12"/></svg><span>Connect</span></button></div><div class="policy" role="group" aria-label="Structural editing policy"><span>Policy</span><button data-policy="refactor" aria-pressed="false">Refactor</button><button data-policy="refine" aria-pressed="true">Refine</button><button data-policy="free" aria-pressed="false">Free edit</button></div></div><p class="tool-description">Tool chooses what a drag grabs; policy chooses which structural changes are allowed. Ordinary typing remains unrestricted in this study. Rows operates study 01; Connect operates study 02. Their local buttons select the same tools. Hold Option / Alt over either study for its tool temporarily.</p><details><summary>Tool families and the policy experiment</summary><div class="tool-families"><div><svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8M12 3v18M8 21h8M4 8v8M2 8h4M2 16h4"/></svg><strong>Edit</strong><p>Caret, selection, completion, syntax templates and eventually dictation. Ordinary text entry here remains unrestricted; the policy gate covers structural commands only.</p></div><div><svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h11M3 12h11M3 19h11M19 4v16m-3-13 3-3 3 3m-6 10 3 3 3-3"/></svg><strong>Rows</strong><p>Reorder, insert at gaps, delete; later duplicate or carry dependencies. Copy is an action variant, not another tool.</p></div><div><svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6c15-4-14 17 10 12"/></svg><strong>Connect</strong><p>Create, move and unplug uses. Later select subexpressions for extraction or inlining. The source and destination choose the operation.</p></div><div><svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H6Q3 3 3 6v12q0 3 3 3h2M16 3h2q3 0 3 3v12q0 3-3 3h-2M8 9h8M8 15h5"/></svg><strong>Shape <small>proposed</small></strong><p>Comb endpoints and regions: group, resize, abstract parameters, extract helpers and reshape match branches. One tool for lexical extent.</p></div><div><svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12Z"/><circle cx="12" cy="12" r="2.5"/></svg><strong>Inspect <small>proposed</small></strong><p>Values, calls and branch views. Furling and trace navigation need no source-edit permission; applying a specialization is a separate command.</p></div></div><p><strong>Refactor → Refine → Free edit</strong> is a proposed nesting of allowed actions. Here Refactor checks arithmetic row moves; Refine also permits connecting a binding to an empty hole; Free edit additionally permits breaking dependencies, replacing uses and deleting populated rows or uses. Blank-draft insertion/cleanup, Undo and Reset are available in every policy. These draft operations are editor scaffolding, not a claim of semantic equivalence.</p><p>Hazelnut Live proves that well-typed expression-hole filling commutes with reduction in its pure calculus. This supports refinement, but a closure can contain holes and change when they are filled; it is not a guarantee for every displayed value, pattern edit, type edit or effectful program. The small parser here does not implement that theorem. <a href="https://arxiv.org/html/1805.00155v4#S4">Hazelnut Live §4</a>.</p></details></aside>
+<section class="chapter" id="rows"><div class="chapter-copy"><h2><span>01</span> Quiet until you reach for structure</h2><p>Select <strong>Rows</strong>, or hold <strong>Option / Alt</strong> while pointing here. Gaps insert; drag anywhere on a binding row to move it. Double-click a cell to edit or interact with its value. There is no separate row handle or action gutter.</p><p class="try">Try moving <code>bonus</code> above <code>n</code>. Then try moving <code>twice</code> above <code>n</code>. Refactor blocks the dependency break; Free edit lets you see it.</p></div>
 <div class="lab" id="row-lab">
-<div class="toolbar"><button class="structure-toggle" aria-pressed="false">Structure</button><span class="mode-note">Editing cells</span><div class="policy"><span>Move policy</span><button data-policy="refactor" aria-pressed="true">Refactor</button><button data-policy="free" aria-pressed="false">Free edit</button></div><button data-action="insert">Insert below</button><button data-action="undo" disabled>Undo</button><button data-action="reset">Reset</button></div>
+<div class="toolbar"><button class="structure-toggle" aria-pressed="false"><svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h11M3 12h11M3 19h11M19 4v16m-3-13 3-3 3 3m-6 10 3 3 3-3"/></svg>Rows</button><span class="mode-note">Editing cells</span><label>Policy <select data-policy-select aria-label="Row gesture policy"><option value="refactor">Refactor</option><option value="refine" selected>Refine</option><option value="free">Free edit</option></select></label><div class="drag-options" role="group" aria-label="Row dragging"><span>Drag</span><button data-row-drag="slot" aria-pressed="true">Slot</button><button data-row-drag="float" aria-pressed="false">Float</button></div><button data-action="undo" disabled>Undo</button><button data-action="reset">Reset</button></div>
 <div class="program-scroll"><div class="row-program" tabindex="-1" aria-label="Arithmetic row experiment"></div></div>
-<div class="lab-status" role="status" aria-live="polite">Click an expression to edit it. In Structure mode, drag a row or double-click a cell.</div>
+<div class="lab-status" role="status" aria-live="polite">Click an expression to edit it. With Rows active, drag a row or double-click a cell.</div>
 <details class="source-details"><summary>Underlying source</summary><pre class="row-source"></pre></details>
 </div>
-<div class="input-notes"><p><strong>Mouse</strong> · In Structure mode, drag anywhere on a row, including over its name, expression, or value. Double-click a cell to edit; double-click a value to select and copy it. The active cell supports ordinary text selection until you leave it or press Escape. Gaps insert; release commits one move.</p><p><strong>Keyboard</strong> · <kbd>⌘/Ctrl</kbd> <kbd>Enter</kbd> inserts below the active row; add <kbd>Shift</kbd> for above. Tab to a row: <kbd>Space</kbd> picks up, <kbd>↑</kbd> <kbd>↓</kbd> previews, <kbd>Enter</kbd> drops. <kbd>Escape</kbd> cancels. When no move is active, <kbd>Enter</kbd> or <kbd>F2</kbd> edits the expression; Tab into any cell to activate it. Newly inserted expressions are ready to type into.</p></div>
+<div class="input-notes"><p><strong>Mouse</strong> · With Rows active, drag anywhere on a row, including over its name, expression, or value. Double-click a cell to edit; double-click a value to select and copy it. The active cell supports ordinary text selection until you leave it or press Escape. Gaps insert; release commits one move. Slot keeps the row in a candidate position with aligned columns; Float lets it follow the pointer. In Free edit, drop outside the editor canvas to delete. The canvas is the code rectangle between the toolbar and status, including its padding; its edge lights up before deletion. Empty draft cleanup works in every policy.</p><p><strong>Keyboard</strong> · <kbd>⌘/Ctrl</kbd> <kbd>Enter</kbd> inserts below the active row; add <kbd>Shift</kbd> for above. Tab to a row: <kbd>Space</kbd> picks up, <kbd>↑</kbd> <kbd>↓</kbd> previews, <kbd>Enter</kbd> drops. <kbd>Escape</kbd> cancels. When no move is active, <kbd>Enter</kbd> or <kbd>F2</kbd> edits the expression; Tab into any cell to activate it. Newly inserted expressions are ready to type into. <kbd>Backspace</kbd> removes a row with both cells empty, from either cell. <kbd>⌘/Ctrl</kbd> <kbd>Shift</kbd> <kbd>Backspace</kbd> requests deletion of the current binding row regardless of contents; populated rows require Free edit. The result row stays.</p></div>
 <p class="note">The refactor gate here is deliberately small: unique names, valid arithmetic, and preserved lexical dependencies. Completely empty draft rows do not block independent moves; their holes remain visible. It is not Hazel’s refactor checker. New rows contain holes and are ordinary source edits, not guaranteed semantic no-ops. Source: old Furl’s row handlers; Big Book 84–88, 94.</p>
 </section>
-<section class="chapter" id="references"><div class="chapter-copy"><h2><span>02</span> Carry a reference, leave the binding</h2><p>With Structure active, pull a connection from a binding to a hole. The endpoint follows you; the name opens in the hole when you connect it. Hover a completed reference to trace it back to its binding.</p></div>
-<div class="lab" id="reference-lab"><div class="toolbar"><button class="structure-toggle" aria-pressed="false">Structure</button><span class="mode-note">Editing cells</span><div class="wire-options" role="group" aria-label="Connection style"><button data-wire-style="line" aria-pressed="true">Line</button><button data-wire-style="wire" aria-pressed="false">Wire</button></div><label><input type="checkbox" data-hover-links checked> Hover links</label><label>Anchor <select data-wire-anchor aria-label="Connection anchor"><option value="center">Word center</option><option value="first">First character</option></select></label><button data-action="undo" disabled>Undo</button><button data-action="reset">Reset</button></div><div class="program-scroll"><div class="reference-program" aria-label="Reference creation experiment"></div></div><div class="lab-status" role="status" aria-live="polite">Turn on Structure, then connect width and height to the two holes.</div></div>
-<div class="input-notes"><p><strong>Mouse</strong> · Pull from <code>width</code> or <code>height</code> to a hole. Try Line for a direct connection, or Wire for a bend with momentum. Hover links use the same style behind the text; the anchor control compares word centers with first characters. Click-to-pick and click-to-place work too.</p><p><strong>Keyboard</strong> · Tab to a binding; <kbd>Enter</kbd> or <kbd>Space</kbd> picks it up. Tab to a hole and press <kbd>Enter</kbd>. Escape cancels. In the live editor, an “Insert reference” chooser at the caret would list in-scope names.</p></div><p class="note">Old Furl implements this for names in later rows. The full editor needs lexical resolution across nested functions, matches, and shadowing. Creating a new use is an edit, not a refactor.</p></section>
+<section class="chapter" id="references"><div class="chapter-copy"><h2><span>02</span> Carry a reference, leave the binding</h2><p>Select <strong>Connect</strong> and pull a connection from a binding to a hole. The endpoint follows you; the name opens in the hole when you connect it. Hover a completed reference to trace it back to its binding.</p></div>
+<div class="lab" id="reference-lab"><div class="toolbar"><button class="structure-toggle" aria-pressed="false"><svg class="tool-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 6c15-4-14 17 10 12"/></svg>Connect</button><span class="mode-note">Inspecting references</span><label>Policy <select data-policy-select aria-label="Reference gesture policy"><option value="refactor">Refactor</option><option value="refine" selected>Refine</option><option value="free">Free edit</option></select></label><label><input type="checkbox" data-hover-links checked> Hover links</label><button data-action="undo" disabled>Undo</button><button data-action="reset">Reset</button></div><div class="program-scroll"><div class="reference-program" aria-label="Reference creation experiment"></div></div><div class="lab-status" role="status" aria-live="polite">Select Connect, then pull width and height into the two holes. Refine permits filling holes; choose Free edit to unplug uses.</div></div>
+<div class="input-notes"><p><strong>Mouse</strong> · Pull from <code>width</code> or <code>height</code> to a hole. The flexible wire and word-center anchors are the chosen design. Hover links use that same wire behind the text. Drag an existing use outside the canvas and release to unplug it in Free edit; its wire springs back to the binding. Click-to-pick and click-to-place work too.</p><p><strong>Keyboard</strong> · Tab to a binding; <kbd>Enter</kbd> or <kbd>Space</kbd> picks it up. Tab to a hole and press <kbd>Enter</kbd>. <kbd>Space</kbd> on a filled factor picks up that use for moving; <kbd>Backspace</kbd> or <kbd>Delete</kbd> removes the focused use in Free edit. Escape cancels; <kbd>⌘/Ctrl</kbd> <kbd>Z</kbd> undoes. In the live editor, an “Insert reference” chooser at the caret would list in-scope names.</p></div><p class="note">Old Furl implements this for names in later rows. The full editor needs lexical resolution across nested functions, matches, and shadowing. Filling an empty factor is allowed in Refine; replacing, moving or unplugging a use requires Free edit. Pickup leaves the source intact until a permitted drop. A refused or canceled drop restores it; Undo reverses a completed edit.</p></section>
 <section class="chapter" id="transformations"><div class="chapter-copy"><h2><span>03</span> The same grid can change shape</h2><p>The Big Book’s larger moves turn rows into blocks, parameters, and branches. Step between the states below. The wording outside the program proposes the gesture; these are before-and-after studies, not general implementations of the transforms.</p></div>
 <div class="lab" id="story-lab"><div class="toolbar"><label>Action <select id="story-choice" aria-label="Transformation"></select></label><div class="story-position"><button data-step="0" aria-pressed="true">Before</button><button data-step="1" aria-pressed="false">After</button></div><label class="motion-label"><input type="checkbox" id="motion" checked> Motion</label></div><div class="program-scroll"><div class="story-program" role="img" aria-label="Transformation preview"></div></div><div class="lab-status story-status" role="status" aria-live="polite"></div><details class="source-details"><summary>Source before and after</summary><div class="source-pair"><div><span>Before</span><pre class="story-before"></pre></div><div><span>After</span><pre class="story-after"></pre></div></div></details></div>
 <div class="input-notes"><p class="story-mouse"></p><p class="story-keyboard"></p></div><p class="note story-rule"></p><p class="note story-evidence"></p>
 </section>
-<section class="chapter" id="inventory"><div class="chapter-copy"><h2><span>04</span> What there is to build</h2><p>The inventory separates working paths in the old editor, proposals in the slides, reusable Hazel transformations, and current Furl behavior. Every row includes a mouse and keyboard path. “Next” and “Soon” are a proposed sequence, not a delivery estimate.</p></div><div class="inventory-controls"><label>Filter <input type="search" id="inventory-search" placeholder="Try: scope, branch, keyboard…"></label><label>Source <select id="inventory-origin"><option value="">All sources</option><option>Old Furl</option><option>Big Book</option><option>Hazel branch</option><option>Current Furl</option><option>New proposal</option></select></label><span id="inventory-count" role="status"></span></div><div class="table-scroll"><table><caption class="sr-only">Furl interaction inventory and proposed controls</caption><thead><tr><th>Action / evidence</th><th>Mouse</th><th>Keyboard</th><th>Constraint</th></tr></thead><tbody><tr data-origin="Old Furl"><td><strong>Insert a binding row</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/view/BlockView.re#L27">BlockView.re:27; Update.re:161–177; Big Book 65, 94</a></span></td><td>Structure: hover a row boundary, then click. Held Option/Alt temporarily reveals the same targets.</td><td>⌘/Ctrl+Enter below; add Shift for above. Enter keeps its native cell meaning.</td><td>Focus the new expression. Insert in a named lexical scope, never at an alignment spacer. A draft row is an edit, not a proven no-op.</td></tr>
-<tr data-origin="Old Furl"><td><strong>Move a row</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L179">BlockView.re:50; Update.re:179–225; Big Book 84–88</a></span></td><td>Structure: drag anywhere on a binding row; double-click a cell for text editing or value interaction. Preview the destination before release.</td><td>Focus the row; Space picks up, ↑/↓ chooses a destination, Enter drops, Escape cancels.</td><td>Refactor offers checked destinations. Free edit permits scope/dependency changes but always produces valid structural syntax. The final result is not an ordinary movable let.</td></tr>
-<tr data-origin="Old Furl"><td><strong>Copy a row</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L205">Update.re:205–210; Big Book 87–88</a></span></td><td>Choose Copy in the structure commands; later compare Shift-drag with the deck’s left-then-down gesture.</td><td>Row command “Duplicate below”; then use the same keyboard pickup.</td><td>Fresh syntax IDs and a fresh binder; redirect references inside the copied subtree only. Copying evaluation is not generally a refactor.</td></tr>
-<tr data-origin="Old Furl"><td><strong>Create a reference from a binding</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L246">PatView.re:43; Update.re:246–327</a></span></td><td>Pull a connection from a binder to a hole or insertion slot. The binding stays put; its name opens at the target. The study compares a line with a flexible wire, plus optional hover links.</td><td>“Insert reference” at the caret opens in-scope bindings; arrows and Enter choose. Study: pick a binder, Tab to a hole, Enter.</td><td>Resolve by binder identity and lexical context, not matching spelling. Never silently capture a different same-named binding.</td></tr>
-<tr data-origin="Old Furl"><td><strong>Move or copy an expression</strong><span class="origin">Old Furl · Soon</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/view/ExpView.re#L23">ExpView.re:23; Update.re:246–327</a></span></td><td>Structure: drag an indicated expression to a typed slot; explicit Copy variant.</td><td>Native structural cut/copy/paste; command “Move expression” can reuse destination picking.</td><td>Old Furl moved single words, not arbitrary Hazel subtrees. Expand to subterms only with source-slot and capture rules.</td></tr>
-<tr data-origin="Old Furl"><td><strong>Extract a literal or subexpression</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L193">Update.re:193–203; Big Book 47–48, 55</a></span></td><td>Pull the selected expression to an earlier binding boundary.</td><td>Command “Extract binding”; reuse Hazel’s refactor chord where available.</td><td>Old implementation only extracted a literal immediately above its own row. Hazel ExtractLet/Explode can supply broader candidates.</td></tr>
-<tr data-origin="Old Furl"><td><strong>Define an unresolved name</strong><span class="origin">Old Furl · Soon</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L187">Update.re:187–192</a></span></td><td>Drag an unresolved occurrence to the boundary above its row.</td><td>At that occurrence, command “Create binding above”.</td><td>Keep the occurrence; create a binder of that name with a hole. Check for collisions.</td></tr>
-<tr data-origin="Old Furl"><td><strong>Insert a word / syntax template</strong><span class="origin">Old Furl · Soon</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/view/CommonView.re#L38">CommonView.re:38; View.re:19; Keyboard.re:16</a></span></td><td>Old editor: click between words or drag from its word palette. Proposed: native Hazel completion or a compact structure menu.</td><td>Use Hazel typing and completion; Tab moves through new holes.</td><td>Do not reimplement a second token editor. Old Space made a new word; that mapping should not replace Hazel’s input model.</td></tr>
-<tr data-origin="Old Furl"><td><strong>Delete and recover</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L115">View.re:108–126; Update.re:115–158</a></span></td><td>Explicit row Delete command; Undo restores it. Keep a stash concept for later.</td><td>Delete on a focused row; ⌘/Ctrl+Z restores.</td><td>Old background drops delete into a visible trash collection; picking up trash removes it before a successful drop. Do not inherit that cancellation behavior.</td></tr>
-<tr data-origin="Old Furl"><td><strong>Navigate rows, cells, and uses</strong><span class="origin">Old Furl · Live / extend</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Keyboard.re#L3">Keyboard.re:3–20; PatView.re:27</a></span></td><td>Click a cell normally; double-click in Structure mode. Binder/use highlighting helps follow references.</td><td>Existing Furl arrows retain column targets. Tab should visit structural targets only when explicitly entering that layer.</td><td>Old Shift+↑/↓ swaps rows; retain native Shift-selection in text. Do not globally steal it.</td></tr>
-<tr data-origin="Big Book"><td><strong>Create a nested block</strong><span class="origin">Big Book · Soon</span><span class="evidence">Slides 85, 87–88, 95</span></td><td>Select a contiguous row range, then Group; compare Alt-drag / left-then-up as an expert gesture.</td><td>Row selection + “Group into block”; name the resulting binding.</td><td>A nested let changes scope. Reject or explicitly export bindings still used outside the chosen block.</td></tr>
-<tr data-origin="Big Book"><td><strong>Resize a block</strong><span class="origin">Big Book · Later</span><span class="evidence">Slide 89</span></td><td>Structure: drag the top or bottom comb endpoint across row boundaries.</td><td>Focus an endpoint; arrows preview moving it one boundary, Enter commits.</td><td>The endpoints change lexical extent, not CSS height. Show escaping uses and keep required exports.</td></tr>
-<tr data-origin="Big Book"><td><strong>Turn leading rows into parameters</strong><span class="origin">Big Book · Soon</span><span class="evidence">Slides 10–12, 48, 90</span></td><td>Pull the top comb boundary downward; crossed definitions become parameter candidates.</td><td>“Abstract leading rows”; choose a range, preview parameters and call, then commit.</td><td>Create a function plus a call supplying old definitions. Preserve evaluation order; update all affected uses. Start with one tuple parameter.</td></tr>
-<tr data-origin="Hazel branch"><td><strong>Add / remove / reorder parameters</strong><span class="origin">Hazel branch · Soon</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorMove.re">RefactorMove.re: add_param_impl, swap_params_rewrite, remove_param_impl</a></span></td><td>Structure: drag parameter slots or use an endpoint command.</td><td>Commands plus directional parameter navigation; reuse the same transform planner.</td><td>Hazel patches known calls and rejects bare escaping uses in relevant transforms. Adding argument holes is an edit; reordering needs evaluation-order checks.</td></tr>
-<tr data-origin="Big Book"><td><strong>Turn a binding into a match</strong><span class="origin">Big Book · Soon</span><span class="evidence">Slides 37–38, 48, 91, 94</span></td><td>After a refutable pattern is complete, show a fork preview; accept on the comb.</td><td>Commit pattern, then command “Branch on this pattern”.</td><td>Deck proposes automatic creation. Start with an explicit acceptance so intermediate typing does not rearrange the editor; add a fallback hole without claiming semantic equivalence.</td></tr>
-<tr data-origin="Big Book"><td><strong>Add a match branch</strong><span class="origin">Big Book · Soon</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorMove.re#L212">Slides 91, 94; Hazel AddCaseArm</a></span></td><td>Structure: click or pull the match fork right. In normal mode it keeps its current view action.</td><td>At the branch handle, command “Add branch”; Tab enters its pattern/body.</td><td>A branch is a pattern plus a body, not a let row. Place a new branch before a catch-all or use a coverage witness.</td></tr>
-<tr data-origin="Hazel branch"><td><strong>Reorder match branches</strong><span class="origin">Hazel branch · Later</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorMove.re#L1991">RefactorMove.re:1991</a></span></td><td>Drag a whole branch column by its comb handle in Structure mode.</td><td>Pick up a branch handle; ←/→ previews, Enter commits.</td><td>Case order is semantic. Refactor requires disjointness or a stronger proof; the branch currently uses a conservative disjoint-pattern test.</td></tr>
-<tr data-origin="Big Book"><td><strong>Inline a binding / one use</strong><span class="origin">Big Book · Soon</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorInline.re">Slides 48, 92; RefactorInline.re</a></span></td><td>Pull a definition toward an occurrence; preview whether it is copied or consumed.</td><td>Commands “Inline binding” / “Inline this use”; use Hazel FeedLet and InlineLet.</td><td>Distinguish one use from all uses. Preserve precedence, capture avoidance, evaluation behavior, and comments.</td></tr>
-<tr data-origin="Big Book"><td><strong>Carry dependencies while moving</strong><span class="origin">Big Book · Soon</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorMove.re#L1405">Slide 93; RefactorMove.re:1405</a></span></td><td>Refactor drag pauses at a dependency; offer a preview carrying the necessary rows.</td><td>At a blocked move, choose “Move with dependencies”.</td><td>Make the larger operation explicit. Do not silently turn a small reorder into a helper extraction.</td></tr>
-<tr data-origin="Big Book"><td><strong>Extract a helper at a scope boundary</strong><span class="origin">Big Book · Soon</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorLift.re">Slides 93, 95–96; RefactorLift.re</a></span></td><td>Pull a dependency group beyond a function ceiling, then accept a helper preview.</td><td>“Extract helper”; review free variables as parameters and rewritten uses.</td><td>Hazel LiftFunction handles a specific contiguous dependency run and enclosure shapes, not every arbitrary selected Furl region.</td></tr>
-<tr data-origin="Hazel branch"><td><strong>Explode / implode applications</strong><span class="origin">Hazel branch · Soon</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorInline.re">Slides 2, 47, 53, 55; RefactorInline.re</a></span></td><td>Select an expression, choose “Expose intermediates” / “Inline intermediates”.</td><td>Use Hazel Explode / Implode commands; bind an optional chord after testing conflicts.</td><td>Introducing let-bound intermediates is a source refactor. Merely furling existing syntax is a view change; keep the two actions distinct.</td></tr>
-<tr data-origin="Big Book"><td><strong>Inspect / specialize a call or case</strong><span class="origin">Big Book · Later</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorReduce.re">Slides 48, 53, 55, 92; RefactorReduce.re</a></span></td><td>Select a live call, then inspect a substituted view. A separate command applies a source rewrite.</td><td>Value arrows navigate; explicit “Step here” / “Bind argument” are source commands.</td><td>A rewrite justified by one sample is not valid for every input. A temporary inspection must not mutate source, history, or persistence.</td></tr>
-<tr data-origin="Current Furl"><td><strong>Furl, unfurl, switch branches and calls</strong><span class="origin">Current Furl · Live</span><span class="evidence">furl/design/architecture.md</span></td><td>Existing comb clicks, all/one branch choice, and selected-value arrows.</td><td>Existing cross-cell arrows and Ctrl+Alt+←/→ for branch inspection.</td><td>View operations stay available outside Structure mode and never become undoable syntax edits. Windows refactor chord conflicts with branch navigation: use row/branch-focused arrows first.</td></tr>
-<tr data-origin="Big Book"><td><strong>Choose attributes / trace columns</strong><span class="origin">Big Book · Live / later</span><span class="evidence">Slides 49–52, 76, 79–82, 98–102</span></td><td>Existing binding/expression/value toggles; later add types, environments, assertions, and trace pinning.</td><td>Focus a toolbar control; Space toggles it. Commands can restore a hidden caret column.</td><td>Extra value columns are invocation views, not duplicated source. No new code row for controls.</td></tr>
-<tr data-origin="Old Furl"><td><strong>Animation and identity tracking</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Animate.re">Animate.re:1–124; Dragology Fig. 1, §§3–4</a></span></td><td>Preview a candidate while dragging; settle identified rows on release.</td><td>Keyboard moves get the same preview and settled state; reduced-motion gets immediate transitions.</td><td>Old editor used UID-based 150ms position transitions. Do not animate syntax by interpolating token text or save intermediate states.</td></tr>
-<tr data-origin="New proposal"><td><strong>Voice-assisted text entry</strong><span class="origin">New proposal · Later</span><span class="evidence">Voice assessment in this study</span></td><td>Click a microphone at the focused cell, dictate, correct a small transcript, then insert.</td><td>Focusable record/stop and accept/cancel controls; ordinary typing remains available.</td><td>One insertion transaction at a retained source target. A late transcript cannot land in a different cell. Service choice remains open.</td></tr></tbody></table></div><p class="note">Old Furl was inspected at <code>4967561</code>; Hazel refactorings at <code>7dbd770</code>. Those source paths were inspected, not rerun as part of this study. Slide numbers include the three hidden slides in the 103-slide PowerPoint.</p></section>
+<section class="chapter" id="inventory"><div class="chapter-copy"><h2><span>04</span> What there is to build</h2><p>The inventory separates working paths in the old editor, proposals in the slides, reusable Hazel transformations, and current Furl behavior. Every row includes a mouse and keyboard path, and a proposed tool family. Tool families describe what is targeted; most commands do not need another tool button. “Next” and “Soon” are a proposed sequence, not a delivery estimate.</p></div><div class="inventory-controls"><label>Filter <input type="search" id="inventory-search" placeholder="Try: scope, branch, keyboard…"></label><label>Source <select id="inventory-origin"><option value="">All sources</option><option>Old Furl</option><option>Big Book</option><option>Hazel branch</option><option>Current Furl</option><option>New proposal</option></select></label><span id="inventory-count" role="status"></span></div><div class="table-scroll"><table><caption class="sr-only">Furl interaction inventory and proposed controls</caption><thead><tr><th>Action / evidence</th><th>Mouse</th><th>Keyboard</th><th>Constraint</th></tr></thead><tbody><tr data-origin="Old Furl"><td><strong>Insert a binding row</strong><span class="origin">Old Furl · Next</span><span class="tool-family">Tool · Rows</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/view/BlockView.re#L27">BlockView.re:27; Update.re:161–177; Big Book 65, 94</a></span></td><td>Structure: hover a row boundary, then click. Held Option/Alt temporarily reveals the same targets.</td><td>⌘/Ctrl+Enter below; add Shift for above. Enter keeps its native cell meaning.</td><td>Focus the new expression. Insert in a named lexical scope, never at an alignment spacer. A draft row is an edit, not a proven no-op.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Move a row</strong><span class="origin">Old Furl · Next</span><span class="tool-family">Tool · Rows</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L179">BlockView.re:50; Update.re:179–225; Big Book 84–88</a></span></td><td>Rows: drag anywhere on a binding row. Slot stays in a candidate position; Float follows the pointer. Double-click a cell for editing or values.</td><td>Focus the row; Space picks up, ↑/↓ chooses a destination, Enter drops, Escape cancels.</td><td>Refactor offers checked destinations. Free edit permits scope/dependency changes but always produces valid structural syntax. The final result is not an ordinary movable let.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Copy a row</strong><span class="origin">Old Furl · Next</span><span class="tool-family">Tool · Rows</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L205">Update.re:205–210; Big Book 87–88</a></span></td><td>Choose Copy in the structure commands; later compare Shift-drag with the deck’s left-then-down gesture.</td><td>Row command “Duplicate below”; then use the same keyboard pickup.</td><td>Fresh syntax IDs and a fresh binder; redirect references inside the copied subtree only. Copying evaluation is not generally a refactor.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Create a reference from a binding</strong><span class="origin">Old Furl · Next</span><span class="tool-family">Tool · Connect</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L246">PatView.re:43; Update.re:246–327</a></span></td><td>Connect: pull a flexible wire from a binder to a hole. Word-center anchors; optional hover links. Drag an existing use to move or unplug it in Free edit.</td><td>“Insert reference” at the caret opens in-scope bindings; arrows and Enter choose. Study: pick a binder, Tab to a hole, Enter.</td><td>Resolve by binder identity and lexical context, not matching spelling. Never silently capture a different same-named binding.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Move or copy an expression</strong><span class="origin">Old Furl · Soon</span><span class="tool-family">Tool · Connect</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/view/ExpView.re#L23">ExpView.re:23; Update.re:246–327</a></span></td><td>Structure: drag an indicated expression to a typed slot; explicit Copy variant.</td><td>Native structural cut/copy/paste; command “Move expression” can reuse destination picking.</td><td>Old Furl moved single words, not arbitrary Hazel subtrees. Expand to subterms only with source-slot and capture rules.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Extract a literal or subexpression</strong><span class="origin">Old Furl · Next</span><span class="tool-family">Tool · Connect</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L193">Update.re:193–203; Big Book 47–48, 55</a></span></td><td>Pull the selected expression to an earlier binding boundary.</td><td>Command “Extract binding”; reuse Hazel’s refactor chord where available.</td><td>Old implementation only extracted a literal immediately above its own row. Hazel ExtractLet/Explode can supply broader candidates.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Define an unresolved name</strong><span class="origin">Old Furl · Soon</span><span class="tool-family">Tool · Connect</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L187">Update.re:187–192</a></span></td><td>Drag an unresolved occurrence to the boundary above its row.</td><td>At that occurrence, command “Create binding above”.</td><td>Keep the occurrence; create a binder of that name with a hole. Check for collisions.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Insert a word / syntax template</strong><span class="origin">Old Furl · Soon</span><span class="tool-family">Tool · Edit</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/view/CommonView.re#L38">CommonView.re:38; View.re:19; Keyboard.re:16</a></span></td><td>Old editor: click between words or drag from its word palette. Proposed: native Hazel completion or a compact structure menu.</td><td>Use Hazel typing and completion; Tab moves through new holes.</td><td>Do not reimplement a second token editor. Old Space made a new word; that mapping should not replace Hazel’s input model.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Delete and recover</strong><span class="origin">Old Furl · Next</span><span class="tool-family">Tool · Rows / Connect</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L115">View.re:108–126; Update.re:115–158</a></span></td><td>Rows / Connect: drop a row or existing reference outside the code canvas. Preview deletion before release; never remove at pickup.</td><td>Backspace on a completely empty row; ⌘/Ctrl+Shift+Backspace requests row deletion. Backspace/Delete on a focused use. ⌘/Ctrl+Z restores.</td><td>Populated rows and uses require Free edit; blank draft cleanup works in every policy. Result stays. Escape, invalid in-canvas drops and policy changes cancel. Old Furl used a trash collection; do not inherit its destructive pickup.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Navigate rows, cells, and uses</strong><span class="origin">Old Furl · Live / extend</span><span class="tool-family">Tool · Edit / Inspect</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Keyboard.re#L3">Keyboard.re:3–20; PatView.re:27</a></span></td><td>Click a cell normally; double-click in Structure mode. Binder/use highlighting helps follow references.</td><td>Existing Furl arrows retain column targets. Tab should visit structural targets only when explicitly entering that layer.</td><td>Old Shift+↑/↓ swaps rows; retain native Shift-selection in text. Do not globally steal it.</td></tr>
+<tr data-origin="Big Book"><td><strong>Create a nested block</strong><span class="origin">Big Book · Soon</span><span class="tool-family">Tool · Shape</span><span class="evidence">Slides 85, 87–88, 95</span></td><td>Select a contiguous row range, then Group; compare Alt-drag / left-then-up as an expert gesture.</td><td>Row selection + “Group into block”; name the resulting binding.</td><td>A nested let changes scope. Reject or explicitly export bindings still used outside the chosen block.</td></tr>
+<tr data-origin="Big Book"><td><strong>Resize a block</strong><span class="origin">Big Book · Later</span><span class="tool-family">Tool · Shape</span><span class="evidence">Slide 89</span></td><td>Structure: drag the top or bottom comb endpoint across row boundaries.</td><td>Focus an endpoint; arrows preview moving it one boundary, Enter commits.</td><td>The endpoints change lexical extent, not CSS height. Show escaping uses and keep required exports.</td></tr>
+<tr data-origin="Big Book"><td><strong>Turn leading rows into parameters</strong><span class="origin">Big Book · Soon</span><span class="tool-family">Tool · Shape</span><span class="evidence">Slides 10–12, 48, 90</span></td><td>Pull the top comb boundary downward; crossed definitions become parameter candidates.</td><td>“Abstract leading rows”; choose a range, preview parameters and call, then commit.</td><td>Create a function plus a call supplying old definitions. Preserve evaluation order; update all affected uses. Start with one tuple parameter.</td></tr>
+<tr data-origin="Hazel branch"><td><strong>Add / remove / reorder parameters</strong><span class="origin">Hazel branch · Soon</span><span class="tool-family">Tool · Shape</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorMove.re">RefactorMove.re: add_param_impl, swap_params_rewrite, remove_param_impl</a></span></td><td>Structure: drag parameter slots or use an endpoint command.</td><td>Commands plus directional parameter navigation; reuse the same transform planner.</td><td>Hazel patches known calls and rejects bare escaping uses in relevant transforms. Adding argument holes is an edit; reordering needs evaluation-order checks.</td></tr>
+<tr data-origin="Big Book"><td><strong>Turn a binding into a match</strong><span class="origin">Big Book · Soon</span><span class="tool-family">Tool · Shape</span><span class="evidence">Slides 37–38, 48, 91, 94</span></td><td>After a refutable pattern is complete, show a fork preview; accept on the comb.</td><td>Commit pattern, then command “Branch on this pattern”.</td><td>Deck proposes automatic creation. Start with an explicit acceptance so intermediate typing does not rearrange the editor; add a fallback hole without claiming semantic equivalence.</td></tr>
+<tr data-origin="Big Book"><td><strong>Add a match branch</strong><span class="origin">Big Book · Soon</span><span class="tool-family">Tool · Shape</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorMove.re#L212">Slides 91, 94; Hazel AddCaseArm</a></span></td><td>Structure: click or pull the match fork right. In normal mode it keeps its current view action.</td><td>At the branch handle, command “Add branch”; Tab enters its pattern/body.</td><td>A branch is a pattern plus a body, not a let row. Place a new branch before a catch-all or use a coverage witness.</td></tr>
+<tr data-origin="Hazel branch"><td><strong>Reorder match branches</strong><span class="origin">Hazel branch · Later</span><span class="tool-family">Tool · Shape</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorMove.re#L1991">RefactorMove.re:1991</a></span></td><td>Drag a whole branch column by its comb handle in Structure mode.</td><td>Pick up a branch handle; ←/→ previews, Enter commits.</td><td>Case order is semantic. Refactor requires disjointness or a stronger proof; the branch currently uses a conservative disjoint-pattern test.</td></tr>
+<tr data-origin="Big Book"><td><strong>Inline a binding / one use</strong><span class="origin">Big Book · Soon</span><span class="tool-family">Tool · Connect</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorInline.re">Slides 48, 92; RefactorInline.re</a></span></td><td>Pull a definition toward an occurrence; preview whether it is copied or consumed.</td><td>Commands “Inline binding” / “Inline this use”; use Hazel FeedLet and InlineLet.</td><td>Distinguish one use from all uses. Preserve precedence, capture avoidance, evaluation behavior, and comments.</td></tr>
+<tr data-origin="Big Book"><td><strong>Carry dependencies while moving</strong><span class="origin">Big Book · Soon</span><span class="tool-family">Tool · Rows</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorMove.re#L1405">Slide 93; RefactorMove.re:1405</a></span></td><td>Refactor drag pauses at a dependency; offer a preview carrying the necessary rows.</td><td>At a blocked move, choose “Move with dependencies”.</td><td>Make the larger operation explicit. Do not silently turn a small reorder into a helper extraction.</td></tr>
+<tr data-origin="Big Book"><td><strong>Extract a helper at a scope boundary</strong><span class="origin">Big Book · Soon</span><span class="tool-family">Tool · Shape</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorLift.re">Slides 93, 95–96; RefactorLift.re</a></span></td><td>Pull a dependency group beyond a function ceiling, then accept a helper preview.</td><td>“Extract helper”; review free variables as parameters and rewritten uses.</td><td>Hazel LiftFunction handles a specific contiguous dependency run and enclosure shapes, not every arbitrary selected Furl region.</td></tr>
+<tr data-origin="Hazel branch"><td><strong>Explode / implode applications</strong><span class="origin">Hazel branch · Soon</span><span class="tool-family">Tool · Connect</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorInline.re">Slides 2, 47, 53, 55; RefactorInline.re</a></span></td><td>Select an expression, choose “Expose intermediates” / “Inline intermediates”.</td><td>Use Hazel Explode / Implode commands; bind an optional chord after testing conflicts.</td><td>Introducing let-bound intermediates is a source refactor. Merely furling existing syntax is a view change; keep the two actions distinct.</td></tr>
+<tr data-origin="Big Book"><td><strong>Inspect / specialize a call or case</strong><span class="origin">Big Book · Later</span><span class="tool-family">Tool · Inspect / Connect</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorReduce.re">Slides 48, 53, 55, 92; RefactorReduce.re</a></span></td><td>Select a live call, then inspect a substituted view. A separate command applies a source rewrite.</td><td>Value arrows navigate; explicit “Step here” / “Bind argument” are source commands.</td><td>A rewrite justified by one sample is not valid for every input. A temporary inspection must not mutate source, history, or persistence.</td></tr>
+<tr data-origin="Current Furl"><td><strong>Furl, unfurl, switch branches and calls</strong><span class="origin">Current Furl · Live</span><span class="tool-family">Tool · Inspect</span><span class="evidence">furl/design/architecture.md</span></td><td>Existing comb clicks, all/one branch choice, and selected-value arrows.</td><td>Existing cross-cell arrows and Ctrl+Alt+←/→ for branch inspection.</td><td>View operations stay available outside Structure mode and never become undoable syntax edits. Windows refactor chord conflicts with branch navigation: use row/branch-focused arrows first.</td></tr>
+<tr data-origin="Big Book"><td><strong>Choose attributes / trace columns</strong><span class="origin">Big Book · Live / later</span><span class="tool-family">Tool · Inspect</span><span class="evidence">Slides 49–52, 76, 79–82, 98–102</span></td><td>Existing binding/expression/value toggles; later add types, environments, assertions, and trace pinning.</td><td>Focus a toolbar control; Space toggles it. Commands can restore a hidden caret column.</td><td>Extra value columns are invocation views, not duplicated source. No new code row for controls.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Animation and identity tracking</strong><span class="origin">Old Furl · Next</span><span class="tool-family">Tool · All tools</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Animate.re">Animate.re:1–124; Dragology Fig. 1, §§3–4</a></span></td><td>Preview a candidate while dragging; settle identified rows on release.</td><td>Keyboard moves get the same preview and settled state; reduced-motion gets immediate transitions.</td><td>Old editor used UID-based 150ms position transitions. Do not animate syntax by interpolating token text or save intermediate states.</td></tr>
+<tr data-origin="New proposal"><td><strong>Voice-assisted text entry</strong><span class="origin">New proposal · Later</span><span class="tool-family">Tool · Edit</span><span class="evidence">Voice assessment in this study</span></td><td>Click a microphone at the focused cell, dictate, correct a small transcript, then insert.</td><td>Focusable record/stop and accept/cancel controls; ordinary typing remains available.</td><td>One insertion transaction at a retained source target. A late transcript cannot land in a different cell. Service choice remains open.</td></tr></tbody></table></div><p class="note">Old Furl was inspected at <code>4967561</code>; Hazel refactorings at <code>7dbd770</code>. Those source paths were inspected, not rerun as part of this study. Slide numbers include the three hidden slides in the 103-slide PowerPoint.</p></section>
 <section class="chapter" id="foundation"><div class="chapter-copy"><h2><span>05</span> One operation, several ways to reach it</h2><p>Reuse Hazel’s transformation layer, then project each candidate program into <em>Furl’s</em> layout. A keyboard command, pointer drag, or comb gesture should choose from the same candidates and commit through the same document transaction.</p><p>Dragology and gestures can coexist: direction chooses an operation family; candidate states determine the valid destinations. A leftward pull can mean Group while an upward move offers nearby binding slots. We do not need a different editing engine for each gesture.</p></div>
 <div class="pipeline" aria-label="Proposed operation pipeline"><span>Source target</span><b aria-hidden="true">→</b><span>Candidate program</span><b aria-hidden="true">→</b><span>Furl preview</span><b aria-hidden="true">→</b><span>One edit + undo</span></div>
 <div class="prose-grid"><div><h3>Refactor has to earn its name</h3><p>Hazel already checks dependencies, capture, and some branch-disjointness conditions. Its registry also includes edits that add holes. We need per-operation guarantees: an unused expression can still fail or diverge, and moving it across a branch can change when it runs.</p><p>A preview does not save, evaluate on every pointer move, or fill the undo stack. A source change during a drag cancels the stale preview. A match echo points to the same source occurrence, so it cannot duplicate an edit.</p></div><div><h3>Integrate deliberately, port periodically</h3><p>Keep <code>furl</code> as the deployment branch. Trial the refactorings snapshot in a separate integration branch: it brings newer Hazel work as well as refactors. The native drag renderer cannot supply Furl’s grid coordinates unchanged.</p><p>Keep reusable Hazel fixes in focused commits with native tests. Backport those to the relevant Hazel branch with provenance, and record imported snapshots and returned PRs in a small ledger. This study does not merge branches or create upstream PRs.</p></div></div>
-<div class="next"><h3>First live slice</h3><ol><li>Scope-aware row insertion, focus, persistence, and one-step undo.</li><li>Structure mode, whole-row dragging, double-click cell activation, keyboard movement, and dependency feedback.</li><li>Reference creation and extraction, followed by helper, parameter, and branch operations.</li></ol><p class="note">Then compare the deck’s left-first gestures, endpoint resizing, and more continuous animation. The complete targeting rules, merge assessment, and acceptance cases are in the <a href="https://github.com/disconcision/furl-next/blob/furl/furl/design/interactions.md">design notes</a>.</p></div></section>
+<div class="next"><h3>First live slice</h3><ol><li>Scope-aware row insertion, focus, persistence, and one-step undo.</li><li>Rows and Connect tools, whole-row dragging, double-click cell activation, keyboard movement, and dependency feedback.</li><li>Reference creation and extraction, followed by helper, parameter, and branch operations.</li></ol><p class="note">Then compare the deck’s left-first gestures, endpoint resizing, and more continuous animation. The complete targeting rules, merge assessment, and acceptance cases are in the <a href="https://github.com/disconcision/furl-next/blob/furl/furl/design/interactions.md">design notes</a>.</p></div></section>
 <section class="chapter" id="voice"><div class="chapter-copy"><h2><span>06</span> Voice can fill the text-shaped gap</h2><p>A small microphone control could dictate into the selected cell, offer a correction, then insert once. Keep the source target and selection while recording; a late transcript must not land in whichever cell happens to be focused later.</p><p>Browser speech recognition is the smallest experiment, but support is uneven and audio may be processed by a service. On-device recognition requires capability checks. <a href="https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition">MDN: SpeechRecognition</a>.</p><p>A short recording sent to an authenticated transcription endpoint offers more control. OpenAI, for example, supports transcription context and keyword hints for domain terms; streaming is available if waiting for a completed clip feels slow. The Pages site can host the control, but a service key belongs on a backend. <a href="https://developers.openai.com/api/docs/guides/speech-to-text">File transcription</a> · <a href="https://developers.openai.com/api/docs/guides/realtime-transcription">Realtime transcription</a>.</p><p class="note">No recording or service is enabled here. The practical trial should measure how much correction names, punctuation, and casing need. Provider, retention, latency, and cost remain choices for that trial.</p></div></section>
 </main><footer><p>Sources: Andrew Blinn’s Furl Big Book; old Furl; Hazel’s refactorings branch; the local Declarative Dragging paper and Dragology implementation. New gestures and examples are design proposals. Full provenance and caveats are in the <a href="https://github.com/disconcision/furl-next/blob/furl/furl/design/interactions.md">design notes</a>.</p><p>Self-contained HTML · no external assets · <a href="./interactions.html" download="furl-interactions.html">Save this study</a></p></footer>
 </div><script>// Fixed program states for design review. Values are preset, not Hazel evaluation.
@@ -1095,6 +1217,7 @@ class FurlReferenceWire {
     this.points = null;
   }
   set(connection) {
+    this.retraction = null;
     const sameSource =
       this.connection?.source === connection?.source &&
       this.connection?.style === connection?.style &&
@@ -1108,6 +1231,7 @@ class FurlReferenceWire {
     if (!this.frame) this.frame = requestAnimationFrame((t) => this.draw(t));
   }
   clear() {
+    this.retraction = null;
     this.connection = null;
     this.points = null;
     cancelAnimationFrame(this.frame);
@@ -1115,6 +1239,25 @@ class FurlReferenceWire {
     this.lastTime = null;
     this.svg.style.display = "none";
     this.path.removeAttribute("d");
+  }
+  get retracting() {
+    return !!this.retraction;
+  }
+  retract(source, pointer) {
+    if (this.motion.matches) {
+      this.clear();
+      return;
+    }
+    this.connection = {
+      source,
+      pointer,
+      style: "wire",
+      anchor: "center",
+      kind: "retract",
+    };
+    this.retraction = { start: performance.now(), pointer };
+    this.changedAt = performance.now();
+    this.request();
   }
   anchor(node, origin, first) {
     const text = node.querySelector(".ref-token") || node;
@@ -1135,17 +1278,38 @@ class FurlReferenceWire {
       this.clear();
       return;
     }
-    const origin = this.program.getBoundingClientRect();
+    // Fixed during a gesture, so the cable can leave the editor's scroll box.
+    // It stays in the program's stacking context, behind its text.
+    const fixed = c.kind === "drag" || c.kind === "retract";
+    const origin = fixed
+      ? { left: 0, top: 0 }
+      : this.program.getBoundingClientRect();
     const a = this.anchor(c.source, origin, c.anchor === "first");
-    const b = c.target?.isConnected
+    let b = c.target?.isConnected
       ? this.anchor(c.target, origin, c.anchor === "first")
       : c.pointer
         ? { x: c.pointer.x - origin.left, y: c.pointer.y - origin.top }
         : a;
+    if (this.retraction) {
+      const elapsed = (time - this.retraction.start) / 1000;
+      if (elapsed >= 1.1 || this.motion.matches) {
+        this.clear();
+        return;
+      }
+      // Underdamped spring, starting at rest: it overshoots the binding once
+      // and settles. The curve's control masses retain their existing motion.
+      const rest =
+        Math.exp(-8 * elapsed) *
+        (Math.cos(16 * elapsed) + 0.5 * Math.sin(16 * elapsed));
+      b = { x: a.x + (b.x - a.x) * rest, y: a.y + (b.y - a.y) * rest };
+      this.svg.style.opacity = String(
+        Math.max(0, Math.min(1, (1.1 - elapsed) / 0.3)),
+      );
+    } else this.svg.style.opacity = "";
     this.svg.style.display = "block";
     this.svg.dataset.kind = c.kind;
     this.svg.dataset.style = c.style;
-    this.tip.style.display = c.kind === "drag" ? "" : "none";
+    this.tip.style.display = fixed ? "" : "none";
     this.tip.setAttribute("cx", b.x);
     this.tip.setAttribute("cy", b.y);
     let moving = false;
@@ -1202,7 +1366,7 @@ class FurlReferenceWire {
     // A newly filled hole changes width briefly. Follow its actual text while
     // it opens, in either style; do not leave the endpoint at an obsolete slot.
     const resizing = !!c.target?.getAnimations({ subtree: true }).length;
-    if (moving || resizing) this.request();
+    if (moving || resizing || this.retraction) this.request();
   }
 }
 
@@ -1234,34 +1398,69 @@ class FurlReferenceWire {
     n.textContent = message;
     n.classList.toggle("warn", warn);
   }
+  // Tool chooses the pointer target; policy chooses the permitted transaction.
+  // Both are shared by the two deliberately separate example documents.
+  const settings = { tool: "edit", policy: "refine" };
+  function chooseSetting(key, value) {
+    document.dispatchEvent(new Event("cancel-gesture"));
+    settings[key] = value;
+    $$(`[data-${key}]`).forEach((b) =>
+      b.setAttribute("aria-pressed", String(b.dataset[key] === value)),
+    );
+    $$("[data-policy-select]").forEach((n) => (n.value = settings.policy));
+    document.dispatchEvent(new Event("study-settings"));
+  }
+  $$("[data-tool],[data-policy]").forEach((b) =>
+    b.addEventListener("click", () => {
+      const key = b.dataset.tool ? "tool" : "policy";
+      chooseSetting(key, b.dataset[key]);
+    }),
+  );
+  $$("[data-policy-select]").forEach((n) =>
+    n.addEventListener("change", () => chooseSetting("policy", n.value)),
+  );
+  function outsideCanvas(root, point) {
+    const r = $(".program-scroll", root).getBoundingClientRect();
+    return (
+      point.x < r.left ||
+      point.x > r.right ||
+      point.y < r.top ||
+      point.y > r.bottom
+    );
+  }
   function mode(root, changed) {
-    let pinned = false,
-      held = false,
+    let held = false,
       inside = false,
       latched = false,
       last = false;
     const button = $(".structure-toggle", root);
-    const active = () => pinned || latched || (held && inside);
+    const tool = root.id === "row-lab" ? "rows" : "connect";
+    const active = () => settings.tool === tool || latched || (held && inside);
     const update = () => {
       const a = active();
+      const pinned = settings.tool === tool;
       root.classList.toggle("armed", a);
       button.setAttribute("aria-pressed", String(pinned));
       $(".mode-note", root).textContent = a
         ? pinned
-          ? "Structure active"
+          ? tool === "rows"
+            ? "Row gestures"
+            : "Reference gestures"
           : latched
             ? "Structure picked up"
             : "Option / Alt held"
-        : "Editing cells";
+        : tool === "rows"
+          ? "Editing cells"
+          : "Inspecting references";
       if (a !== last) {
         last = a;
         changed(a);
       }
     };
     button.addEventListener("click", () => {
-      pinned = !pinned;
-      update();
+      chooseSetting("tool", settings.tool === tool ? "edit" : tool);
     });
+    document.addEventListener("study-settings", update);
     root.addEventListener("pointerenter", () => {
       inside = true;
       update();
@@ -1298,7 +1497,7 @@ class FurlReferenceWire {
     return {
       active,
       enable: () => {
-        pinned = true;
+        if (settings.tool !== tool) chooseSetting("tool", tool);
         update();
       },
       latch: (value) => {
@@ -1395,7 +1594,7 @@ class FurlReferenceWire {
     let history = [],
       serial = 0,
       selected = "n",
-      policy = "refactor",
+      dragStyle = "slot",
       session = null,
       pendingDrag = null,
       activeCell = null;
@@ -1445,7 +1644,7 @@ class FurlReferenceWire {
     }
     function placeDraggedRow(rect) {
       const s = session;
-      if (!s?.pointer || !s.began) return;
+      if (!s?.pointer || !s.began || dragStyle !== "float") return;
       const n = nodes.get(s.id);
       // This is the real row. Its normal-flow slot is the placeholder; only its
       // painted position follows the pointer, without a tween or a name proxy.
@@ -1612,7 +1811,12 @@ class FurlReferenceWire {
         [...nodes].map(([id, n]) => [id, n.getBoundingClientRect()]),
       );
       for (const [id, n] of nodes) {
-        if (session?.pointer && session.began && session.id === id) {
+        if (
+          session?.pointer &&
+          session.began &&
+          session.id === id &&
+          dragStyle === "float"
+        ) {
           placeDraggedRow(after.get(id));
         } else if (animate && !reduced()) {
           const old = before.get(id),
@@ -1674,6 +1878,7 @@ class FurlReferenceWire {
       pendingDrag = null;
       const wasMoving = !!session;
       session = null;
+      root.classList.remove("delete-preview", "delete-blocked");
       controls.latch(false);
       if (wasMoving) {
         render();
@@ -1718,7 +1923,7 @@ class FurlReferenceWire {
       const oldErrors = analyze(withoutDrafts(s.base)).errors,
         newErrors = analyze(withoutDrafts(next)).errors;
       const reason = oldErrors[0] || newErrors[0];
-      s.allowed = policy === "free" || !reason;
+      s.allowed = settings.policy === "free" || !reason;
       s.candidate = next;
       render(s.allowed ? next : s.base);
       const gap = $(`.gap[data-slot="${s.to}"]`, program);
@@ -1739,6 +1944,13 @@ class FurlReferenceWire {
     function finish() {
       if (!session) return;
       const s = session;
+      if (s.outside) {
+        const id = s.id;
+        cancel();
+        deleteRow(id);
+        return;
+      }
+      root.classList.remove("delete-preview", "delete-blocked");
       if (!s.allowed) {
         cancel(
           "Move refused. The dependency-breaking candidate was not applied.",
@@ -1752,7 +1964,7 @@ class FurlReferenceWire {
         const errors = analyze(s.candidate).errors;
         commit(
           s.candidate,
-          errors.length && policy === "free"
+          errors.length && settings.policy === "free"
             ? `Moved in Free edit. ${errors[0]}`
             : "Moved the row. One Undo restores the original order.",
           s.id,
@@ -1760,7 +1972,7 @@ class FurlReferenceWire {
         status(
           root,
           $(".lab-status", root).textContent,
-          errors.length > 0 && policy === "free",
+          errors.length > 0 && settings.policy === "free",
         );
       } else {
         render();
@@ -1808,19 +2020,35 @@ class FurlReferenceWire {
       }
       s.x = e.clientX;
       s.y = e.clientY;
+      const wasOutside = s.outside;
+      s.outside = outsideCanvas(root, { x: s.x, y: s.y });
+      root.classList.toggle("delete-preview", s.outside);
+      root.classList.toggle("delete-blocked", s.outside && !canDelete(s.id));
+      if (s.outside) {
+        placeDraggedRow();
+        status(
+          root,
+          canDelete(s.id)
+            ? "Release outside the canvas to delete this row. Escape cancels."
+            : "Deletion blocked: a populated row requires Free edit. Return to the canvas or cancel.",
+          !canDelete(s.id),
+        );
+        return;
+      }
       const to = Math.max(
         0,
         Math.min(s.base.length - 2, Math.round((s.pickupOffset + delta) / 22)),
       );
-      if (to !== s.to) preview(to);
+      if (to !== s.to || wasOutside) preview(to);
       else placeDraggedRow();
     });
-    window.addEventListener("pointerup", () => {
+    window.addEventListener("pointerup", (e) => {
       if (pendingDrag) {
         pendingDrag = null;
         controls.latch(false);
       }
       if (!session?.pointer) return;
+      session.outside = outsideCanvas(root, { x: e.clientX, y: e.clientY });
       if (session.began) finish();
       else session.pointer = false;
     });
@@ -1873,6 +2101,22 @@ class FurlReferenceWire {
     }
     root.addEventListener("keydown", (e) => {
       if (e.isComposing) return;
+      const row = rows.find((r) => r.id === selected);
+      const forceDelete = primary(e) && e.shiftKey && e.key === "Backspace";
+      const emptyDelete =
+        e.key === "Backspace" &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !e.shiftKey &&
+        row &&
+        !row.p.trim() &&
+        !row.e.trim();
+      if ((forceDelete || emptyDelete) && e.target.closest(".edit-row")) {
+        e.preventDefault();
+        deleteRow(selected);
+        return;
+      }
       if (e.key === "Escape" && session) {
         e.preventDefault();
         const id = session.id;
@@ -1894,6 +2138,35 @@ class FurlReferenceWire {
         undoAction();
       }
     });
+    function canDelete(id) {
+      const row = rows.find((r) => r.id === id);
+      return (
+        row &&
+        !row.result &&
+        (settings.policy === "free" || (!row.p.trim() && !row.e.trim()))
+      );
+    }
+    function deleteRow(id) {
+      if (session || pendingDrag) cancel();
+      if (!canDelete(id)) {
+        status(
+          root,
+          "Deletion blocked: populated rows require Free edit. The result row cannot be removed.",
+          true,
+        );
+        return;
+      }
+      const index = rows.findIndex((r) => r.id === id);
+      const next = rows.filter((r) => r.id !== id);
+      const focus = next[Math.min(index, next.length - 1)].id;
+      activeCell = null;
+      commit(
+        next,
+        "Deleted the row. One Undo restores it and its contents.",
+        focus,
+      );
+      focusRow(focus, "row");
+    }
     function undoAction() {
       if (session || pendingDrag) cancel();
       if (history.length) {
@@ -1905,11 +2178,6 @@ class FurlReferenceWire {
       }
     }
     undo.addEventListener("click", undoAction);
-    $("[data-action=insert]", root).addEventListener("click", () =>
-      insert(
-        Math.min(rows.length - 1, rows.findIndex((r) => r.id === selected) + 1),
-      ),
-    );
     $("[data-action=reset]", root).addEventListener("click", () => {
       cancel();
       commit(
@@ -1918,21 +2186,32 @@ class FurlReferenceWire {
         "n",
       );
     });
-    $$("[data-policy]", root).forEach((b) =>
+    document.addEventListener("cancel-gesture", () => cancel());
+    document.addEventListener("study-settings", () =>
+      status(
+        root,
+        settings.policy === "free"
+          ? "Free edit: moves and deletions may change meaning or introduce errors."
+          : "Checked row moves and empty-draft cleanup. Populated row deletion requires Free edit.",
+      ),
+    );
+    $$("[data-row-drag]", root).forEach((b) =>
       b.addEventListener("click", () => {
-        if (session) cancel();
-        policy = b.dataset.policy;
-        $$("[data-policy]", root).forEach((n) =>
+        cancel();
+        dragStyle = b.dataset.rowDrag;
+        $$("[data-row-drag]", root).forEach((n) =>
           n.setAttribute("aria-pressed", String(n === b)),
         );
+        root.dataset.rowDrag = dragStyle;
         status(
           root,
-          policy === "free"
-            ? "Free edit: row moves may change meaning or introduce errors."
-            : "Refactor: move independent arithmetic rows, including past empty drafts.",
+          dragStyle === "slot"
+            ? "Slot: the row stays aligned in the nearest permitted position."
+            : "Float: the row follows the pointer freely.",
         );
       }),
     );
+    root.dataset.rowDrag = dragStyle;
     // Mouse activation is gated by double-click; Tab/Enter/F2 remain keyboard
     // equivalents. Leaving a cell ends its temporary text-selection/edit mode.
     document.addEventListener(
@@ -1977,6 +2256,7 @@ class FurlReferenceWire {
     let slots = [null, null],
       history = [],
       picked = null,
+      originSlot = null,
       drag = null,
       hovered = null,
       aimed = null,
@@ -1987,11 +2267,12 @@ class FurlReferenceWire {
       suspended = false,
       controls;
     const hoverOption = $("[data-hover-links]", root);
-    const anchorOption = $("[data-wire-anchor]", root);
-    let style = "line";
     const names = new Map(),
       holes = [];
     const wire = new FurlReferenceWire(program);
+    const floating = el("span", "reference-floating");
+    floating.setAttribute("aria-hidden", "true");
+    document.body.append(floating);
     const token = (text) => el("span", "ref-token", text);
     const valueCell = (text) => {
       const n = el("span", "ref-value");
@@ -2015,7 +2296,15 @@ class FurlReferenceWire {
         e.preventDefault();
         name.focus({ preventScroll: true });
         clearLanding();
-        drag = { id: b.id, x: e.clientX, y: e.clientY, moved: false };
+        originSlot = null;
+        wire.clear();
+        drag = {
+          id: b.id,
+          origin: null,
+          x: e.clientX,
+          y: e.clientY,
+          moved: false,
+        };
         controls.latch(true);
       });
       names.set(b.id, name);
@@ -2032,10 +2321,31 @@ class FurlReferenceWire {
       hole.type = "button";
       hole.dataset.hole = i;
       hole.append(token("□"));
+      hole.addEventListener("pointerdown", (e) => {
+        if (e.button || !controls.active() || !slots[i] || picked) return;
+        e.preventDefault();
+        hole.focus({ preventScroll: true });
+        clearLanding();
+        wire.clear();
+        drag = {
+          id: slots[i],
+          origin: i,
+          x: e.clientX,
+          y: e.clientY,
+          moved: false,
+        };
+        controls.latch(true);
+      });
       hole.addEventListener("click", () => {
         if (suppressClick) return;
         if (picked) place(i);
-        else if (controls.active()) status(root, "Choose a binding first.");
+        else if (controls.active())
+          status(
+            root,
+            slots[i]
+              ? "Drag this use to move or unplug it. Backspace removes it in Free edit."
+              : "Choose a binding first.",
+          );
       });
       hole.addEventListener("pointerenter", () => {
         hovered = i;
@@ -2064,10 +2374,16 @@ class FurlReferenceWire {
         wire.clear();
         return;
       }
+      if (wire.retracting) return;
       let id, target, kind;
       if (picked) {
         id = picked;
-        target = aimed === null ? null : holes[aimed];
+        target =
+          originSlot !== null && drag?.moved
+            ? floating
+            : aimed === null
+              ? null
+              : holes[aimed];
         kind = "drag";
       } else if (landing !== null) {
         id = slots[landing];
@@ -2091,8 +2407,8 @@ class FurlReferenceWire {
         source: names.get(id),
         target,
         pointer: freePoint,
-        style,
-        anchor: anchorOption.value,
+        style: "wire",
+        anchor: "center",
         kind,
       });
     }
@@ -2114,6 +2430,7 @@ class FurlReferenceWire {
           word.textContent = b?.name || "□";
         hole.classList.toggle("filled", !!b);
         hole.classList.toggle("target", !!picked && aimed === i);
+        hole.classList.toggle("unplugging", originSlot === i && !!picked);
         // Filled references remain hoverable/focusable outside Structure mode.
         hole.disabled = !controls?.active() && !b;
         if (b) hole.dataset.reference = b.id;
@@ -2136,6 +2453,8 @@ class FurlReferenceWire {
     }
     function pick(id, point = null) {
       clearLanding();
+      wire.clear();
+      originSlot = null;
       picked = id;
       aimed = null;
       freePoint = point;
@@ -2149,18 +2468,38 @@ class FurlReferenceWire {
     }
     function place(index) {
       if (!picked) return;
+      const changesSource = originSlot !== null && originSlot !== index;
+      const changed = slots[index] !== picked || changesSource;
+      const permitted =
+        !changed ||
+        settings.policy === "free" ||
+        (settings.policy === "refine" && originSlot === null && !slots[index]);
+      if (!permitted) {
+        cancel();
+        status(
+          root,
+          settings.policy === "refactor"
+            ? "Refactor blocks creating a use. Choose Refine to fill an empty hole."
+            : "Refine only fills empty holes. Replacing or moving a use requires Free edit.",
+          true,
+        );
+        return;
+      }
       const hole = holes[index],
         previousWidth = hole.getBoundingClientRect().width;
-      const changed = slots[index] !== picked;
       if (changed) {
         history.push([...slots]);
+        if (changesSource) slots[originSlot] = null;
         slots[index] = picked;
       }
       clearLanding();
       landing = index;
       picked = null;
+      originSlot = null;
       drag = null;
       aimed = null;
+      floating.style.display = "none";
+      root.classList.remove("delete-preview", "delete-blocked");
       controls.latch(false);
       render();
       hole.focus({ preventScroll: true });
@@ -2199,6 +2538,12 @@ class FurlReferenceWire {
     }
     function aimAt(e) {
       freePoint = { x: e.clientX, y: e.clientY };
+      if (originSlot !== null && drag?.moved) {
+        floating.style.display = "block";
+        floating.textContent = bindings.find((b) => b.id === picked).name;
+        floating.style.left = `${e.clientX}px`;
+        floating.style.top = `${e.clientY}px`;
+      }
       const target = document
         .elementFromPoint(e.clientX, e.clientY)
         ?.closest("#reference-lab [data-hole]");
@@ -2206,6 +2551,20 @@ class FurlReferenceWire {
       holes.forEach((hole, i) =>
         hole.classList.toggle("target", !!picked && aimed === i),
       );
+      const outside = originSlot !== null && outsideCanvas(root, freePoint);
+      root.classList.toggle("delete-preview", outside);
+      root.classList.toggle(
+        "delete-blocked",
+        outside && settings.policy !== "free",
+      );
+      if (outside)
+        status(
+          root,
+          settings.policy === "free"
+            ? "Release outside the canvas to unplug this use; the binding stays."
+            : "Unplugging requires Free edit. Return to the canvas or press Escape.",
+          settings.policy !== "free",
+        );
       updateLink();
     }
     window.addEventListener("pointermove", (e) => {
@@ -2218,8 +2577,9 @@ class FurlReferenceWire {
         if (!drag.moved) {
           drag.moved = true;
           picked = drag.id;
+          originSlot = drag.origin;
           controls.latch(true);
-          names.forEach((n, id) => n.classList.toggle("picked", picked === id));
+          render();
         }
       }
       if (picked) aimAt(e);
@@ -2227,30 +2587,107 @@ class FurlReferenceWire {
     window.addEventListener("pointerup", (e) => {
       if (!drag) return;
       const moved = drag.moved;
-      drag = null;
       if (moved) {
         aimAt(e);
-        if (aimed !== null) place(aimed);
+        if (originSlot !== null && outsideCanvas(root, freePoint))
+          removeUse(originSlot, freePoint);
+        else if (aimed !== null) place(aimed);
         else cancel();
         // A completed drag must not also fire a binder/hole click.
         suppressClick = true;
         setTimeout(() => {
           suppressClick = false;
         }, 0);
-      } else controls.latch(false);
+      } else {
+        drag = null;
+        controls.latch(false);
+      }
     });
     function cancel() {
+      wire.clear();
       clearLanding();
       drag = null;
       picked = null;
+      originSlot = null;
       aimed = null;
       freePoint = null;
       hovered = null;
+      floating.style.display = "none";
+      root.classList.remove("delete-preview", "delete-blocked");
       controls.latch(false);
       render();
       status(root, "Canceled. Bindings and references are unchanged.");
     }
+    function removeUse(index, point = null) {
+      const id = slots[index];
+      if (!id) return;
+      if (settings.policy !== "free") {
+        cancel();
+        status(
+          root,
+          "Unplugging removes information and requires Free edit.",
+          true,
+        );
+        return;
+      }
+      const rect = $(".ref-token", holes[index]).getBoundingClientRect();
+      const endpoint = point || {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      };
+      // Keep the source intact throughout pickup. Removal is one transaction
+      // at release; Escape, refused drops and tool changes cannot lose the use.
+      history.push([...slots]);
+      slots[index] = null;
+      clearLanding();
+      drag = null;
+      picked = null;
+      originSlot = null;
+      aimed = null;
+      hovered = null;
+      freePoint = null;
+      floating.style.display = "none";
+      root.classList.remove("delete-preview", "delete-blocked");
+      controls.latch(false);
+      wire.retract(names.get(id), endpoint);
+      render();
+      status(
+        root,
+        "Unplugged this use, leaving a hole. The binding remains; Undo reconnects it.",
+      );
+    }
     root.addEventListener("keydown", (e) => {
+      if (e.isComposing) return;
+      const hole = e.target.closest("[data-hole]");
+      if (
+        hole &&
+        controls.active() &&
+        (e.key === "Backspace" || e.key === "Delete") &&
+        !e.altKey
+      ) {
+        e.preventDefault();
+        removeUse(Number(hole.dataset.hole));
+        return;
+      }
+      if (
+        hole &&
+        controls.active() &&
+        e.key === " " &&
+        slots[Number(hole.dataset.hole)] &&
+        !picked
+      ) {
+        e.preventDefault();
+        const index = Number(hole.dataset.hole);
+        pick(slots[index]);
+        originSlot = index;
+        holes[index].focus({ preventScroll: true });
+        render();
+        status(
+          root,
+          "Picked up this use. Tab to another factor and Enter to move; Escape cancels.",
+        );
+        return;
+      }
       if (e.key === "Escape") {
         e.preventDefault();
         cancel();
@@ -2258,6 +2695,13 @@ class FurlReferenceWire {
       if (primary(e) && e.key.toLowerCase() === "z" && !e.shiftKey) {
         e.preventDefault();
         undo();
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      // Keyboard destination picking may Tab beyond this example's controls.
+      if (e.key === "Escape" && (picked || drag)) {
+        e.preventDefault();
+        cancel();
       }
     });
     window.addEventListener("pointercancel", () => {
@@ -2284,6 +2728,7 @@ class FurlReferenceWire {
     window.addEventListener("scroll", () => wire.request(), true);
     new ResizeObserver(() => wire.request()).observe(program);
     function undo() {
+      wire.clear();
       if (drag || picked) cancel();
       clearLanding();
       holes.forEach((n) =>
@@ -2292,7 +2737,7 @@ class FurlReferenceWire {
       if (history.length) {
         slots = history.pop();
         render();
-        status(root, "Undid reference insertion.");
+        status(root, "Undid one reference edit.");
       }
     }
     $("[data-action=undo]", root).addEventListener("click", undo);
@@ -2307,15 +2752,16 @@ class FurlReferenceWire {
       status(root, "The two factors are empty again.");
     });
     hoverOption.addEventListener("change", updateLink);
-    anchorOption.addEventListener("change", updateLink);
-    $$("[data-wire-style]", root).forEach((button) =>
-      button.addEventListener("click", () => {
-        style = button.dataset.wireStyle;
-        $$("[data-wire-style]", root).forEach((n) =>
-          n.setAttribute("aria-pressed", String(n === button)),
-        );
-        updateLink();
-      }),
+    document.addEventListener("cancel-gesture", cancel);
+    document.addEventListener("study-settings", () =>
+      status(
+        root,
+        settings.policy === "refactor"
+          ? "Refactor: creating, replacing and unplugging uses are blocked."
+          : settings.policy === "refine"
+            ? "Refine: fill empty factors. Choose Free edit to move, replace or unplug uses."
+            : "Free edit: fill, replace, move or unplug a use. Its binding always stays.",
+      ),
     );
     controls = mode(root, (active) => {
       if (!active && !drag) picked = null;

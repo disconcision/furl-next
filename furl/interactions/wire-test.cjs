@@ -29,7 +29,10 @@ module.exports = async function checkReferenceWires(page, output) {
       range.selectNodeContents(word);
       if (first) range.setEnd(word.firstChild, 1);
       const r = range.getBoundingClientRect(),
-        p = n.closest(".reference-program").getBoundingClientRect();
+        p = n
+          .closest(".reference-program")
+          .querySelector(".reference-wire")
+          .getBoundingClientRect();
       return {
         x: r.left + r.width / 2 - p.left,
         y: r.top + r.height / 2 - p.top,
@@ -85,13 +88,13 @@ module.exports = async function checkReferenceWires(page, output) {
   const point = { x: source.x + 180, y: source.y + 25 };
   await page.mouse.move(point.x, point.y);
   await frames(2);
-  assert.match(await d(), / L /);
+  assert.match(await d(), / C /);
   let p = await coords();
-  close(p.at(-2), point.x - origin.x, "free endpoint x");
-  close(p.at(-1), point.y - origin.y, "free endpoint y");
+  close(p.at(-2), point.x, "free endpoint x");
+  close(p.at(-1), point.y, "free endpoint y");
   assert.equal(await page.locator(".drag-ghost").count(), 0);
   assert.equal(await binder("width").textContent(), "width");
-  await screenshot("reference-line-drag");
+  await screenshot("reference-chosen-wire-drag");
   await aim(0);
   await endpoints(binder("width"), hole(0));
   const oldWidth = (await hole(0).boundingBox()).width,
@@ -134,12 +137,10 @@ module.exports = async function checkReferenceWires(page, output) {
   await frames(2);
   assert.equal(await d(), null);
   await lab.locator("[data-hover-links]").check();
-  await lab.locator("[data-wire-anchor]").selectOption("first");
-  await hole(0).hover();
-  await frames(2);
-  await endpoints(binder("width"), hole(0), true);
-  await lab.locator("[data-wire-anchor]").selectOption("center");
-  await lab.locator("[data-wire-style=wire]").click();
+  assert.equal(
+    await lab.locator("[data-wire-anchor],[data-wire-style]").count(),
+    0,
+  );
   await hole(0).hover();
   await frames(2);
   assert.match(await d(), / C /);
@@ -160,8 +161,8 @@ module.exports = async function checkReferenceWires(page, output) {
   await frames(1);
   const moving = await coords(),
     local = await program.boundingBox();
-  close(moving.at(-2), bPoint.x - local.x, "wire endpoint x");
-  close(moving.at(-1), bPoint.y - local.y, "wire endpoint y");
+  close(moving.at(-2), bPoint.x, "wire endpoint x");
+  close(moving.at(-1), bPoint.y, "wire endpoint y");
   await frames(7);
   const after = await coords();
   assert.ok(
@@ -171,7 +172,7 @@ module.exports = async function checkReferenceWires(page, output) {
   await page.mouse.move(aPoint.x, aPoint.y);
   await frames(2);
   p = await coords();
-  close(p.at(-2), aPoint.x - local.x, "reversed endpoint x");
+  close(p.at(-2), aPoint.x, "reversed endpoint x");
   await screenshot("reference-wire-drag");
   await frames(125);
   const settled = await d();

@@ -15,7 +15,7 @@ def document():
         source = escape(item['source'])
         if item['url']:
             source = '<a href="' + escape(item['url'], quote=True) + '">' + source + '</a>'
-        first = '<strong>' + escape(item['action']) + '</strong><span class="origin">' + escape(item['origin']) + ' · ' + escape(item['phase']) + '</span><span class="evidence">' + source + '</span>'
+        first = '<strong>' + escape(item['action']) + '</strong><span class="origin">' + escape(item['origin']) + ' · ' + escape(item['phase']) + '</span><span class="tool-family">Tool · ' + escape(item['tool']) + '</span><span class="evidence">' + source + '</span>'
         cells = [first] + [escape(item[key]) for key in ('mouse', 'keyboard', 'rule')]
         rows.append('<tr data-origin="' + escape(item['origin'], quote=True) + '">' + ''.join('<td>' + cell + '</td>' for cell in cells) + '</tr>')
     styles = (REPO / 'furl/reference/book.css').read_text() + '\n' + (HERE / 'style.css').read_text()

@@ -21,6 +21,7 @@ class FurlReferenceWire {
     this.points = null;
   }
   set(connection) {
+    this.retraction = null;
     const sameSource =
       this.connection?.source === connection?.source &&
       this.connection?.style === connection?.style &&
@@ -34,6 +35,7 @@ class FurlReferenceWire {
     if (!this.frame) this.frame = requestAnimationFrame((t) => this.draw(t));
   }
   clear() {
+    this.retraction = null;
     this.connection = null;
     this.points = null;
     cancelAnimationFrame(this.frame);
@@ -41,6 +43,25 @@ class FurlReferenceWire {
     this.lastTime = null;
     this.svg.style.display = "none";
     this.path.removeAttribute("d");
+  }
+  get retracting() {
+    return !!this.retraction;
+  }
+  retract(source, pointer) {
+    if (this.motion.matches) {
+      this.clear();
+      return;
+    }
+    this.connection = {
+      source,
+      pointer,
+      style: "wire",
+      anchor: "center",
+      kind: "retract",
+    };
+    this.retraction = { start: performance.now(), pointer };
+    this.changedAt = performance.now();
+    this.request();
   }
   anchor(node, origin, first) {
     const text = node.querySelector(".ref-token") || node;
@@ -61,17 +82,38 @@ class FurlReferenceWire {
       this.clear();
       return;
     }
-    const origin = this.program.getBoundingClientRect();
+    // Fixed during a gesture, so the cable can leave the editor's scroll box.
+    // It stays in the program's stacking context, behind its text.
+    const fixed = c.kind === "drag" || c.kind === "retract";
+    const origin = fixed
+      ? { left: 0, top: 0 }
+      : this.program.getBoundingClientRect();
     const a = this.anchor(c.source, origin, c.anchor === "first");
-    const b = c.target?.isConnected
+    let b = c.target?.isConnected
       ? this.anchor(c.target, origin, c.anchor === "first")
       : c.pointer
         ? { x: c.pointer.x - origin.left, y: c.pointer.y - origin.top }
         : a;
+    if (this.retraction) {
+      const elapsed = (time - this.retraction.start) / 1000;
+      if (elapsed >= 1.1 || this.motion.matches) {
+        this.clear();
+        return;
+      }
+      // Underdamped spring, starting at rest: it overshoots the binding once
+      // and settles. The curve's control masses retain their existing motion.
+      const rest =
+        Math.exp(-8 * elapsed) *
+        (Math.cos(16 * elapsed) + 0.5 * Math.sin(16 * elapsed));
+      b = { x: a.x + (b.x - a.x) * rest, y: a.y + (b.y - a.y) * rest };
+      this.svg.style.opacity = String(
+        Math.max(0, Math.min(1, (1.1 - elapsed) / 0.3)),
+      );
+    } else this.svg.style.opacity = "";
     this.svg.style.display = "block";
     this.svg.dataset.kind = c.kind;
     this.svg.dataset.style = c.style;
-    this.tip.style.display = c.kind === "drag" ? "" : "none";
+    this.tip.style.display = fixed ? "" : "none";
     this.tip.setAttribute("cx", b.x);
     this.tip.setAttribute("cy", b.y);
     let moving = false;
@@ -128,6 +170,6 @@ class FurlReferenceWire {
     // A newly filled hole changes width briefly. Follow its actual text while
     // it opens, in either style; do not leave the endpoint at an obsolete slot.
     const resizing = !!c.target?.getAnimations({ subtree: true }).length;
-    if (moving || resizing) this.request();
+    if (moving || resizing || this.retraction) this.request();
   }
 }

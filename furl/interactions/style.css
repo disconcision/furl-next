@@ -679,3 +679,124 @@ footer {
 .gap::after {
   pointer-events: none;
 }
+
+/* Tool primacy and transaction policy are independent, outside the code grid. */
+.tool-desk {
+  margin: 0 0 36px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: var(--panel);
+  font-size: 12px;
+}
+.tool-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 28px;
+  align-items: center;
+  padding: 12px 14px;
+}
+.tool-buttons,
+.drag-options {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.tool-buttons button,
+.structure-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.tool-buttons button {
+  padding: 7px 10px;
+}
+.tool-icon {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: var(--purple);
+  vertical-align: middle;
+}
+.structure-toggle .tool-icon {
+  width: 17px;
+  height: 17px;
+  flex-basis: 17px;
+}
+.tool-description {
+  margin: 0;
+  padding: 0 14px 12px;
+  color: var(--muted-text);
+  max-width: 85ch;
+}
+.tool-desk details {
+  padding: 10px 14px;
+  border-top: 1px solid var(--rule);
+  color: var(--muted-text);
+}
+.tool-desk details > p {
+  max-width: 90ch;
+}
+.tool-families {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 22px;
+  margin: 20px 0;
+}
+.tool-families strong {
+  display: block;
+  color: var(--text);
+  margin-top: 7px;
+}
+.tool-families p {
+  margin: 7px 0;
+  font-size: 12px;
+}
+.tool-families small {
+  color: var(--muted-text);
+  font-weight: normal;
+}
+.tool-family {
+  display: block;
+  color: var(--muted-text);
+  font-size: 11px;
+  margin-top: 4px;
+}
+.drag-options > span {
+  color: var(--muted-text);
+  margin-right: 3px;
+}
+.delete-preview .program-scroll {
+  box-shadow: inset 0 0 0 2px var(--danger);
+}
+.delete-preview .edit-row[data-picked="true"],
+.hole.unplugging .ref-token {
+  opacity: 0.3;
+}
+.delete-blocked .program-scroll {
+  box-shadow: inset 0 0 0 1px var(--purple);
+}
+.reference-wire[data-kind="drag"],
+.reference-wire[data-kind="retract"] {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+}
+.reference-floating {
+  display: none;
+  position: fixed;
+  z-index: 30;
+  pointer-events: none;
+  font: 14px/22px var(--mono);
+  color: var(--blue);
+  transform: translate(-50%, -50%);
+  white-space: pre;
+}
+.armed .hole.filled {
+  cursor: grab;
+}

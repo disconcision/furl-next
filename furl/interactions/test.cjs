@@ -34,7 +34,10 @@ const url =
     const activate = () => page.locator("#row-lab .structure-toggle").click();
     const reset = async () => {
       await page.goto(url);
+      await page.locator("#row-lab").scrollIntoViewIfNeeded();
     };
+    await reset();
+    await require("./tool-test.cjs")(page, output);
     await reset();
     await require("./wire-test.cjs")(page, output);
     await reset();
@@ -339,7 +342,7 @@ const url =
     assert.deepEqual(errors, []);
     if (url.startsWith("file:")) assert.deepEqual(requests, []);
     console.log(
-      "Passed: insertion/drag/drop frame geometry and reversals, refactor movement through drafts, offline loading, mode gating, insertion/focus, keyboard/pointer movement, dependency refusal/free edits, undo/cancel/blur, reference placement, 8 storyboards, filtering, mobile, reduced motion.",
+      "Passed: tool/policy sharing, slot/float motion, row and reference deletion, unplug/retraction, cancellation and undo, insertion/drag/drop frame geometry and reversals, refactor movement through drafts, offline loading, mode gating, insertion/focus, keyboard/pointer movement, dependency refusal/free edits, undo/cancel/blur, reference placement, 8 storyboards, filtering, mobile, reduced motion.",
     );
     console.log("Screenshots:", output);
   } finally {

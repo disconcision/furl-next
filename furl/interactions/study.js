@@ -26,34 +26,69 @@
     n.textContent = message;
     n.classList.toggle("warn", warn);
   }
+  // Tool chooses the pointer target; policy chooses the permitted transaction.
+  // Both are shared by the two deliberately separate example documents.
+  const settings = { tool: "edit", policy: "refine" };
+  function chooseSetting(key, value) {
+    document.dispatchEvent(new Event("cancel-gesture"));
+    settings[key] = value;
+    $$(`[data-${key}]`).forEach((b) =>
+      b.setAttribute("aria-pressed", String(b.dataset[key] === value)),
+    );
+    $$("[data-policy-select]").forEach((n) => (n.value = settings.policy));
+    document.dispatchEvent(new Event("study-settings"));
+  }
+  $$("[data-tool],[data-policy]").forEach((b) =>
+    b.addEventListener("click", () => {
+      const key = b.dataset.tool ? "tool" : "policy";
+      chooseSetting(key, b.dataset[key]);
+    }),
+  );
+  $$("[data-policy-select]").forEach((n) =>
+    n.addEventListener("change", () => chooseSetting("policy", n.value)),
+  );
+  function outsideCanvas(root, point) {
+    const r = $(".program-scroll", root).getBoundingClientRect();
+    return (
+      point.x < r.left ||
+      point.x > r.right ||
+      point.y < r.top ||
+      point.y > r.bottom
+    );
+  }
   function mode(root, changed) {
-    let pinned = false,
-      held = false,
+    let held = false,
       inside = false,
       latched = false,
       last = false;
     const button = $(".structure-toggle", root);
-    const active = () => pinned || latched || (held && inside);
+    const tool = root.id === "row-lab" ? "rows" : "connect";
+    const active = () => settings.tool === tool || latched || (held && inside);
     const update = () => {
       const a = active();
+      const pinned = settings.tool === tool;
       root.classList.toggle("armed", a);
       button.setAttribute("aria-pressed", String(pinned));
       $(".mode-note", root).textContent = a
         ? pinned
-          ? "Structure active"
+          ? tool === "rows"
+            ? "Row gestures"
+            : "Reference gestures"
           : latched
             ? "Structure picked up"
             : "Option / Alt held"
-        : "Editing cells";
+        : tool === "rows"
+          ? "Editing cells"
+          : "Inspecting references";
       if (a !== last) {
         last = a;
         changed(a);
       }
     };
     button.addEventListener("click", () => {
-      pinned = !pinned;
-      update();
+      chooseSetting("tool", settings.tool === tool ? "edit" : tool);
     });
+    document.addEventListener("study-settings", update);
     root.addEventListener("pointerenter", () => {
       inside = true;
       update();
@@ -90,7 +125,7 @@
     return {
       active,
       enable: () => {
-        pinned = true;
+        if (settings.tool !== tool) chooseSetting("tool", tool);
         update();
       },
       latch: (value) => {
@@ -187,7 +222,7 @@
     let history = [],
       serial = 0,
       selected = "n",
-      policy = "refactor",
+      dragStyle = "slot",
       session = null,
       pendingDrag = null,
       activeCell = null;
@@ -237,7 +272,7 @@
     }
     function placeDraggedRow(rect) {
       const s = session;
-      if (!s?.pointer || !s.began) return;
+      if (!s?.pointer || !s.began || dragStyle !== "float") return;
       const n = nodes.get(s.id);
       // This is the real row. Its normal-flow slot is the placeholder; only its
       // painted position follows the pointer, without a tween or a name proxy.
@@ -404,7 +439,12 @@
         [...nodes].map(([id, n]) => [id, n.getBoundingClientRect()]),
       );
       for (const [id, n] of nodes) {
-        if (session?.pointer && session.began && session.id === id) {
+        if (
+          session?.pointer &&
+          session.began &&
+          session.id === id &&
+          dragStyle === "float"
+        ) {
           placeDraggedRow(after.get(id));
         } else if (animate && !reduced()) {
           const old = before.get(id),
@@ -466,6 +506,7 @@
       pendingDrag = null;
       const wasMoving = !!session;
       session = null;
+      root.classList.remove("delete-preview", "delete-blocked");
       controls.latch(false);
       if (wasMoving) {
         render();
@@ -510,7 +551,7 @@
       const oldErrors = analyze(withoutDrafts(s.base)).errors,
         newErrors = analyze(withoutDrafts(next)).errors;
       const reason = oldErrors[0] || newErrors[0];
-      s.allowed = policy === "free" || !reason;
+      s.allowed = settings.policy === "free" || !reason;
       s.candidate = next;
       render(s.allowed ? next : s.base);
       const gap = $(`.gap[data-slot="${s.to}"]`, program);
@@ -531,6 +572,13 @@
     function finish() {
       if (!session) return;
       const s = session;
+      if (s.outside) {
+        const id = s.id;
+        cancel();
+        deleteRow(id);
+        return;
+      }
+      root.classList.remove("delete-preview", "delete-blocked");
       if (!s.allowed) {
         cancel(
           "Move refused. The dependency-breaking candidate was not applied.",
@@ -544,7 +592,7 @@
         const errors = analyze(s.candidate).errors;
         commit(
           s.candidate,
-          errors.length && policy === "free"
+          errors.length && settings.policy === "free"
             ? `Moved in Free edit. ${errors[0]}`
             : "Moved the row. One Undo restores the original order.",
           s.id,
@@ -552,7 +600,7 @@
         status(
           root,
           $(".lab-status", root).textContent,
-          errors.length > 0 && policy === "free",
+          errors.length > 0 && settings.policy === "free",
         );
       } else {
         render();
@@ -600,19 +648,35 @@
       }
       s.x = e.clientX;
       s.y = e.clientY;
+      const wasOutside = s.outside;
+      s.outside = outsideCanvas(root, { x: s.x, y: s.y });
+      root.classList.toggle("delete-preview", s.outside);
+      root.classList.toggle("delete-blocked", s.outside && !canDelete(s.id));
+      if (s.outside) {
+        placeDraggedRow();
+        status(
+          root,
+          canDelete(s.id)
+            ? "Release outside the canvas to delete this row. Escape cancels."
+            : "Deletion blocked: a populated row requires Free edit. Return to the canvas or cancel.",
+          !canDelete(s.id),
+        );
+        return;
+      }
       const to = Math.max(
         0,
         Math.min(s.base.length - 2, Math.round((s.pickupOffset + delta) / 22)),
       );
-      if (to !== s.to) preview(to);
+      if (to !== s.to || wasOutside) preview(to);
       else placeDraggedRow();
     });
-    window.addEventListener("pointerup", () => {
+    window.addEventListener("pointerup", (e) => {
       if (pendingDrag) {
         pendingDrag = null;
         controls.latch(false);
       }
       if (!session?.pointer) return;
+      session.outside = outsideCanvas(root, { x: e.clientX, y: e.clientY });
       if (session.began) finish();
       else session.pointer = false;
     });
@@ -665,6 +729,22 @@
     }
     root.addEventListener("keydown", (e) => {
       if (e.isComposing) return;
+      const row = rows.find((r) => r.id === selected);
+      const forceDelete = primary(e) && e.shiftKey && e.key === "Backspace";
+      const emptyDelete =
+        e.key === "Backspace" &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !e.shiftKey &&
+        row &&
+        !row.p.trim() &&
+        !row.e.trim();
+      if ((forceDelete || emptyDelete) && e.target.closest(".edit-row")) {
+        e.preventDefault();
+        deleteRow(selected);
+        return;
+      }
       if (e.key === "Escape" && session) {
         e.preventDefault();
         const id = session.id;
@@ -686,6 +766,35 @@
         undoAction();
       }
     });
+    function canDelete(id) {
+      const row = rows.find((r) => r.id === id);
+      return (
+        row &&
+        !row.result &&
+        (settings.policy === "free" || (!row.p.trim() && !row.e.trim()))
+      );
+    }
+    function deleteRow(id) {
+      if (session || pendingDrag) cancel();
+      if (!canDelete(id)) {
+        status(
+          root,
+          "Deletion blocked: populated rows require Free edit. The result row cannot be removed.",
+          true,
+        );
+        return;
+      }
+      const index = rows.findIndex((r) => r.id === id);
+      const next = rows.filter((r) => r.id !== id);
+      const focus = next[Math.min(index, next.length - 1)].id;
+      activeCell = null;
+      commit(
+        next,
+        "Deleted the row. One Undo restores it and its contents.",
+        focus,
+      );
+      focusRow(focus, "row");
+    }
     function undoAction() {
       if (session || pendingDrag) cancel();
       if (history.length) {
@@ -697,11 +806,6 @@
       }
     }
     undo.addEventListener("click", undoAction);
-    $("[data-action=insert]", root).addEventListener("click", () =>
-      insert(
-        Math.min(rows.length - 1, rows.findIndex((r) => r.id === selected) + 1),
-      ),
-    );
     $("[data-action=reset]", root).addEventListener("click", () => {
       cancel();
       commit(
@@ -710,21 +814,32 @@
         "n",
       );
     });
-    $$("[data-policy]", root).forEach((b) =>
+    document.addEventListener("cancel-gesture", () => cancel());
+    document.addEventListener("study-settings", () =>
+      status(
+        root,
+        settings.policy === "free"
+          ? "Free edit: moves and deletions may change meaning or introduce errors."
+          : "Checked row moves and empty-draft cleanup. Populated row deletion requires Free edit.",
+      ),
+    );
+    $$("[data-row-drag]", root).forEach((b) =>
       b.addEventListener("click", () => {
-        if (session) cancel();
-        policy = b.dataset.policy;
-        $$("[data-policy]", root).forEach((n) =>
+        cancel();
+        dragStyle = b.dataset.rowDrag;
+        $$("[data-row-drag]", root).forEach((n) =>
           n.setAttribute("aria-pressed", String(n === b)),
         );
+        root.dataset.rowDrag = dragStyle;
         status(
           root,
-          policy === "free"
-            ? "Free edit: row moves may change meaning or introduce errors."
-            : "Refactor: move independent arithmetic rows, including past empty drafts.",
+          dragStyle === "slot"
+            ? "Slot: the row stays aligned in the nearest permitted position."
+            : "Float: the row follows the pointer freely.",
         );
       }),
     );
+    root.dataset.rowDrag = dragStyle;
     // Mouse activation is gated by double-click; Tab/Enter/F2 remain keyboard
     // equivalents. Leaving a cell ends its temporary text-selection/edit mode.
     document.addEventListener(
@@ -769,6 +884,7 @@
     let slots = [null, null],
       history = [],
       picked = null,
+      originSlot = null,
       drag = null,
       hovered = null,
       aimed = null,
@@ -779,11 +895,12 @@
       suspended = false,
       controls;
     const hoverOption = $("[data-hover-links]", root);
-    const anchorOption = $("[data-wire-anchor]", root);
-    let style = "line";
     const names = new Map(),
       holes = [];
     const wire = new FurlReferenceWire(program);
+    const floating = el("span", "reference-floating");
+    floating.setAttribute("aria-hidden", "true");
+    document.body.append(floating);
     const token = (text) => el("span", "ref-token", text);
     const valueCell = (text) => {
       const n = el("span", "ref-value");
@@ -807,7 +924,15 @@
         e.preventDefault();
         name.focus({ preventScroll: true });
         clearLanding();
-        drag = { id: b.id, x: e.clientX, y: e.clientY, moved: false };
+        originSlot = null;
+        wire.clear();
+        drag = {
+          id: b.id,
+          origin: null,
+          x: e.clientX,
+          y: e.clientY,
+          moved: false,
+        };
         controls.latch(true);
       });
       names.set(b.id, name);
@@ -824,10 +949,31 @@
       hole.type = "button";
       hole.dataset.hole = i;
       hole.append(token("□"));
+      hole.addEventListener("pointerdown", (e) => {
+        if (e.button || !controls.active() || !slots[i] || picked) return;
+        e.preventDefault();
+        hole.focus({ preventScroll: true });
+        clearLanding();
+        wire.clear();
+        drag = {
+          id: slots[i],
+          origin: i,
+          x: e.clientX,
+          y: e.clientY,
+          moved: false,
+        };
+        controls.latch(true);
+      });
       hole.addEventListener("click", () => {
         if (suppressClick) return;
         if (picked) place(i);
-        else if (controls.active()) status(root, "Choose a binding first.");
+        else if (controls.active())
+          status(
+            root,
+            slots[i]
+              ? "Drag this use to move or unplug it. Backspace removes it in Free edit."
+              : "Choose a binding first.",
+          );
       });
       hole.addEventListener("pointerenter", () => {
         hovered = i;
@@ -856,10 +1002,16 @@
         wire.clear();
         return;
       }
+      if (wire.retracting) return;
       let id, target, kind;
       if (picked) {
         id = picked;
-        target = aimed === null ? null : holes[aimed];
+        target =
+          originSlot !== null && drag?.moved
+            ? floating
+            : aimed === null
+              ? null
+              : holes[aimed];
         kind = "drag";
       } else if (landing !== null) {
         id = slots[landing];
@@ -883,8 +1035,8 @@
         source: names.get(id),
         target,
         pointer: freePoint,
-        style,
-        anchor: anchorOption.value,
+        style: "wire",
+        anchor: "center",
         kind,
       });
     }
@@ -906,6 +1058,7 @@
           word.textContent = b?.name || "□";
         hole.classList.toggle("filled", !!b);
         hole.classList.toggle("target", !!picked && aimed === i);
+        hole.classList.toggle("unplugging", originSlot === i && !!picked);
         // Filled references remain hoverable/focusable outside Structure mode.
         hole.disabled = !controls?.active() && !b;
         if (b) hole.dataset.reference = b.id;
@@ -928,6 +1081,8 @@
     }
     function pick(id, point = null) {
       clearLanding();
+      wire.clear();
+      originSlot = null;
       picked = id;
       aimed = null;
       freePoint = point;
@@ -941,18 +1096,38 @@
     }
     function place(index) {
       if (!picked) return;
+      const changesSource = originSlot !== null && originSlot !== index;
+      const changed = slots[index] !== picked || changesSource;
+      const permitted =
+        !changed ||
+        settings.policy === "free" ||
+        (settings.policy === "refine" && originSlot === null && !slots[index]);
+      if (!permitted) {
+        cancel();
+        status(
+          root,
+          settings.policy === "refactor"
+            ? "Refactor blocks creating a use. Choose Refine to fill an empty hole."
+            : "Refine only fills empty holes. Replacing or moving a use requires Free edit.",
+          true,
+        );
+        return;
+      }
       const hole = holes[index],
         previousWidth = hole.getBoundingClientRect().width;
-      const changed = slots[index] !== picked;
       if (changed) {
         history.push([...slots]);
+        if (changesSource) slots[originSlot] = null;
         slots[index] = picked;
       }
       clearLanding();
       landing = index;
       picked = null;
+      originSlot = null;
       drag = null;
       aimed = null;
+      floating.style.display = "none";
+      root.classList.remove("delete-preview", "delete-blocked");
       controls.latch(false);
       render();
       hole.focus({ preventScroll: true });
@@ -991,6 +1166,12 @@
     }
     function aimAt(e) {
       freePoint = { x: e.clientX, y: e.clientY };
+      if (originSlot !== null && drag?.moved) {
+        floating.style.display = "block";
+        floating.textContent = bindings.find((b) => b.id === picked).name;
+        floating.style.left = `${e.clientX}px`;
+        floating.style.top = `${e.clientY}px`;
+      }
       const target = document
         .elementFromPoint(e.clientX, e.clientY)
         ?.closest("#reference-lab [data-hole]");
@@ -998,6 +1179,20 @@
       holes.forEach((hole, i) =>
         hole.classList.toggle("target", !!picked && aimed === i),
       );
+      const outside = originSlot !== null && outsideCanvas(root, freePoint);
+      root.classList.toggle("delete-preview", outside);
+      root.classList.toggle(
+        "delete-blocked",
+        outside && settings.policy !== "free",
+      );
+      if (outside)
+        status(
+          root,
+          settings.policy === "free"
+            ? "Release outside the canvas to unplug this use; the binding stays."
+            : "Unplugging requires Free edit. Return to the canvas or press Escape.",
+          settings.policy !== "free",
+        );
       updateLink();
     }
     window.addEventListener("pointermove", (e) => {
@@ -1010,8 +1205,9 @@
         if (!drag.moved) {
           drag.moved = true;
           picked = drag.id;
+          originSlot = drag.origin;
           controls.latch(true);
-          names.forEach((n, id) => n.classList.toggle("picked", picked === id));
+          render();
         }
       }
       if (picked) aimAt(e);
@@ -1019,30 +1215,107 @@
     window.addEventListener("pointerup", (e) => {
       if (!drag) return;
       const moved = drag.moved;
-      drag = null;
       if (moved) {
         aimAt(e);
-        if (aimed !== null) place(aimed);
+        if (originSlot !== null && outsideCanvas(root, freePoint))
+          removeUse(originSlot, freePoint);
+        else if (aimed !== null) place(aimed);
         else cancel();
         // A completed drag must not also fire a binder/hole click.
         suppressClick = true;
         setTimeout(() => {
           suppressClick = false;
         }, 0);
-      } else controls.latch(false);
+      } else {
+        drag = null;
+        controls.latch(false);
+      }
     });
     function cancel() {
+      wire.clear();
       clearLanding();
       drag = null;
       picked = null;
+      originSlot = null;
       aimed = null;
       freePoint = null;
       hovered = null;
+      floating.style.display = "none";
+      root.classList.remove("delete-preview", "delete-blocked");
       controls.latch(false);
       render();
       status(root, "Canceled. Bindings and references are unchanged.");
     }
+    function removeUse(index, point = null) {
+      const id = slots[index];
+      if (!id) return;
+      if (settings.policy !== "free") {
+        cancel();
+        status(
+          root,
+          "Unplugging removes information and requires Free edit.",
+          true,
+        );
+        return;
+      }
+      const rect = $(".ref-token", holes[index]).getBoundingClientRect();
+      const endpoint = point || {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      };
+      // Keep the source intact throughout pickup. Removal is one transaction
+      // at release; Escape, refused drops and tool changes cannot lose the use.
+      history.push([...slots]);
+      slots[index] = null;
+      clearLanding();
+      drag = null;
+      picked = null;
+      originSlot = null;
+      aimed = null;
+      hovered = null;
+      freePoint = null;
+      floating.style.display = "none";
+      root.classList.remove("delete-preview", "delete-blocked");
+      controls.latch(false);
+      wire.retract(names.get(id), endpoint);
+      render();
+      status(
+        root,
+        "Unplugged this use, leaving a hole. The binding remains; Undo reconnects it.",
+      );
+    }
     root.addEventListener("keydown", (e) => {
+      if (e.isComposing) return;
+      const hole = e.target.closest("[data-hole]");
+      if (
+        hole &&
+        controls.active() &&
+        (e.key === "Backspace" || e.key === "Delete") &&
+        !e.altKey
+      ) {
+        e.preventDefault();
+        removeUse(Number(hole.dataset.hole));
+        return;
+      }
+      if (
+        hole &&
+        controls.active() &&
+        e.key === " " &&
+        slots[Number(hole.dataset.hole)] &&
+        !picked
+      ) {
+        e.preventDefault();
+        const index = Number(hole.dataset.hole);
+        pick(slots[index]);
+        originSlot = index;
+        holes[index].focus({ preventScroll: true });
+        render();
+        status(
+          root,
+          "Picked up this use. Tab to another factor and Enter to move; Escape cancels.",
+        );
+        return;
+      }
       if (e.key === "Escape") {
         e.preventDefault();
         cancel();
@@ -1050,6 +1323,13 @@
       if (primary(e) && e.key.toLowerCase() === "z" && !e.shiftKey) {
         e.preventDefault();
         undo();
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      // Keyboard destination picking may Tab beyond this example's controls.
+      if (e.key === "Escape" && (picked || drag)) {
+        e.preventDefault();
+        cancel();
       }
     });
     window.addEventListener("pointercancel", () => {
@@ -1076,6 +1356,7 @@
     window.addEventListener("scroll", () => wire.request(), true);
     new ResizeObserver(() => wire.request()).observe(program);
     function undo() {
+      wire.clear();
       if (drag || picked) cancel();
       clearLanding();
       holes.forEach((n) =>
@@ -1084,7 +1365,7 @@
       if (history.length) {
         slots = history.pop();
         render();
-        status(root, "Undid reference insertion.");
+        status(root, "Undid one reference edit.");
       }
     }
     $("[data-action=undo]", root).addEventListener("click", undo);
@@ -1099,15 +1380,16 @@
       status(root, "The two factors are empty again.");
     });
     hoverOption.addEventListener("change", updateLink);
-    anchorOption.addEventListener("change", updateLink);
-    $$("[data-wire-style]", root).forEach((button) =>
-      button.addEventListener("click", () => {
-        style = button.dataset.wireStyle;
-        $$("[data-wire-style]", root).forEach((n) =>
-          n.setAttribute("aria-pressed", String(n === button)),
-        );
-        updateLink();
-      }),
+    document.addEventListener("cancel-gesture", cancel);
+    document.addEventListener("study-settings", () =>
+      status(
+        root,
+        settings.policy === "refactor"
+          ? "Refactor: creating, replacing and unplugging uses are blocked."
+          : settings.policy === "refine"
+            ? "Refine: fill empty factors. Choose Free edit to move, replace or unplug uses."
+            : "Free edit: fill, replace, move or unplug a use. Its binding always stays.",
+      ),
     );
     controls = mode(root, (active) => {
       if (!active && !drag) picked = null;

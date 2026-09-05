@@ -8,6 +8,7 @@ module.exports = async function checkRowMotion(page, output) {
     n.scrollIntoView({ block: "center", behavior: "instant" }),
   );
   await lab.locator(".structure-toggle").click();
+  await lab.locator("[data-row-drag=float]").click();
   await page.evaluate(() => {
     const animate = Element.prototype.animate;
     Element.prototype.animate = function (...args) {
