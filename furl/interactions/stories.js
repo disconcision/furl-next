@@ -29,7 +29,7 @@ const FURL_INTERACTION_STORIES = [
     mouse:
       "Select a row range, then Group. Compare the deck’s left-then-up gesture after the explicit version works.",
     keyboard:
-      "Select rows through their handles → Group into block → name the result.",
+      "Select rows in Structure mode → Group into block → name the result.",
     rule: "Only subtotal escapes this new scope. Grouping rows whose binders are still used outside needs explicit exports or a refusal.",
     message:
       "A new comb marks the nested definition; the parent uses its named result.",

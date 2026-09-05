@@ -4,11 +4,11 @@ Design study, 2026-09-05. The [self-contained interaction page](https://andrewbl
 
 ## Recommendation
 
-Start with row insertion, explicit row selection, row movement, and reference creation. Put mouse editing affordances behind **Structure**, with a held **Option/Alt** revealing the same affordances temporarily while pointing. Keep ordinary text editing and view controls available without entering a mode. Keep a separate **Refactor / Free edit** policy: visibility of handles and admissibility of edits are independent decisions.
+Start with row insertion, explicit row selection, row movement, and reference creation. Put mouse editing affordances behind **Structure**, with a held **Option/Alt** revealing the same affordances temporarily while pointing. Keep ordinary text editing and view controls available without entering a mode. Keep a separate **Refactor / Free edit** policy: activation of structural gestures and admissibility of edits are independent decisions.
 
 Use **Command+Enter** on macOS / **Ctrl+Enter** elsewhere for a new Furl binding below the focused logical row; add Shift for above. Preserve native Enter for now, including completion/menu acceptance and multiline source. We can compare plain Enter for insertion later; changing it immediately would make the same subeditor behave differently depending on projection and transient completion state.
 
-For keyboard movement, focus the row handle, press Space to pick up, use arrows to inspect destinations, Enter to commit, and Escape to cancel. A click on a selected handle can also enter destination picking, giving mouse users a way to move without holding a drag. Reuse that destination protocol for branches and comb endpoints. Do not replace Shift+Arrow text selection with the old prototype's row-swap shortcut.
+For keyboard movement, focus the row itself, press Space to pick up, use arrows to inspect destinations, Enter to commit, and Escape to cancel. A picked-up row can also be placed by clicking a destination gap. With no move active, Enter/F2 edits its expression; Tab into any cell is the keyboard equivalent of double-click activation. Reuse the destination protocol for branches and comb endpoints. Do not replace Shift+Arrow text selection with the old prototype's row-swap shortcut.
 
 The first page demonstrates insertion and dependency-checked/free row movement, reference creation, and before/after structural transformations. The row lab deliberately understands only numbers, identifiers, parentheses, +, -, and *; it is not a substitute language implementation. Other transformation values are preset examples.
 
@@ -56,9 +56,9 @@ The deck suggests automatic form changes after pattern entry. Initial recommenda
 
 ## Input and targeting contract
 
-**Offside geometry.** Reserve a small, stable action gutter outside the comb stack. It does not indent code and does not appear/disappear as layout space. Handles occupy row centers; insertion targets are narrow overlays at true binding boundaries, not extra-height rows. A hovered row receives a subtle background across the row; a hovered boundary receives a thin insertion mark. Only the handle initiates a row drag initially. Token-area drags remain selection or explicit subterm/reference operations.
+**Row and cell targeting.** Structure mode uses the entire binding row as the drag target, including its pattern, expression, and value columns. There is no side handle or reserved action gutter. A single click focuses the row; crossing the pointer slop threshold begins a move. Double-click activates one cell for editing or value interaction, and that cell supports ordinary text selection until focus leaves or Escape returns to the row. Values remain read-only; activation allows selection/copying in the study. Normal mode keeps single-click cell editing. A new row immediately activates its expression. Insertion targets remain narrow overlays at true binding boundaries, not extra-height rows; their marks share the comb margin. A hovered row receives a subtle background across its width.
 
-The comb continues to express scope. In normal mode its existing clicks furl/unfurl or navigate branches. Structure mode can reveal endpoint/fork handles that act on source. Endpoint hits must win over stem hits; row handles must not overlap either. When combs are hidden, structural commands remain available through the action gutter and keyboard.
+The comb continues to express scope. In normal mode its existing clicks furl/unfurl or navigate branches. Structure mode can reveal endpoint/fork handles that act on source. Endpoint hits must win over stem hits and row drags. When combs are hidden, structural commands remain available through the row surface and keyboard.
 
 **Quasimode.** Option/Alt reveals pointer affordances only while the pointer is over a study/editor. Do not consume Alt text input, word-navigation chords, AltGr, composition, or browser menu shortcuts. Clear held state on blur/visibility loss. Latch the operation at pickup so releasing the modifier mid-drag does not change its meaning; Escape, pointer cancellation, or window blur cancels. This key is provisional: test on the actual macOS/browser combination before making it the only shortcut. The explicit toggle is always available, including touch.
 
@@ -94,7 +94,7 @@ Inspected remote/local `refactorings` at `7dbd77039d7caccc2d077ce922a8beece97167
 
 Build a small **Furl command adapter** over the transform layer: logical selection → authoritative Hazel target → candidate source → Furl projection and layout → preview → commit. Expose a geometry-independent planner if the existing refactor API forces native caret targeting. Reuse the current Furl document's source slices, stable targets, whole-program statics, and history. Do not transform each subeditor independently.
 
-Native branch chords are Cmd+Ctrl+arrows on macOS / Ctrl+Alt+arrows on PC, with Shift for explode/implode and Enter for stepping. The PC chord conflicts with today's Furl branch inspection. Resolve by focus context first: row/branch handles use plain arrows, text retains its current commands. Do not add a second global handler that fires both operations.
+Native branch chords are Cmd+Ctrl+arrows on macOS / Ctrl+Alt+arrows on PC, with Shift for explode/implode and Enter for stepping. The PC chord conflicts with today's Furl branch inspection. Resolve by focus context first: focused rows/branches use plain arrows, text retains its current commands. Do not add a second global handler that fires both operations.
 
 ## Dragology and gestures fit together
 
@@ -132,7 +132,7 @@ Microphone access needs permission and a secure context ([MDN](https://developer
 ## Delivery order and acceptance
 
 1. **Source commands and draft rows.** Cmd/Ctrl+Enter, scope-aware insertion, focus, one undo, persistence, hidden-column recovery. Test parameter/arm/result positions, nested lets, multiline source, and shared echoes.
-2. **Structure layer and row movement.** Offside handles, pointer and keyboard pickup, refactor/free policy, cancellation, dependency feedback. Test no mutation in normal hover, no accidental drag on text, held-modifier release, blur, stale-source cancellation, and independent/dependent reorder cases.
+2. **Structure layer and row movement.** Whole-row pointer targets, double-click cell activation, keyboard pickup, refactor/free policy, cancellation, and dependency feedback. Test normal single-click editing, row dragging across every column in Structure mode, text selection within an active cell, value activation, held-modifier release, blur, stale-source cancellation, and independent/dependent reorder cases.
 3. **References and extraction.** Binder identity, typed destinations, capture avoidance, literal/general extraction, and native completion. Test same-name shadowing, parameter scope, copied IDs, repeated echoes, and dropped selection replacement.
 4. **Integrate the refactor foundation.** Dedicated branch and merge review before enabling helper carry, inlining, parameter changes, branch edits. Test source/print roundtrip, lexical/type behavior, comments, probes, focus, history, and existing Furl navigation/menu invariants.
 5. **Scope gestures and motion.** Compare explicit Group/Copy commands with the deck's left-first variants; resize, abstract, and fork through the same candidate engine. Add stable-identity previews before elaborate tweening.

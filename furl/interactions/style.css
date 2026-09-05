@@ -101,7 +101,8 @@ select {
   -webkit-user-select: none;
 }
 .row-program {
-  padding: 0 0 0 48px;
+  padding-left: 18px;
+  min-width: 570px;
   --pattern: 14ch;
   --expr: 29ch;
   --value: 11ch;
@@ -145,6 +146,37 @@ select {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+.edit-row .value:focus-visible,
+.edit-row:focus-visible {
+  outline: 1px solid var(--purple);
+  outline-offset: -1px;
+}
+.armed .edit-row {
+  cursor: grab;
+  touch-action: none;
+}
+.armed .edit-row[data-result="true"] {
+  cursor: default;
+}
+.edit-row .cell-locked {
+  cursor: inherit;
+  user-select: none;
+  -webkit-user-select: none;
+  caret-color: transparent;
+}
+.edit-row .cell-active {
+  cursor: text;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.edit-row input::selection,
+.edit-row .value::selection {
+  background: var(--accent-fill);
+  color: var(--text);
 }
 .edit-row .invalid {
   color: var(--danger);
@@ -161,39 +193,12 @@ select {
   box-shadow: 0 2px 8px #0002;
   pointer-events: none;
 }
-.edit-row.dragging::before {
-  content: "";
-  position: absolute;
-  inset: 0 100% 0 -48px;
-  background: var(--well);
-}
 .dragging-row,
 .dragging-row * {
   cursor: grabbing !important;
 }
-.row-handle {
-  position: absolute;
-  left: -48px;
-  top: 0;
-  width: 22px;
-  height: 22px;
-  border: 0;
-  padding: 0;
-  opacity: 0;
-  color: var(--purple);
-  border-radius: 0;
-  touch-action: none;
-  cursor: grab;
-}
-.armed .row-handle,
-.row-handle:focus-visible {
-  opacity: 1;
-}
-.row-handle:active {
-  cursor: grabbing;
-}
-.row-handle[aria-pressed="true"] {
-  background: var(--accent-fill);
+.edit-row[data-picked="true"] {
+  background: var(--well);
 }
 .gap {
   position: absolute;
@@ -216,7 +221,7 @@ select {
   content: "";
   height: 2px;
   position: absolute;
-  left: 29px;
+  left: 0;
   right: 0;
   top: 3px;
   background: var(--purple);
@@ -224,7 +229,7 @@ select {
 .gap::before {
   content: "+";
   position: absolute;
-  left: 4px;
+  left: 0;
   top: -7px;
   font: 16px/22px var(--mono);
   color: var(--purple);
@@ -260,6 +265,9 @@ select {
   overflow: visible;
   pointer-events: none;
   color: var(--purple);
+}
+.row-program .comb {
+  left: 0;
 }
 .comb path {
   stroke: currentColor;
@@ -585,7 +593,7 @@ footer {
     padding: 22px 10px;
   }
   .row-program {
-    min-width: 535px;
+    min-width: 505px;
     --pattern: 12ch;
     --expr: 24ch;
     --value: 9ch;

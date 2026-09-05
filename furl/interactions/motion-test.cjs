@@ -62,7 +62,7 @@ module.exports = async function checkRowMotion(page, output) {
   const order = () =>
     lab.locator(".edit-row").evaluateAll((ns) => ns.map((n) => n.dataset.id));
   const status = () => lab.locator(".lab-status").textContent();
-  const handle = (id) => lab.locator(`[data-id="${id}"] .row-handle`);
+  const rowTarget = (id) => lab.locator(`[data-id="${id}"]`);
 
   // Insertion leaves preceding rows absolutely still. Following rows start at
   // their old positions, then move monotonically down exactly one grid row.
@@ -98,7 +98,7 @@ module.exports = async function checkRowMotion(page, output) {
   // The actual row (all three columns) follows both pointer axes from the
   // original grab offset, while siblings animate into its current vacant slot.
   const base = await positions(),
-    h = await handle("bonus").boundingBox();
+    h = await rowTarget("bonus").boundingBox();
   const x = h.x + 11,
     y = h.y + 11;
   await page.evaluate(() => {
@@ -188,7 +188,7 @@ module.exports = async function checkRowMotion(page, output) {
 
   // A refused move still tracks the pointer and returns smoothly on release.
   const blockedBase = await positions(),
-    bh = await handle("twice").boundingBox();
+    bh = await rowTarget("twice").boundingBox();
   await page.mouse.move(bh.x + 11, bh.y + 11);
   await page.mouse.down();
   await page.mouse.move(bh.x + 19, bh.y - 5);
@@ -213,7 +213,7 @@ module.exports = async function checkRowMotion(page, output) {
     await settle();
   }
   const drafts = await order();
-  await handle("bonus").focus();
+  await rowTarget("bonus").focus();
   await page.keyboard.press("Space");
   for (let i = 0; i < 4; i++) {
     await page.keyboard.press("ArrowUp");
@@ -237,7 +237,7 @@ module.exports = async function checkRowMotion(page, output) {
   await frame("refactor-across-drafts");
   await undo();
   assert.deepEqual(await order(), drafts);
-  await handle("twice").focus();
+  await rowTarget("twice").focus();
   await page.keyboard.press("Space");
   for (let i = 0; i < 4; i++) await page.keyboard.press("ArrowUp");
   assert.match(await status(), /Blocked.*n is not bound/);

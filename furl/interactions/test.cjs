@@ -28,14 +28,15 @@ const url =
         .locator("#row-lab .edit-row")
         .evaluateAll((ns) => ns.map((n) => n.dataset.id));
     const text = () => page.locator("#row-lab .row-source").textContent();
-    const handle = (id) =>
-      page.locator(`#row-lab [data-id="${id}"] .row-handle`);
+    const rowTarget = (id) => page.locator(`#row-lab [data-id="${id}"]`);
     const expr = (id) => page.locator(`#row-lab [data-id="${id}"] .expression`);
     const status = () => page.locator("#row-lab .lab-status").textContent();
     const activate = () => page.locator("#row-lab .structure-toggle").click();
     const reset = async () => {
       await page.goto(url);
     };
+    await reset();
+    await require("./cell-mode-test.cjs")(page, output);
     await reset();
     await require("./motion-test.cjs")(page, output);
     await reset();
@@ -106,13 +107,13 @@ const url =
     assert.match(await status(), /Unsupported|Unexpected|not bound/);
     await reset();
     // Keyboard pickup previews, cancels, and commits exactly one undo entry.
-    await handle("bonus").focus();
+    await rowTarget("bonus").focus();
     await page.keyboard.press("Space");
     assert.equal(
       await page.evaluate(() =>
         document.activeElement.getAttribute("aria-label"),
       ),
-      "Move bonus",
+      "bonus row",
     );
     await page.keyboard.press("ArrowUp");
     assert.deepEqual(await order(), ["n", "bonus", "twice", "total", "result"]);
@@ -122,7 +123,7 @@ const url =
       await page.locator("#row-lab [data-action=undo]").isDisabled(),
       true,
     );
-    await handle("bonus").focus();
+    await rowTarget("bonus").focus();
     await page.keyboard.press("Space");
     await page.keyboard.press("ArrowUp");
     await page.keyboard.press("ArrowUp");
@@ -135,14 +136,14 @@ const url =
       true,
     );
     // A dependency-blocked candidate never commits; free editing exposes the actual error.
-    await handle("twice").focus();
+    await rowTarget("twice").focus();
     await page.keyboard.press("Space");
     await page.keyboard.press("ArrowUp");
     assert.match(await status(), /Blocked.*n is not bound/);
     await page.keyboard.press("Enter");
     assert.deepEqual(await order(), ["n", "twice", "bonus", "total", "result"]);
     await page.locator("[data-policy=free]").click();
-    await handle("twice").focus();
+    await rowTarget("twice").focus();
     await page.keyboard.press("Space");
     await page.keyboard.press("ArrowUp");
     await page.keyboard.press("Enter");
@@ -152,21 +153,22 @@ const url =
       "?",
     );
     await page.locator("#row-lab [data-action=undo]").click();
-    // Pointer move, click-to-pick/place, quasimode latch/release, and cancel-on-blur.
+    // Pointer move, keyboard pickup/click-to-place, quasimode latch/release, and cancel-on-blur.
     await reset();
     await activate();
-    let h = await handle("bonus").boundingBox();
+    let h = await rowTarget("bonus").boundingBox();
     await page.mouse.move(h.x + 11, h.y + 11);
     await page.mouse.down();
     await page.mouse.move(h.x + 11, h.y - 33, { steps: 8 });
     await page.mouse.up();
     assert.deepEqual(await order(), ["bonus", "n", "twice", "total", "result"]);
     await page.locator("#row-lab [data-action=undo]").click();
-    await handle("bonus").click();
+    await rowTarget("bonus").click();
+    await page.keyboard.press("Space");
     await page.locator('#row-lab .gap[data-slot="0"]').click();
     assert.deepEqual(await order(), ["bonus", "n", "twice", "total", "result"]);
     await reset();
-    h = await handle("bonus").boundingBox();
+    h = await rowTarget("bonus").boundingBox();
     await page.mouse.move(h.x + 11, h.y + 11);
     await page.keyboard.down("Alt");
     await page.mouse.down();
@@ -187,7 +189,7 @@ const url =
       false,
     );
     await activate();
-    h = await handle("n").boundingBox();
+    h = await rowTarget("n").boundingBox();
     const before = await text();
     await page.mouse.move(h.x + 11, h.y + 11);
     await page.mouse.down();
@@ -287,7 +289,7 @@ const url =
         .evaluate((n) => n.getAnimations({ subtree: true }).length),
       0,
     );
-    await handle("bonus").focus();
+    await rowTarget("bonus").focus();
     await page.keyboard.press("Space");
     await page.keyboard.press("ArrowUp");
     await page.keyboard.press("Enter");

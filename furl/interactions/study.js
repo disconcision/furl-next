@@ -188,18 +188,52 @@
       serial = 0,
       selected = "n",
       policy = "refactor",
-      session = null;
+      session = null,
+      pendingDrag = null,
+      activeCell = null;
     const nodes = new Map();
     let controls;
     const undo = $("[data-action=undo]", root);
     const source = $(".row-source", root);
+    function syncCellAccess() {
+      const armed = controls?.active();
+      for (const n of nodes.values()) {
+        for (const cell of $$("input,.value", n)) {
+          const locked = armed && cell !== activeCell;
+          cell.classList.toggle("cell-active", cell === activeCell);
+          cell.classList.toggle("cell-locked", !!locked);
+          if (cell.tagName === "INPUT") cell.readOnly = !!locked;
+          else cell.title = locked ? "" : cell.dataset.problem || "";
+        }
+      }
+    }
+    function selectRow(id) {
+      selected = id;
+      for (const [key, n] of nodes) n.classList.toggle("focused", key === id);
+    }
+    function activateCell(cell, select = false) {
+      if (!cell) return;
+      if (session || pendingDrag) cancel();
+      activeCell = cell;
+      syncCellAccess();
+      cell.focus({ preventScroll: true });
+      if (select) {
+        if (cell.tagName === "INPUT") cell.select();
+        else {
+          const range = document.createRange();
+          range.selectNodeContents(cell);
+          const selection = getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+      }
+    }
     function focusRow(id, part = "expression") {
       selected = id;
       const row = nodes.get(id);
-      if (row)
-        $(part === "handle" ? ".row-handle" : `.${part}`, row)?.focus({
-          preventScroll: true,
-        });
+      if (!row) return;
+      if (part === "row") row.focus({ preventScroll: true });
+      else activateCell($(`.${part}`, row));
     }
     function placeDraggedRow(rect) {
       const s = session;
@@ -217,8 +251,8 @@
     }
     function render(shown = rows, animate = true) {
       const focused = document.activeElement;
-      const focusedHandle = focused?.classList.contains("row-handle")
-        ? focused.closest(".edit-row").dataset.id
+      const focusedRow = focused?.classList.contains("edit-row")
+        ? focused.dataset.id
         : null;
       const focusInfo = focused?.dataset.field
         ? {
@@ -253,23 +287,24 @@
         if (!n) {
           n = el("div", "edit-row");
           n.dataset.id = row.id;
-          if (!row.result) {
-            const handle = el("button", "row-handle", "⋮");
-            handle.type = "button";
-            handle.setAttribute("aria-label", `Move ${row.p || "new row"}`);
-            handle.addEventListener("pointerdown", (e) =>
-              startPointer(e, row.id),
+          n.tabIndex = 0;
+          n.setAttribute("role", "group");
+          n.dataset.result = String(!!row.result);
+          n.addEventListener("pointerdown", (e) => startPointer(e, row.id));
+          n.addEventListener("keydown", (e) => rowKey(e, row.id));
+          n.addEventListener("focus", () => selectRow(row.id));
+          n.addEventListener("dblclick", (e) => {
+            const cell = e.target.closest("input,.value");
+            if (!controls.active() || !cell || cell === activeCell) return;
+            e.preventDefault();
+            activateCell(cell, true);
+            status(
+              root,
+              cell.classList.contains("value")
+                ? "Value selected for copying. Values are read-only."
+                : "Editing this cell. Escape returns to the row.",
             );
-            handle.addEventListener("keydown", (e) => handleKey(e, row.id));
-            handle.addEventListener("focus", () => {
-              selected = row.id;
-              n.classList.add("focused");
-            });
-            handle.addEventListener("blur", () =>
-              n.classList.remove("focused"),
-            );
-            n.append(handle);
-          }
+          });
           if (row.result) n.append(el("span", "static-pattern", "result"));
           else {
             const p = el("input", "pattern");
@@ -285,15 +320,20 @@
           expression.placeholder = "□";
           expression.spellcheck = false;
           expression.autocomplete = "off";
-          n.append(expression, el("span", "value"));
-          $$("input", n).forEach((input) => {
-            input.addEventListener("focus", () => {
-              selected = row.id;
-              n.classList.add("focused");
+          const value = el("span", "value");
+          value.tabIndex = 0;
+          n.append(expression, value);
+          $$("input,.value", n).forEach((cell) => {
+            cell.addEventListener("focus", () => {
+              activeCell = cell;
+              selectRow(row.id);
+              syncCellAccess();
             });
-            input.addEventListener("blur", () => n.classList.remove("focused"));
+          });
+          $$("input", n).forEach((input) => {
             input.addEventListener("input", () => {
-              if (session) cancel("The edit canceled the movement preview.");
+              if (session || pendingDrag)
+                cancel("The edit canceled the movement preview.");
               const base = copy(rows);
               const current = rows.find((r) => r.id === row.id);
               if (!current) return;
@@ -311,6 +351,8 @@
           nodes.set(row.id, n);
         }
         n.dataset.index = index;
+        n.setAttribute("aria-label", `${row.p || "New binding"} row`);
+        n.dataset.picked = String(session?.id === row.id);
         n.classList.toggle("focused", row.id === selected);
         const pat = $(".pattern", n);
         if (pat) {
@@ -326,12 +368,11 @@
         const value = analysis.values.get(row.id);
         $(".value", n).textContent = value.problem ? "?" : String(value.value);
         $(".value", n).classList.toggle("invalid", !!value.problem);
-        $(".value", n).title = value.problem;
-        const handle = $(".row-handle", n);
-        if (handle) {
-          handle.setAttribute("aria-label", `Move ${row.p || "new row"}`);
-          handle.setAttribute("aria-pressed", String(session?.id === row.id));
-        }
+        $(".value", n).dataset.problem = value.problem;
+        $(".value", n).setAttribute(
+          "aria-label",
+          `Value for ${row.p || "new row"}`,
+        );
         program.append(n);
       });
       program.append(comb(shown.length * 22));
@@ -389,7 +430,8 @@
       source.textContent = shown
         .map((r) => (r.result ? r.e : `let ${r.p || "□"} = ${r.e || "□"} in`))
         .join("\n");
-      if (focusedHandle) focusRow(focusedHandle, "handle");
+      syncCellAccess();
+      if (focusedRow) focusRow(focusedRow, "row");
       if (focusInfo && nodes.has(focusInfo.id)) {
         const input = $(
           `[data-field=${focusInfo.field}]`,
@@ -409,7 +451,7 @@
       status(root, message);
     }
     function insert(index) {
-      if (session) cancel();
+      if (session || pendingDrag) cancel();
       const id = `draft${++serial}`;
       const next = copy(rows);
       next.splice(index, 0, { id, p: "", e: "" });
@@ -421,15 +463,20 @@
       focusRow(id);
     }
     function cancel(message = "Canceled. Source and row order are unchanged.") {
-      if (!session) return;
+      pendingDrag = null;
+      const wasMoving = !!session;
       session = null;
       controls.latch(false);
-      render();
-      status(root, message);
+      if (wasMoving) {
+        render();
+        status(root, message);
+      }
     }
     function begin(id, pin = true) {
       const row = rows.find((r) => r.id === id);
       if (!row || row.result) return;
+      pendingDrag = null;
+      activeCell = null;
       if (pin) controls.enable();
       controls.latch(true);
       selected = id;
@@ -511,27 +558,38 @@
         render();
         status(root, "No change to the row order.");
       }
-      focusRow(s.id, "handle");
+      focusRow(s.id, "row");
     }
     function startPointer(e, id) {
       if (e.button !== 0 || (!controls.active() && !session)) return;
+      const cell = e.target.closest("input,.value");
+      if (cell && cell === activeCell) return;
       e.preventDefault();
+      getSelection()?.removeAllRanges();
       if (session) cancel();
-      e.currentTarget.focus({ preventScroll: true });
+      focusRow(id, "row");
+      // A click selects; it does not pick up or mutate the DOM. This leaves the
+      // browser's double-click sequence intact for activating a locked cell.
+      if (rows.find((r) => r.id === id)?.result) return;
       const rect = nodes.get(id).getBoundingClientRect();
-      begin(id, false);
-      session.pointer = true;
-      session.startX = e.clientX;
-      session.startY = e.clientY;
-      session.grabX = e.clientX - rect.left;
-      session.grabY = e.clientY - rect.top;
-      session.x = e.clientX;
-      session.y = e.clientY;
-      // Use stable slot geometry, never animated sibling positions, for picking
-      // a destination. A row picked up during a tween still tracks accurately.
-      session.pickupOffset = rect.top - program.getBoundingClientRect().top;
+      pendingDrag = {
+        id,
+        startX: e.clientX,
+        startY: e.clientY,
+        grabX: e.clientX - rect.left,
+        grabY: e.clientY - rect.top,
+        pickupOffset: rect.top - program.getBoundingClientRect().top,
+      };
+      controls.latch(true);
     }
     window.addEventListener("pointermove", (e) => {
+      if (pendingDrag) {
+        const p = pendingDrag;
+        if (Math.hypot(e.clientX - p.startX, e.clientY - p.startY) < 5) return;
+        pendingDrag = null;
+        begin(p.id, false);
+        Object.assign(session, p, { pointer: true });
+      }
       const s = session;
       if (!s?.pointer) return;
       const delta = e.clientY - s.startY;
@@ -550,6 +608,10 @@
       else placeDraggedRow();
     });
     window.addEventListener("pointerup", () => {
+      if (pendingDrag) {
+        pendingDrag = null;
+        controls.latch(false);
+      }
       if (!session?.pointer) return;
       if (session.began) finish();
       else session.pointer = false;
@@ -557,17 +619,33 @@
     window.addEventListener("pointercancel", () => cancel());
     window.addEventListener("blur", () => cancel());
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && session) {
+      if (e.key === "Escape" && (session || pendingDrag)) {
         e.preventDefault();
-        const id = session.id;
+        const id = session?.id || pendingDrag.id;
         cancel();
-        focusRow(id, "handle");
+        focusRow(id, "row");
       }
     });
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) cancel();
     });
-    function handleKey(e, id) {
+    function rowKey(e, id) {
+      if (
+        e.target !== e.currentTarget ||
+        e.isComposing ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey
+      )
+        return;
+      if (e.key === "F2" || (e.key === "Enter" && !session)) {
+        e.preventDefault();
+        activateCell(
+          $(e.shiftKey ? ".pattern" : ".expression", nodes.get(id)),
+          true,
+        );
+        return;
+      }
       if (e.key === " " || e.key === "Enter") {
         e.preventDefault();
         if (session) finish();
@@ -579,8 +657,8 @@
         else {
           const i = rows.findIndex((r) => r.id === id);
           focusRow(
-            rows[Math.max(0, Math.min(rows.length - 2, i + d))].id,
-            "handle",
+            rows[Math.max(0, Math.min(rows.length - 1, i + d))].id,
+            "row",
           );
         }
       }
@@ -591,7 +669,14 @@
         e.preventDefault();
         const id = session.id;
         cancel();
-        focusRow(id, "handle");
+        focusRow(id, "row");
+      } else if (e.key === "Escape" && activeCell) {
+        e.preventDefault();
+        const id = activeCell.closest(".edit-row").dataset.id;
+        activeCell = null;
+        syncCellAccess();
+        getSelection()?.removeAllRanges();
+        focusRow(id, "row");
       } else if (primary(e) && e.key === "Enter") {
         e.preventDefault();
         const i = rows.findIndex((r) => r.id === selected);
@@ -602,13 +687,13 @@
       }
     });
     function undoAction() {
-      if (session) cancel();
+      if (session || pendingDrag) cancel();
       if (history.length) {
         rows = history.pop();
         selected = rows.some((r) => r.id === selected) ? selected : rows[0].id;
         render();
         status(root, "Undid one edit.");
-        focusRow(selected);
+        focusRow(selected, controls.active() ? "row" : "expression");
       }
     }
     undo.addEventListener("click", undoAction);
@@ -640,7 +725,34 @@
         );
       }),
     );
+    // Mouse activation is gated by double-click; Tab/Enter/F2 remain keyboard
+    // equivalents. Leaving a cell ends its temporary text-selection/edit mode.
+    document.addEventListener(
+      "pointerdown",
+      (e) => {
+        if (activeCell && !activeCell.contains(e.target)) {
+          activeCell = null;
+          syncCellAccess();
+        }
+      },
+      true,
+    );
+    document.addEventListener(
+      "focusin",
+      (e) => {
+        if (activeCell && e.target !== activeCell) {
+          activeCell = null;
+          syncCellAccess();
+        }
+      },
+      true,
+    );
     controls = mode(root, (active) => {
+      // Holding Option while already editing must not steal that cell's text
+      // input or word-navigation chords. Clicking the mode button leaves the
+      // cell first, so an explicit mode change starts with rows locked.
+      if (active && activeCell !== document.activeElement) activeCell = null;
+      syncCellAccess();
       $$(".gap", program).forEach((g) =>
         g.setAttribute("aria-hidden", String(!active)),
       );

@@ -12,8 +12,8 @@
   {
     "action": "Move a row",
     "origin": "Old Furl",
-    "mouse": "Drag the row handle outside the comb; preview the destination before release.",
-    "keyboard": "Focus the handle; Space picks up, ↑/↓ chooses a destination, Enter drops, Escape cancels.",
+    "mouse": "Structure: drag anywhere on a binding row; double-click a cell for text editing or value interaction. Preview the destination before release.",
+    "keyboard": "Focus the row; Space picks up, ↑/↓ chooses a destination, Enter drops, Escape cancels.",
     "rule": "Refactor offers checked destinations. Free edit permits scope/dependency changes but always produces valid structural syntax. The final result is not an ordinary movable let.",
     "source": "BlockView.re:50; Update.re:179–225; Big Book 84–88",
     "url": "https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L179",
@@ -83,7 +83,7 @@
     "action": "Delete and recover",
     "origin": "Old Furl",
     "mouse": "Explicit row Delete command; Undo restores it. Keep a stash concept for later.",
-    "keyboard": "Delete on a focused row handle; ⌘/Ctrl+Z restores.",
+    "keyboard": "Delete on a focused row; ⌘/Ctrl+Z restores.",
     "rule": "Old background drops delete into a visible trash collection; picking up trash removes it before a successful drop. Do not inherit that cancellation behavior.",
     "source": "View.re:108–126; Update.re:115–158",
     "url": "https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L115",
@@ -92,7 +92,7 @@
   {
     "action": "Navigate rows, cells, and uses",
     "origin": "Old Furl",
-    "mouse": "Click a cell; binder/use highlighting helps follow references.",
+    "mouse": "Click a cell normally; double-click in Structure mode. Binder/use highlighting helps follow references.",
     "keyboard": "Existing Furl arrows retain column targets. Tab should visit structural targets only when explicitly entering that layer.",
     "rule": "Old Shift+↑/↓ swaps rows; retain native Shift-selection in text. Do not globally steal it.",
     "source": "Keyboard.re:3–20; PatView.re:27",
@@ -224,7 +224,7 @@
     "origin": "Current Furl",
     "mouse": "Existing comb clicks, all/one branch choice, and selected-value arrows.",
     "keyboard": "Existing cross-cell arrows and Ctrl+Alt+←/→ for branch inspection.",
-    "rule": "View operations stay available outside Structure mode and never become undoable syntax edits. Windows refactor chord conflicts with branch navigation: use handle-focused arrows first.",
+    "rule": "View operations stay available outside Structure mode and never become undoable syntax edits. Windows refactor chord conflicts with branch navigation: use row/branch-focused arrows first.",
     "source": "furl/design/architecture.md",
     "url": "",
     "phase": "Live"
