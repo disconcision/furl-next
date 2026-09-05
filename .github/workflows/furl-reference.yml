@@ -1,0 +1,19 @@
+name: Furl reference
+on:
+  push:
+    branches: [furl]
+    paths: ['furl/reference/**', 'docs/index.html', 'docs/studies.html', '.github/workflows/furl-reference.yml', 'src/web/www/img/hazelnut.svg']
+  pull_request:
+    paths: ['furl/reference/**', 'docs/index.html', 'docs/studies.html', '.github/workflows/furl-reference.yml', 'src/web/www/img/hazelnut.svg']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 furl/reference/build.py --check
+      - run: node --check furl/reference/fixtures.js
+      - run: node --check furl/reference/study.js

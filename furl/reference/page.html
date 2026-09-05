@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Furl: an interactive reference for working with code, bindings, and the values they produce.">
+  <meta name="color-scheme" content="light dark">
+  <title>Furl — an interactive reference</title>
+  <style>{{styles}}</style>
+</head>
+<body>
+<a class="skip" href="#lets">Skip to the examples</a>
+<div class="book">
+  <header class="masthead">
+    <a class="wordmark" href="#top" aria-label="Furl, top of page">f<span>u</span>rl</a>
+    <nav aria-label="Reference links"><a href="./studies.html">Study switcher</a><a href="./index.html" download="furl.html">Save HTML</a><a href="https://github.com/disconcision/furl-next">GitHub</a></nav>
+  </header>
+  <main id="top">
+    <div class="introduction">
+      <p class="eyebrow">An interactive reference · September 2026</p>
+      <h1>Code, with room for its values.</h1>
+      <p>Furl explores a way to work with programs by bringing bindings, expressions, and values into the same view. A sequence of small definitions becomes a common place to read, inspect, and eventually transform code.</p>
+      <p>A view can be furled into rows or unfurled back into ordinary syntax, one subexpression at a time. These studies explore that movement on a character grid.</p>
+      <p class="note">The controls work; the values are preset examples. Text editing, evaluation, drag and drop, and animated transformations are still to come.</p>
+    </div>
+    <nav class="contents" aria-label="Examples">
+      <a href="#lets">01 Bindings</a><a href="#functions">02 Functions</a><a href="#matches">03 Matches</a><a href="#combined">04 Together</a><a href="#recursion">05 Calls</a><a href="#traces">06 Traces</a><a href="#helper">07 Extraction</a>
+    </nav>
+
+    <section class="chapter" id="lets" aria-labelledby="heading-lets">
+      <div class="chapter-copy"><h2 id="heading-lets"><span>01</span> A common shape for bindings</h2>
+        <p>A cell brings a name or pattern beside an expression and its value. A scope collects these cells into a sequence. Furling exposes the smaller definitions inside an expression while keeping their containing scope visible in the comb.</p>
+        <p class="try">Try unfurling the inner calculation, then the whole program. Toggle bindings, expressions, and values independently; <span class="integral">∫</span> hides the comb.</p>
+      </div>
+      {{study:lets}}
+    </section>
+
+    <section class="chapter" id="functions" aria-labelledby="heading-functions">
+      <div class="chapter-copy"><h2 id="heading-functions"><span>02</span> Leave a place for an argument</h2>
+        <p>A function parameter has a pattern and an example value, but no defining expression here: the dot marks that opening. The same scope shape accommodates the function’s body. A small mark in the comb separates parameters from the rest of the computation.</p>
+        <p class="try">Unfurl either function to see its literal syntax. Under Display options, compare the parameter mark with and without its extension.</p>
+      </div>
+      {{study:functions}}
+    </section>
+
+    <section class="chapter" id="matches" aria-labelledby="heading-matches">
+      <div class="chapter-copy"><h2 id="heading-matches"><span>03</span> Let a pattern split the path</h2>
+        <p>A match places alternative patterns beside the same input. Each branch carries its own definitions to a result. Repeated input and result references help the branches read together; the curved comb makes their grouping explicit.</p>
+        <p class="try">Switch between <code>Some 7</code> and <code>None</code>, then unfurl the match bridge. Compare a shared and a separate stem under Display options.</p>
+      </div>
+      {{study:matches}}
+    </section>
+
+    <section class="chapter" id="combined" aria-labelledby="heading-combined">
+      <div class="chapter-copy"><h2 id="heading-combined"><span>04</span> Compose the same few forms</h2>
+        <p>Let blocks, function literals, and matches share a regular arrangement without losing their distinctions. Here two parameters lead into a definition and then a match. The expression and value columns retain their alignment through the surrounding function and its branches.</p>
+        <p class="try">Furl the function while leaving its match as code, or reverse the choice. Pattern indentation and the offside comb can be shown independently.</p>
+      </div>
+      {{study:combined}}
+    </section>
+
+    <section class="chapter" id="recursion" aria-labelledby="heading-recursion">
+      <div class="chapter-copy"><h2 id="heading-recursion"><span>05</span> One program, several calls</h2>
+        <p>The syntax of a recursive function stays in place as its arguments and intermediate values change. Selecting a call changes which evaluation we inspect. The outer run remains the point of entry; each recursive subtotal leads into another invocation.</p>
+        <p class="try">Use the call arrows, or click a subtotal value to step into its call. At the empty list, the other branch supplies the result.</p>
+      </div>
+      {{study:recursion}}
+    </section>
+
+    <section class="chapter" id="traces" aria-labelledby="heading-traces">
+      <div class="chapter-copy"><h2 id="heading-traces"><span>06</span> Turn toward the trace</h2>
+        <p>A program can act as the guide for its own trace. Showing two calls together gives values a home beside the code that produced them. Here the calls take different branches, so each branch also carries the corresponding example’s values.</p>
+        <p class="try">Hide the expressions to compare values, then restore them to see the computation. On a narrow page, branches stack while their role columns remain aligned.</p>
+      </div>
+      {{study:traces}}
+    </section>
+
+    <section class="chapter" id="helper" aria-labelledby="heading-helper">
+      <div class="chapter-copy"><h2 id="heading-helper"><span>07</span> Give a calculation its own name</h2>
+        <p>The let block is a useful intermediate shape for transformations. A sequence of calculations can become a helper; references to the surrounding scope can become its parameters. The familiar rows provide a place to follow what moves and what is left behind.</p>
+        <p class="try">Compare the calculation before and after extracting <code>dist</code>. This is a pair of prepared states, a reference for the editing gesture to come.</p>
+      </div>
+      {{study:helper}}
+    </section>
+
+    <section class="direction" aria-labelledby="direction-heading">
+      <h2 id="direction-heading">Toward an editor</h2>
+      <p>Furl will own the surrounding workspace and these views. Hazel will supply the structural editors, language semantics, and value inspection. Small expression and pattern editors should fit into the same quiet grid, with the comb remaining outside the code’s indentation.</p>
+      <p>This page is the working reference for that interface. New examples and display choices can be tried here as the live implementation develops.</p>
+    </section>
+  </main>
+  <footer>
+    <div class="footer-line"><span>Adapted from Andrew Blinn’s <em>Furl Big Book</em>.</span><a class="powered" href="https://hazel.org">powered by <img src="{{hazelnut}}" width="18" height="18" alt="">Hazel</a></div>
+    <details class="credits"><summary>About this reference</summary><p>The explanatory sequence draws on the Big Book’s cells, scopes, comb, and trace discussion. These are interactive design studies with preset samples, not a running Hazel editor. The original deck and old Furl implementation remain separate sources.</p><p>Hazelnut icon from Hazel; its icon credits name The Noun Project under the Icon Pro license. Hazel’s MIT license and icon notices are retained in the <a href="https://github.com/disconcision/furl-next">repository</a>.</p></details>
+  </footer>
+</div>
+<script>{{scripts}}</script>
+</body>
+</html>

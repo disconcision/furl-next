@@ -1,0 +1,31 @@
+<div id="{{instance}}" class="furl-study" data-initial-study="{{study}}" aria-label="Furl character grid studies">
+ <div class="studies" role="tablist" aria-label="Studies">
+  <button class="study" id="{{instance}}-tab-lets" data-ui="tab-lets" role="tab" aria-selected="true" aria-controls="{{instance}}-study-panel" data-study="lets" type="button"><span class="ordinal">01</span>Let blocks</button>
+  <button class="study" id="{{instance}}-tab-functions" data-ui="tab-functions" role="tab" aria-selected="false" aria-controls="{{instance}}-study-panel" data-study="functions" type="button"><span class="ordinal">02</span>Functions</button>
+  <button class="study" id="{{instance}}-tab-matches" data-ui="tab-matches" role="tab" aria-selected="false" aria-controls="{{instance}}-study-panel" data-study="matches" type="button"><span class="ordinal">03</span>Matches</button>
+  <button class="study" id="{{instance}}-tab-combined" data-ui="tab-combined" role="tab" aria-selected="false" aria-controls="{{instance}}-study-panel" data-study="combined" type="button"><span class="ordinal">04</span>Function + match</button>
+  <button class="study" id="{{instance}}-tab-recursion" data-ui="tab-recursion" role="tab" aria-selected="false" aria-controls="{{instance}}-study-panel" data-study="recursion" type="button"><span class="ordinal">05</span>Recursive calls</button>
+  <button class="study" id="{{instance}}-tab-traces" data-ui="tab-traces" role="tab" aria-selected="false" aria-controls="{{instance}}-study-panel" data-study="traces" type="button"><span class="ordinal">06</span>Two traces</button>
+  <button class="study" id="{{instance}}-tab-helper" data-ui="tab-helper" role="tab" aria-selected="false" aria-controls="{{instance}}-study-panel" data-study="helper" type="button"><span class="ordinal">07</span>Extract helper</button>
+ </div>
+ <section class="editor" id="{{instance}}-study-panel" data-ui="study-panel" role="tabpanel" aria-labelledby="{{instance}}-tab-lets">
+  <div class="bar titlebar"><span class="logo">f<span>u</span>rl</span><span class="filename" id="{{instance}}-filename" data-ui="filename">geometry / radius</span><div class="global-actions"><button type="button" class="plain" data-all="true">Furl all</button><button type="button" class="plain" data-all="false">Unfurl all</button></div></div>
+  <div class="bar legend" aria-label="Visible attributes and layout">
+   <button type="button" class="attribute comb-visibility" data-attr="comb" aria-pressed="true" aria-label="Show comb decoration" data-tooltip="Show or hide all comb decoration"><span class="comb-symbol" aria-hidden="true">∫</span></button>
+   <button type="button" class="attribute" data-attr="bindings" aria-pressed="true"><span class="swatch" aria-hidden="true"></span><span class="attribute-label">Bindings</span></button>
+   <button type="button" class="attribute" data-attr="expressions" aria-pressed="true"><span class="swatch" aria-hidden="true"></span><span class="attribute-label">Expressions</span></button>
+   <button type="button" class="attribute" data-attr="values" aria-pressed="true"><span class="swatch" aria-hidden="true"></span><span class="attribute-label">Values</span></button>
+  </div>
+  <details class="display-settings"><summary>Display options</summary>
+  <div class="bar design-options" aria-label="Display alternatives">
+   <div class="option-group" role="group" aria-labelledby="{{instance}}-layout-label"><span class="group-name" id="{{instance}}-layout-label" data-ui="layout-label">Layout</span><label class="option"><input type="checkbox" id="{{instance}}-indent" data-ui="indent" checked>Pattern indent</label><label class="option"><input type="checkbox" id="{{instance}}-name-top" data-ui="name-top" checked>Name + value at top</label><label class="option"><input type="checkbox" id="{{instance}}-grid" data-ui="grid">Grid</label></div>
+   <div class="option-group" role="group" aria-labelledby="{{instance}}-comb-label"><span class="group-name" id="{{instance}}-comb-label" data-ui="comb-label">Comb</span><label class="option"><input type="checkbox" id="{{instance}}-params" data-ui="params" checked>Parameter mark</label><label class="option"><input type="checkbox" id="{{instance}}-extend" data-ui="extend">Extend mark</label><label class="option"><input type="checkbox" id="{{instance}}-shared" data-ui="shared" checked>Shared match stem</label></div>
+   <div class="option-group" role="group" aria-labelledby="{{instance}}-blocks-label"><span class="group-name" id="{{instance}}-blocks-label" data-ui="blocks-label">Source blocks</span><label class="option"><input type="checkbox" id="{{instance}}-block" data-ui="block" checked>Expression edge</label><label class="option"><input type="checkbox" id="{{instance}}-pattern-block" data-ui="pattern-block">Pattern fill</label></div>
+  </div>
+  </details>
+  <div class="bar context" id="{{instance}}-context" data-ui="context"></div>
+  <div class="program" id="{{instance}}-program" data-ui="program" data-grid="false" aria-label="Program projection"></div>
+ </section>
+ <div class="review-foot"><span class="interaction" id="{{instance}}-interaction" data-ui="interaction">Click a comb or match bridge to unfurl; click + to furl.</span><span class="fixture">View study · preset values</span></div>
+ <span class="sr" id="{{instance}}-announcement" data-ui="announcement" aria-live="polite"></span>
+</div>
