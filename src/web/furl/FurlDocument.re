@@ -114,9 +114,8 @@ let border = let twice = width + height in twice * 2 in
   (
     "Functions",
     {js|let offset = 1 in
-let scale = fun factor -> fun x -> factor * x + offset in
-let answer = scale(3)(4) in
-answer|js},
+let scale = fun (factor, x) -> factor * x + offset in
+scale(3, 4)|js},
   ),
   (
     "Matches",
@@ -131,6 +130,7 @@ type cell = {
   target,
   source: Segment.t,
   editor: CodeEditable.Model.t,
+  value: string,
 };
 [@deriving (show, sexp, yojson)]
 type snapshot = {
@@ -155,6 +155,7 @@ type t = {
   values: bool,
   indentation: bool,
   example: int,
+  caret_tone: string,
 };
 
 type projection =
@@ -257,6 +258,29 @@ let project_statics = (statics: CachedStatics.t, editor: CodeEditable.Model.t) =
   };
 };
 
+let text_of_exp = exp => {
+  let settings =
+    ExpToSegment.Settings.of_core(
+      ~inline=true,
+      ~fold_fn_bodies=`Text,
+      settings.core,
+    );
+  exp
+  |> ExpToSegment.exp_to_segment(~settings)
+  |> Printer.of_segment(~indent=" ");
+};
+let sample_id = (editor: CodeEditable.Model.t) =>
+  MakeTerm.from_zip_for_sem(editor.editor.state.zipper, ~root=Sort.Exp).term
+  |> Language.Exp.rep_id;
+let sampled_value = (editor, samples: Language.Sample.Map.t) =>
+  switch (Language.Sample.Map.lookup(sample_id(editor), samples)) {
+  | Some([sample, ..._]) =>
+    text_of_exp(
+      Language.Substitution.in_exp(Language.Builtins.env_init, sample.value),
+    )
+  | _ => ""
+  };
+
 let refresh_cells = model => {
   let visible = targets(project(model));
   let cells =
@@ -290,6 +314,7 @@ let refresh_cells = model => {
           target,
           source: seg,
           editor,
+          value: root == Sort.Exp ? sampled_value(editor, model.samples) : "",
         };
       },
       visible,
@@ -392,42 +417,79 @@ let init = (~example=0, segment) =>
     values: true,
     indentation: true,
     example,
+    caret_tone: "violet",
   });
 let cell = (target, model) =>
   List.find(c => key(c.target) == key(target), model.document.cells);
-let text_of_exp = exp => {
-  let settings =
-    ExpToSegment.Settings.of_core(
-      ~inline=true,
-      ~fold_fn_bodies=`Text,
-      settings.core,
-    );
-  exp
-  |> ExpToSegment.exp_to_segment(~settings)
-  |> Printer.of_segment(~indent=" ");
-};
-let sample_id = (editor: CodeEditable.Model.t) =>
-  MakeTerm.from_zip_for_sem(editor.editor.state.zipper, ~root=Sort.Exp).term
-  |> Language.Exp.rep_id;
 let samples_for = (target, model) =>
   Language.Sample.Map.lookup(
     sample_id(cell(target, model).editor),
     model.samples,
   )
   |> Option.value(~default=[]);
-let value_text = (target, model) =>
-  switch (samples_for(target, model)) {
-  | [sample, ..._] =>
-    text_of_exp(
-      Language.Substitution.in_exp(Language.Builtins.env_init, sample.value),
-    )
-  | [] => ""
-  };
+let value_text = (target, model) => cell(target, model).value;
+
+/* Navigation uses the visible projection, not the underlying syntax order.
+   Values and the static result label are deliberately not focus targets. */
+type nav_cell = {
+  target,
+  root: Sort.t,
+  inset: int,
+};
+let nav_cells = model => {
+  let rec collect = projection =>
+    switch (projection) {
+    | Row({pattern, expression, depth, _}) =>
+      (
+        model.bindings
+          ? List.map(
+              target =>
+                {
+                  target,
+                  root: Sort.Pat,
+                  inset: model.indentation ? max(0, depth - 1) : 0,
+                },
+              Option.to_list(pattern),
+            )
+          : []
+      )
+      @ (
+        model.expressions
+          ? [
+            {
+              target: expression,
+              root: Sort.Exp,
+              inset: 0,
+            },
+          ]
+          : []
+      )
+    | Scope({rows, _}) => List.concat_map(collect, rows)
+    };
+  collect(project(model));
+};
+[@deriving (show, sexp, yojson)]
+type travel =
+  | Across(Direction.t)
+  | BetweenRows(Action.vertical);
+
+let neighbor = (target, forward, cells: list(nav_cell)) => {
+  let cells = forward ? cells : List.rev(cells);
+  let rec next = cells =>
+    switch (cells) {
+    | [a, b, ..._] when a.target == target => Some(b)
+    | [_, ...rest] => next(rest)
+    | [] => None
+    };
+  next(cells);
+};
 
 [@deriving (show, sexp, yojson)]
 type action =
   | Edit(target, CodeEditable.Update.t)
   | Focus(string)
+  | Navigate(target, travel)
+  | CaretTone(string)
   | ToggleScope(string)
   | FurlAll
   | Toggle(string)
@@ -435,8 +497,99 @@ type action =
   | Redo
   | Reset;
 
-let update = (action, model) =>
+let rec update = (action, model) =>
   switch (action) {
+  | CaretTone(caret_tone)
+      when List.mem(caret_tone, ["violet", "coral", "teal"]) => {
+      ...model,
+      caret_tone,
+    }
+  | CaretTone(_) => model
+  | Navigate(target, Across(direction))
+      when
+        !
+          Selection.is_empty(
+            cell(target, model).editor.editor.state.zipper.selection,
+          ) =>
+    update(Edit(target, Perform(Move(Local(direction, ByChar)))), model)
+  | Navigate(target, travel) =>
+    let cells = nav_cells(model);
+    switch (List.find_opt(c => c.target == target, cells)) {
+    | None => model
+    | Some(from) =>
+      let old = cell(target, model).editor.editor;
+      let (to_cell, vertical) =
+        switch (travel) {
+        | Across(direction) => (
+            neighbor(target, direction == Right, cells),
+            None,
+          )
+        | BetweenRows(v) => (
+            neighbor(
+              target,
+              v == Down,
+              List.filter(c => c.root == from.root, cells),
+            ),
+            Some(v),
+          )
+        };
+      switch (to_cell) {
+      | None => model
+      | Some(dest) =>
+        let target_col =
+          Option.value(
+            old.state.col_target,
+            ~default=
+              Zipper.Caret.point(old.syntax.measured, old.state.zipper).col,
+          )
+          + from.inset
+          - dest.inset;
+        let destination = cell(dest.target, model).editor.editor;
+        let move =
+          switch (travel) {
+          | Across(Left) => Action.End
+          | Across(Right) => Start
+          | BetweenRows(v) =>
+            Point(
+              {
+                row:
+                  v == Down
+                    ? 0 : max(0, destination.syntax.measured.total_rows - 1),
+                col: max(0, target_col),
+              },
+              None,
+            )
+          };
+        let next = update(Edit(dest.target, Perform(Move(move))), model);
+        let cells =
+          List.map(
+            (c: cell) =>
+              c.target == dest.target
+                ? {
+                  ...c,
+                  editor: {
+                    ...c.editor,
+                    editor: {
+                      ...c.editor.editor,
+                      state: {
+                        ...c.editor.editor.state,
+                        col_target: Option.map(_ => target_col, vertical),
+                      },
+                    },
+                  },
+                }
+                : c,
+            next.document.cells,
+          );
+        {
+          ...next,
+          document: {
+            ...next.document,
+            cells,
+          },
+        };
+      };
+    };
   | Focus(active) => {
       ...model,
       document: {
@@ -514,8 +667,21 @@ let update = (action, model) =>
   | Edit(target, action) =>
     let c = cell(target, model);
     let updated = CodeEditable.Update.update(~settings, action, c.editor);
-    let editor = updated.model;
     let changed = updated.is_edit;
+    /* Cursor-only actions use Hazel's selection-only cache path for ONE cell.
+       Keep all other cells, projected statics and evaluated values intact. */
+    let editor =
+      changed
+        ? updated.model
+        : CodeWithStatics.Update.calculate(
+            ~settings=settings.core,
+            ~is_edited=false,
+            ~projected=updated.model.statics,
+            ~stitch=x => x,
+            ~dynamics=model.samples,
+            ~is_dynamic_term=false,
+            updated.model,
+          );
     let segment =
       changed
         ? replace(target, pieces(editor), model.document.segment)
@@ -531,7 +697,7 @@ let update = (action, model) =>
         ? [key(target), ...model.closed] : model.closed;
     let cells =
       List.map(
-        c =>
+        (c: cell) =>
           key(c.target) == key(target)
             ? {
               ...c,
@@ -556,5 +722,5 @@ let update = (action, model) =>
           : model.undo,
       redo: changed ? [] : model.redo,
     };
-    changed ? calculate(next) : refresh_cells(next);
+    changed ? calculate(next) : next;
   };

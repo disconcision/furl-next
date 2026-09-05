@@ -3,6 +3,11 @@ open Js_of_ocaml;
 open Bonsai.Let_syntax;
 
 let storage_key = i => "furl.live.v1." ++ string_of_int(i);
+/* Upgrade the old untouched fixture without replacing anyone's edited code. */
+let legacy_function_source = {js|let offset = 1 in
+let scale = fun factor -> fun x -> factor * x + offset in
+let answer = scale(3)(4) in
+answer|js};
 let load = i => {
   let initial = () => FurlDocument.parse(snd(FurlDocument.examples[i]));
   let segment =
@@ -24,6 +29,11 @@ let load = i => {
     }) {
     | _ => initial()
     };
+  let segment =
+    i == 1
+    && String.trim(Haz3lcore.Printer.of_segment(~indent=" ", segment))
+    == legacy_function_source
+      ? initial() : segment;
   FurlDocument.init(~example=i, segment);
 };
 let save = (model: FurlDocument.t) => {
@@ -51,6 +61,7 @@ module Action = {
 };
 
 let component = () => {
+  let reveal_caret = ref(false);
   let%sub (model, inject) =
     Bonsai.state_machine0(
       (module Model),
@@ -61,8 +72,26 @@ let component = () => {
         let next =
           switch (action) {
           | Action.Document(action) => FurlDocument.update(action, model)
-          | Example(i) => load(i)
+          | Example(i) => {
+              ...load(i),
+              caret_tone: model.caret_tone,
+              comb: model.comb,
+              bindings: model.bindings,
+              expressions: model.expressions,
+              values: model.values,
+              indentation: model.indentation,
+            }
           };
+        switch (action) {
+        | Document(CaretTone(_)) =>
+          Haz3lcore.ProbePerform.FocusEffect.schedule_cell()
+        | _ => ()
+        };
+        switch (action) {
+        | Document(Edit(_, Perform(Move(Point(_))))) => ()
+        | Document(Edit(_) | Navigate(_)) => reveal_caret := true
+        | _ => ()
+        };
         let should_save =
           switch (action) {
           | Action.Document(_) =>
@@ -114,7 +143,21 @@ let component = () => {
               Dom_html.window##.navigator##.platform##toUpperCase##indexOf(
                 Js.string("MAC"),
               )
-              >= 0
+              >= 0;
+            ignore(Haz3lcore.ProbePerform.FocusEffect.execute());
+            if (reveal_caret^) {
+              reveal_caret := false;
+              switch (JsUtil.get_elem_by_id_opt("caret")) {
+              | Some(caret) =>
+                caret##scrollIntoView(
+                  Js.Unsafe.obj([|
+                    ("block", Js.Unsafe.inject(Js.string("nearest"))),
+                    ("inline", Js.Unsafe.inject(Js.string("nearest"))),
+                  |]),
+                )
+              | None => ()
+              };
+            };
           },
           (),
         );

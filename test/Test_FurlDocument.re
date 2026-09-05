@@ -33,10 +33,188 @@ let replace_text = (target, text, model) =>
   model
   |> update(Edit(target, Perform(Select(All))))
   |> update(Edit(target, Perform(Paste(text))));
+let caret = (target, model) => {
+  let ed = cell(target, model).editor.editor;
+  Zipper.Caret.point(ed.syntax.measured, ed.state.zipper);
+};
+let at_col = (target, col, model) =>
+  update(
+    Edit(
+      target,
+      Perform(
+        Move(
+          Point(
+            {
+              row: 0,
+              col,
+            },
+            None,
+          ),
+        ),
+      ),
+    ),
+    model,
+  );
 
 let tests = (
   "FurlDocument",
   [
+    test_case(
+      "vertical navigation retains its goal through short cells",
+      `Quick,
+      () => {
+        let m =
+          start("let a = 123456789 in let b = 2 in let c = 987654321 in c");
+        let a = rhs("a", m);
+        let b = rhs("b", m);
+        let c = rhs("c", m);
+        let m1 = at_col(a, 7, m);
+        check(
+          bool,
+          "same whole-program analysis",
+          true,
+          m.statics === m1.statics,
+        );
+        check(
+          bool,
+          "unchanged inactive cell",
+          true,
+          cell(b, m) === cell(b, m1),
+        );
+        check(
+          bool,
+          "same active cell context",
+          true,
+          cell(a, m).editor.statics.info_map
+          === cell(a, m1).editor.statics.info_map,
+        );
+        let m2 = update(Navigate(a, BetweenRows(Down)), m1);
+        check(string, "focus moved", key(b), m2.document.active);
+        check(int, "short line clips caret", 1, caret(b, m2).col);
+        check(
+          option(int),
+          "goal retained",
+          Some(7),
+          cell(b, m2).editor.editor.state.col_target,
+        );
+        let m3 = update(Navigate(b, BetweenRows(Down)), m2);
+        check(int, "long line recovers goal", 7, caret(c, m3).col);
+        let m4 =
+          m3
+          |> update(Navigate(c, BetweenRows(Up)))
+          |> update(Navigate(b, BetweenRows(Up)));
+        check(int, "round trip", 7, caret(a, m4).col);
+        check(
+          bool,
+          "no evaluation on navigation",
+          true,
+          m.samples === m4.samples,
+        );
+        check(
+          bool,
+          "no program changes",
+          true,
+          m.document.segment === m4.document.segment,
+        );
+        check(int, "no history on navigation", 0, List.length(m4.undo));
+      },
+    ),
+    test_case(
+      "pattern navigation compensates for indentation",
+      `Quick,
+      () => {
+        let m = init(parse(snd(examples[0])));
+        let area = named("area", m);
+        let twice = named("twice", m);
+        let border = named("border", m);
+        let m =
+          at_col(area, 3, m) |> update(Navigate(area, BetweenRows(Down)));
+        check(int, "one character inset", 2, caret(twice, m).col);
+        let m = update(Navigate(twice, BetweenRows(Down)), m);
+        check(
+          int,
+          "enclosing binding aligned again",
+          3,
+          caret(border, m).col,
+        );
+        let m = update(Navigate(border, BetweenRows(Down)), m);
+        check(
+          string,
+          "static result label skipped",
+          key(border),
+          m.document.active,
+        );
+      },
+    ),
+    test_case(
+      "horizontal navigation follows visible editable cells",
+      `Quick,
+      () => {
+        let m = start("let a = 123 in let b = 2 in b");
+        let a = named("a", m);
+        let ae = rhs("a", m);
+        let b = named("b", m);
+        let m1 = update(Navigate(a, Across(Right)), m);
+        check(string, "pattern to expression", key(ae), m1.document.active);
+        check(int, "enter from left", 0, caret(ae, m1).col);
+        let m2 = update(Navigate(ae, Across(Right)), m1);
+        check(
+          string,
+          "expression to next pattern",
+          key(b),
+          m2.document.active,
+        );
+        let m3 = update(Navigate(b, Across(Left)), m2);
+        check(int, "enter from right", 3, caret(ae, m3).col);
+        let selected = update(Edit(ae, Perform(Select(All))), m3);
+        let collapsed = update(Navigate(ae, Across(Left)), selected);
+        check(
+          string,
+          "collapse selection before crossing",
+          key(ae),
+          collapsed.document.active,
+        );
+        let hidden =
+          m3
+          |> update(Toggle("bindings"))
+          |> update(Navigate(ae, Across(Right)));
+        check(
+          string,
+          "hidden patterns skipped",
+          key(rhs("b", hidden)),
+          hidden.document.active,
+        );
+      },
+    ),
+    test_case(
+      "vertical entry chooses the adjacent line of a multiline editor",
+      `Quick,
+      () => {
+        let m = start("let a = (111 +\n222) in let b = 12345 in b");
+        let a = rhs("a", m);
+        let b = rhs("b", m);
+        let m = at_col(b, 2, m) |> update(Navigate(b, BetweenRows(Up)));
+        check(
+          int,
+          "entered bottom line",
+          cell(a, m).editor.editor.syntax.measured.total_rows - 1,
+          caret(a, m).row,
+        );
+        let m = update(Edit(a, Perform(Move(Vertical(Up, ByChar)))), m);
+        check(
+          int,
+          "native motion continues inside cell",
+          0,
+          caret(a, m).row,
+        );
+        check(
+          option(int),
+          "goal survives native motion",
+          Some(2),
+          cell(a, m).editor.editor.state.col_target,
+        );
+      },
+    ),
     test_case("examples evaluate using Hazel", `Quick, () => {
       List.iter(
         ((i, expected)) => {
