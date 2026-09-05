@@ -44,3 +44,11 @@ Nested branch planning and live sample routing should remain separate: geometric
 The live implementation now applies the shared lane plan to nested matches. `All columns` sums branch widths; `One branch` shows one selected arm at each match. Native editor measurements determine shared attribute widths before rendering; branch results align at the bottom when neighboring arms contain different numbers of let rows. The live view scrolls the whole grid on narrow surfaces.
 
 Syntax addresses and view IDs are separate: repeated match inputs and result bindings share editable syntax, while focus identifies exactly one visual echo. A branch choice does not alter execution. Function call selection uses real Hazel probe call stacks and step intervals, independently of the geometric branch choice.
+
+## Live comb geometry
+
+`FurlCombs.plan` counts structural rail levels per column before drawing. Adjacent rails have a pitch of one text character. The innermost reserved level is one character to the left of the code. Sequential scopes share the same rail plan; pattern indentation does not participate.
+
+The first match arm continues the enclosing column's levels. Each later arm begins with its own match stem at level zero, and its body adds levels inward. The branch gutter reserves enough space for those local rails. This is why the recursive example's second arm has two rails: the match stem, then the local `let tail = sum(rest) in head + tail` scope. The let rail belongs inside its match stem. Single-branch mode reserves levels for every alternative, avoiding rail jumps while cycling. Hiding combs retains the same layout.
+
+All comb ink is SVG, including the curved hooks, match fork/bridge, branch stems, and function parameter tick. Strokes are 1.4 CSS pixels with round caps. Curves use unscaled character-based coordinates; vertical lines inherit their containing scope's height. The parameter tick extends 0.65 characters. Match forks retain their pointed junctions; scope bottoms have rounded ends without feet. Transparent buttons provide the click areas separately from the strokes, and let/function rail tooltips show the corresponding source scope.

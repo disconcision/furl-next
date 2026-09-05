@@ -81,6 +81,84 @@ let tests = (
   "FurlDocument",
   [
     test_case(
+      "comb rails pack by structural depth within each column", `Quick, () => {
+      List.iter(
+        ((i, expected)) => {
+          let m = init(~example=i, parse(snd(examples[i])));
+          let depths = FurlCombs.plan(m, project(m));
+          check(
+            list(int),
+            "reserved rails per column",
+            expected,
+            Array.to_list(depths),
+          );
+          Array.iteri(
+            (lane, count) => {
+              check(
+                float(0.001),
+                "innermost rail one character offside",
+                -1.,
+                FurlCombs.x(depths, lane, count - 1),
+              );
+              if (count > 1) {
+                check(
+                  float(0.001),
+                  "one character between levels",
+                  1.,
+                  FurlCombs.x(depths, lane, 1)
+                  -. FurlCombs.x(depths, lane, 0),
+                );
+              };
+              if (lane > 0) {
+                check(
+                  bool,
+                  "branch gutter contains all local rails",
+                  true,
+                  FurlCombs.gap(depths) > count,
+                );
+              };
+            },
+            depths,
+          );
+          let hidden =
+            m
+            |> update(Toggle("comb"))
+            |> update(Toggle("indentation"))
+            |> update(Toggle("bindings"));
+          check(
+            list(int),
+            "display switches leave rail geometry fixed",
+            expected,
+            Array.to_list(FurlCombs.plan(hidden, project(hidden))),
+          );
+        },
+        [(0, [2]), (1, [2]), (2, [2, 1]), (3, [3, 2])],
+      )
+    }),
+    test_case(
+      "single-branch rails reserve nested scopes in every alternative",
+      `Quick,
+      () => {
+        let m =
+          init(~example=3, parse(snd(examples[3])))
+          |> update(MatchMode(false));
+        let (target, _, _) = Option.get(first_match(project(m)));
+        let next = update(BranchStep(key(target), 1), m);
+        check(
+          list(int),
+          "all alternatives measured",
+          [4],
+          Array.to_list(FurlCombs.plan(m, project(m))),
+        );
+        check(
+          list(int),
+          "cycling leaves rails fixed",
+          [4],
+          Array.to_list(FurlCombs.plan(next, project(next))),
+        );
+      },
+    ),
+    test_case(
       "function parameters and body edit the original program",
       `Quick,
       () => {

@@ -58,7 +58,7 @@ This makes the difficult boundary concrete while leaving room to sketch extracti
 
 ## Visual constraints
 
-Use a character grid, compact uninterrupted rows, blue-gray surfaces, and restrained purple/green structure marks. Commentary belongs around the example; avoid explanatory labels inside the program. Pattern indentation is optional. Comb rails are offside decoration, not an additional indentation level. Source block names and values share a vertical alignment choice. Scope combs have no bottom foot.
+Use a character grid, compact uninterrupted rows, blue-gray surfaces, and restrained purple/green structure marks. Commentary belongs around the example; avoid explanatory labels inside the program. Pattern indentation is optional. Comb rails are offside decoration, not an additional indentation level. Source block names and values share a vertical alignment choice. Scope combs have no bottom foot. `FurlCombs` now supplies a shared SVG renderer and a column-local rail plan: one character between levels, with later match arms starting a local stack. Rails, forks, and parameter ticks share a 1.4px stroke with round caps. The parameter tick is 0.65 characters long. Scope heights come from the containing layout without stretching a viewBox. See the live comb geometry in `layout.md`.
 
 The comb is not uniformly redundant. Parameter dots and arity marks identify functions; case-pattern styling and alternative branches suggest matches. Removing the comb can still erase scope extent or the grouping of neighboring branch structures, especially with indentation or attributes hidden. The visibility switch is a design experiment, not a claim that the remaining view is always an unambiguous serialization.
 

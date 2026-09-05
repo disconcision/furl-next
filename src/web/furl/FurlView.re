@@ -29,6 +29,12 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
       ...model,
       match_columns: true,
     });
+  let tree = project(model);
+  let rail_depths = FurlCombs.plan(model, tree);
+  let lane_gap = FurlCombs.gap(rail_depths);
+  let rail_x = (lane, level) => FurlCombs.x(rail_depths, lane, level);
+  let rail_style = (lane, level) =>
+    "left:" ++ Printf.sprintf("%g", rail_x(lane, level) -. 0.5) ++ "ch";
   let active = active_cell(model);
   let editor = (view, target) => {
     let c = cell(target, model);
@@ -64,6 +70,7 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
         ~terminal=false,
         ~mark="",
         ~rail=0,
+        ~lane=0,
         ~allow_fold=true,
         (),
       ) => {
@@ -167,12 +174,7 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
             button(
               ~attrs=[
                 Attr.class_("furl-open"),
-                Attr.create(
-                  "style",
-                  "left:"
-                  ++ string_of_float(float_of_int(rail) *. 0.65)
-                  ++ "ch",
-                ),
+                Attr.create("style", rail_style(lane, rail)),
               ],
               ~label="Furl this expression",
               inject(ToggleScope(key(Option.get(expression)))),
@@ -183,20 +185,32 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
       ),
     );
   };
-  let comb = (target, rail, kind) =>
+  let comb = (target, lane, rail, kind, first) =>
     model.comb
       ? [
-        button(
+        Node.button(
           ~attrs=[
-            Attr.class_("furl-comb " ++ kind),
-            Attr.create(
-              "style",
-              "left:" ++ string_of_float(float_of_int(rail) *. 0.65) ++ "ch",
+            Attr.type_("button"),
+            Attr.class_(
+              "furl-comb " ++ (kind == "match" ? "furl-case-comb" : ""),
             ),
+            Attr.create("style", rail_style(lane, rail)),
+            Attr.create("data-rail-level", string_of_int(rail)),
+            Attr.create("data-rail-lane", string_of_int(lane)),
+            Attr.create("data-comb-kind", kind),
+            Attr.create(
+              "aria-label",
+              "Unfurl this " ++ kind ++ " to Hazel code",
+            ),
+            Attr.title(
+              Haz3lcore.Printer.of_segment(
+                ~indent=" ",
+                read(target, model.document.segment),
+              ),
+            ),
+            Attr.on_click(_ => inject(ToggleScope(key(target)))),
           ],
-          ~label="Unfurl this " ++ kind ++ " to Hazel code",
-          inject(ToggleScope(key(target))),
-          "",
+          [FurlCombs.stem(~pitch=font_metrics.col_width, ~kind, ~first, ())],
         ),
       ]
       : [];
@@ -204,7 +218,7 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
     Haz3lcore.ProbePerform.FocusEffect.schedule_cell();
     inject(BranchStep(key(target), direction));
   };
-  let rec projection = (rail, node) =>
+  let rec projection = (lane, rail, node) =>
     switch (node) {
     | Row({pattern, expression, depth, terminal}) =>
       row(
@@ -215,6 +229,7 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
         ~depth,
         ~terminal,
         ~rail,
+        ~lane,
         (),
       )
     | Scope({target, depth: _, rows}) =>
@@ -224,8 +239,8 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
           Attr.class_("furl-scope"),
           Attr.create("data-scope", key(target)),
         ],
-        comb(target, rail, "let block")
-        @ List.map(projection(rail + 1), rows),
+        comb(target, lane, rail, "let block", false)
+        @ List.map(projection(lane, rail + 1), rows),
       )
     | Function({target, parameter, body_target: _, depth, body}) =>
       let call_count =
@@ -272,19 +287,10 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
         @ [
           Node.div(
             ~attrs=[Attr.class_("furl-function-content")],
-            comb(target, rail, "function")
+            comb(target, lane, rail, "function", false)
             @ [
               Node.div(
-                ~attrs=[
-                  Attr.class_("furl-parameters"),
-                  Attr.create("data-comb", string_of_bool(model.comb)),
-                  Attr.create(
-                    "style",
-                    "--rail:"
-                    ++ string_of_float(float_of_int(rail) *. 0.65)
-                    ++ "ch",
-                  ),
-                ],
+                ~attrs=[Attr.class_("furl-parameters")],
                 [
                   row(
                     ~id=parameter_row_id(parameter),
@@ -295,9 +301,23 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
                     ~mark="·",
                     (),
                   ),
+                  model.comb
+                    ? Node.div(
+                        ~attrs=[
+                          Attr.class_("furl-parameter-divider"),
+                          Attr.create(
+                            "style",
+                            "left:"
+                            ++ Printf.sprintf("%g", rail_x(lane, rail))
+                            ++ "ch",
+                          ),
+                        ],
+                        [FurlCombs.parameter(font_metrics.col_width)],
+                      )
+                    : Node.none,
                 ],
               ),
-              projection(rail + 1, body),
+              projection(lane, rail + 1, body),
             ],
           ),
         ],
@@ -305,6 +325,19 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
     | Match({target, input, depth, branches}) =>
       let selected = selected_branch(target, branches, model);
       let shown = shown_branches(target, branches, model);
+      let next_lane = ref(lane);
+      let placements =
+        List.mapi(
+          (i, (_, b)) => {
+            let placed = (next_lane^, i == 0 ? rail : 0);
+            next_lane := next_lane^ + lanes(model, b.body);
+            placed;
+          },
+          shown,
+        );
+      let (last_lane, last_rail) = List.hd(List.rev(placements));
+      let start_x = rail_x(lane, rail);
+      let end_x = rail_x(last_lane, last_rail);
       let sizes =
         List.map(((_, b)) => string_of_int(lanes(model, b.body)), shown);
       Node.div(
@@ -317,11 +350,11 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
             ++ string_of_int(lanes(model, node))
             ++ " * var(--lane-width) + "
             ++ string_of_int(max(0, lanes(model, node) - 1))
-            ++ " * 2ch);--last-width:calc("
+            ++ " * var(--lane-gap));--last-width:calc("
             ++ List.hd(List.rev(sizes))
             ++ " * var(--lane-width) + ("
             ++ List.hd(List.rev(sizes))
-            ++ " - 1) * 2ch)",
+            ++ " - 1) * var(--lane-gap))",
           ),
           Attr.create("data-match", key(target)),
           Attr.create(
@@ -383,7 +416,7 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
                          ++ size
                          ++ " * var(--lane-width) + ("
                          ++ size
-                         ++ " - 1) * 2ch)",
+                         ++ " - 1) * var(--lane-gap))",
                        sizes,
                      ),
                    ),
@@ -392,24 +425,51 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
             (
               model.comb
                 ? [
-                  button(
-                    ~attrs=[Attr.class_("furl-match-bridge")],
-                    ~label="Unfurl match comb to Hazel code",
-                    inject(ToggleScope(key(target))),
-                    "",
+                  Node.button(
+                    ~attrs=[
+                      Attr.type_("button"),
+                      Attr.class_("furl-match-bridge"),
+                      Attr.create(
+                        "style",
+                        "left:"
+                        ++ Printf.sprintf("%g", start_x)
+                        ++ "ch;width:"
+                        ++ (
+                          List.length(shown) == 1
+                            ? "1.3ch"
+                            : "calc(100% - var(--last-width) + "
+                              ++ Printf.sprintf("%g", end_x -. start_x)
+                              ++ "ch)"
+                        ),
+                      ),
+                      Attr.create(
+                        "aria-label",
+                        "Unfurl match comb to Hazel code",
+                      ),
+                      Attr.on_click(_ => inject(ToggleScope(key(target)))),
+                    ],
+                    [
+                      FurlCombs.bridge(
+                        ~pitch=font_metrics.col_width,
+                        ~many=List.length(shown) > 1,
+                      ),
+                    ],
                   ),
                 ]
                 : []
             )
-            @ List.map(
-                ((i, b)) =>
+            @ List.mapi(
+                (slot, (i, b)) => {
+                  let (branch_lane, branch_rail) =
+                    List.nth(placements, slot);
                   Node.div(
                     ~key=key(b.pattern),
                     ~attrs=[
                       Attr.class_("furl-branch"),
                       Attr.create("data-branch", string_of_int(i)),
                     ],
-                    [
+                    comb(target, branch_lane, branch_rail, "match", slot == 0)
+                    @ [
                       row(
                         ~id=branch_row_id(b.pattern),
                         ~pattern=Some(b.pattern),
@@ -419,9 +479,10 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
                         ~depth=depth + 1,
                         (),
                       ),
-                      projection(rail + 1, b.body),
+                      projection(branch_lane, branch_rail + 1, b.body),
                     ],
-                  ),
+                  );
+                },
                 shown,
               ),
           ),
@@ -694,6 +755,10 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
                 ++ String.concat(" ", columns)
                 ++ ";--lane-width:"
                 ++ string_of_int(max(1, min_width))
+                ++ "ch;--lane-gap:"
+                ++ string_of_int(lane_gap)
+                ++ "ch;--comb-gutter:"
+                ++ string_of_int(max(5, rail_depths[0] + 2))
                 ++ "ch",
               ),
             ],
@@ -705,15 +770,15 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
                     "style",
                     "min-width:"
                     ++ string_of_int(
-                         lanes(model, project(model))
+                         lanes(model, tree)
                          * max(1, min_width)
-                         + max(0, lanes(model, project(model)) - 1)
-                         * 2,
+                         + max(0, lanes(model, tree) - 1)
+                         * lane_gap,
                        )
                     ++ "ch",
                   ),
                 ],
-                [projection(0, project(model))],
+                [projection(0, 0, tree)],
               ),
             ],
           ),
