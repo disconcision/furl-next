@@ -800,3 +800,175 @@ footer {
 .armed .hole.filled {
   cursor: grab;
 }
+
+/* Stage and platform coverage carry the roadmap; tool names remain hypotheses. */
+.trial-label {
+  color: var(--muted-text);
+  font-size: 11px;
+}
+.inventory-recommendation {
+  border-left: 2px solid var(--purple);
+  padding: 0 0 0 18px;
+  margin: 24px 0;
+  max-width: 88ch;
+  font-size: 14px;
+}
+.inventory-recommendation > strong {
+  font-weight: 500;
+  color: var(--purple);
+}
+.coverage-key {
+  font-size: 12px;
+  color: var(--muted-text);
+}
+.working {
+  color: var(--green);
+}
+.partial,
+.storyboard {
+  color: var(--purple);
+}
+.stage-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  margin: 22px 0;
+  font-size: 13px;
+}
+.stage-nav a {
+  text-decoration: none;
+}
+.stage-nav span {
+  color: var(--muted-text);
+  margin-left: 4px;
+}
+.inventory-controls select {
+  max-width: 275px;
+}
+.inventory-stage {
+  border-top: 1px solid var(--rule);
+  margin: 22px 0;
+  scroll-margin-top: 20px;
+}
+.inventory-stage > summary {
+  display: list-item;
+  padding: 14px 0;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--text);
+}
+.stage-count {
+  font-size: 12px;
+  color: var(--muted-text);
+  font-weight: 400;
+  margin-left: 16px;
+  white-space: nowrap;
+}
+.stage-summary {
+  font-size: 13px;
+  color: var(--muted-text);
+  margin: 0 0 12px;
+  max-width: 95ch;
+}
+#inventory table {
+  min-width: 900px;
+}
+#inventory td {
+  width: 25%;
+  font-size: 12px;
+}
+#inventory td:first-child {
+  width: 22%;
+  padding-right: 20px;
+}
+#inventory td:nth-child(2) {
+  width: 27%;
+}
+#inventory td:nth-child(3) {
+  width: 24%;
+}
+#inventory td:nth-child(4) {
+  width: 27%;
+}
+#inventory td > p {
+  margin: 0 0 10px;
+}
+#inventory td strong {
+  display: block;
+  line-height: 1.4;
+  margin: 4px 0 10px;
+}
+#inventory td b {
+  font-weight: 500;
+}
+.action-id {
+  color: var(--purple);
+  text-decoration: none;
+  font: 11px var(--mono);
+}
+.target-kind {
+  display: block;
+  color: var(--muted-text);
+  margin: 4px 0;
+  font-size: 11px;
+}
+.action-evidence {
+  margin-top: 10px;
+  color: var(--muted-text);
+  font-size: 11px;
+}
+#inventory td details {
+  color: var(--muted-text);
+}
+#inventory td summary {
+  font-size: 11px;
+}
+.coverage {
+  margin-bottom: 15px;
+}
+.coverage:last-child {
+  margin-bottom: 0;
+}
+.coverage-platform {
+  display: block;
+  font-size: 10px;
+  color: var(--muted-text);
+  margin-bottom: 1px;
+}
+.coverage-state {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+}
+.coverage-state.todo,
+.coverage-state.none {
+  color: var(--muted-text);
+}
+.coverage p {
+  margin: 5px 0;
+  font-size: 12px;
+}
+.coverage a {
+  font-size: 11px;
+}
+#inventory [data-action-id] {
+  scroll-margin-top: 20px;
+}
+#inventory [data-action-id]:target {
+  background: var(--rowhover);
+}
+@media (max-width: 640px) {
+  .inventory-controls label {
+    max-width: 100%;
+  }
+  .inventory-controls select {
+    max-width: 68vw;
+  }
+  .inventory-stage > summary {
+    font-size: 15px;
+  }
+  .stage-count {
+    display: block;
+    margin: 4px 0 0;
+  }
+}

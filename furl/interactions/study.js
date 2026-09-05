@@ -1563,6 +1563,12 @@
       nodes.clear();
       render();
     });
+    $$("[data-story]").forEach((link) =>
+      link.addEventListener("click", () => {
+        choice.value = link.dataset.story;
+        choice.dispatchEvent(new Event("change"));
+      }),
+    );
     $$("[data-step]", root).forEach((b) =>
       b.addEventListener("click", () => {
         step = Number(b.dataset.step);
@@ -1578,22 +1584,62 @@
   function initInventory() {
     const search = $("#inventory-search"),
       origin = $("#inventory-origin"),
-      rows = $$("#inventory tbody tr");
+      stage = $("#inventory-stage"),
+      groups = $$("#inventory .inventory-stage"),
+      rows = $$("#inventory [data-action-id]");
     function filter() {
       const q = search.value.trim().toLowerCase();
       let count = 0;
       rows.forEach((row) => {
         row.hidden = !(
           row.textContent.toLowerCase().includes(q) &&
-          (!origin.value || row.dataset.origin === origin.value)
+          (!origin.value || row.dataset.origin === origin.value) &&
+          (!stage.value || row.dataset.stage === stage.value)
         );
         if (!row.hidden) count++;
       });
       $("#inventory-count").textContent = `${count} of ${rows.length} actions`;
+      groups.forEach((group) => {
+        const children = $$("[data-action-id]", group);
+        const visible = children.filter((row) => !row.hidden).length;
+        group.hidden = visible === 0;
+        $(".stage-count", group).textContent =
+          visible === children.length
+            ? `${visible} actions`
+            : `${visible} of ${children.length} actions`;
+        if (visible && (q || origin.value || stage.value)) group.open = true;
+      });
+      $("#inventory-empty").hidden = count !== 0;
     }
     search.addEventListener("input", filter);
     origin.addEventListener("change", filter);
+    stage.addEventListener("change", filter);
+    $("[data-clear-inventory]").addEventListener("click", () => {
+      search.value = origin.value = stage.value = "";
+      filter();
+    });
+    function revealHash() {
+      const target = document.getElementById(location.hash.slice(1));
+      const group = target?.closest(".inventory-stage");
+      if (!group) return;
+      if (group.hidden || target.hidden) {
+        search.value = origin.value = stage.value = "";
+        filter();
+      }
+      group.open = true;
+      target.scrollIntoView({ block: "start" });
+    }
+    $$("[data-stage-link]").forEach((link) =>
+      link.addEventListener("click", () => {
+        search.value = origin.value = "";
+        stage.value = "";
+        filter();
+        $(`#inventory-${link.dataset.stageLink}`).open = true;
+      }),
+    );
+    window.addEventListener("hashchange", revealHash);
     filter();
+    revealHash();
   }
   initRows();
   initReferences();

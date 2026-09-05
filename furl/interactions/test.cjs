@@ -5,6 +5,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 const os = require("node:os");
 const { pathToFileURL } = require("node:url");
+const actionCount = require("./inventory.json").actions.length;
 const url =
   process.env.TEST_URL ||
   pathToFileURL(path.resolve(__dirname, "../../docs/interactions.html")).href;
@@ -37,6 +38,8 @@ const url =
       await page.locator("#row-lab").scrollIntoViewIfNeeded();
     };
     await reset();
+    await require("./inventory-test.cjs")(page, output);
+    await reset();
     await require("./connection-cancel-test.cjs")(page, output);
     await reset();
     await require("./tool-test.cjs")(page, output);
@@ -50,7 +53,7 @@ const url =
     assert.deepEqual(await order(), ["n", "twice", "bonus", "total", "result"]);
     assert.equal(
       await page.locator("#inventory-count").textContent(),
-      "26 of 26 actions",
+      `${actionCount} of ${actionCount} actions`,
     );
     // Normal hover/click does not insert; modifier reveals the same overlay without layout changes.
     const gap = page.locator('#row-lab .gap[data-slot="1"]');
@@ -286,7 +289,7 @@ const url =
     await page.locator("#inventory-search").fill("no-such-operation");
     assert.equal(
       await page.locator("#inventory-count").textContent(),
-      "0 of 26 actions",
+      `0 of ${actionCount} actions`,
     );
     await page.locator("#inventory-search").fill("");
     await page.locator("#inventory-origin").selectOption("Big Book");
