@@ -27,7 +27,8 @@ let rhs = (name, model) =>
       location: Child(id, 1),
       offset: 0,
     }
-  | Program => failwith("No RHS")
+  | Program
+  | Span(_) => failwith("No RHS")
   };
 let replace_text = (target, text, model) =>
   model
@@ -56,9 +57,285 @@ let at_col = (target, col, model) =>
     model,
   );
 
+let rec first_function =
+  fun
+  | Function({target, parameter, body_target, _}) =>
+    Some((target, parameter, body_target))
+  | Scope({rows, _}) => List.find_map(first_function, rows)
+  | Match({branches, _}) =>
+    List.find_map(b => first_function(b.body), branches)
+  | Row(_) => None;
+let rec first_match =
+  fun
+  | Match({target, input, branches, _}) => Some((target, input, branches))
+  | Scope({rows, _}) => List.find_map(first_match, rows)
+  | Function({body, _}) => first_match(body)
+  | Row(_) => None;
+let branch_expression = b =>
+  switch (b.body) {
+  | Row({expression, _}) => expression
+  | _ => failwith("Expected simple branch")
+  };
+
 let tests = (
   "FurlDocument",
   [
+    test_case(
+      "function parameters and body edit the original program",
+      `Quick,
+      () => {
+        let m = init(~example=1, parse(snd(examples[1])));
+        let (fn, parameter, body) = Option.get(first_function(project(m)));
+        check(
+          string,
+          "argument comes from the call",
+          "(3, 4)",
+          value_text(parameter, m),
+        );
+        check(string, "body sample", "13", value_text(body, m));
+        let edited = replace_text(body, "factor * x + offset + 1", m);
+        check(string, "body edit", "14", result(edited));
+        let renamed = replace_text(parameter, "(factor, y)", edited);
+        check(
+          bool,
+          "parameter changes body context",
+          true,
+          renamed.statics.error_ids != [],
+        );
+        check(string, "undo", "14", result(update(Undo, renamed)));
+        let round =
+          m
+          |> update(ToggleScope(key(fn)))
+          |> update(ToggleScope(key(fn)));
+        check(
+          bool,
+          "furl preserves source identities",
+          true,
+          m.document.segment === round.document.segment,
+        );
+        check(
+          bool,
+          "furl preserves evaluation",
+          true,
+          m.samples === round.samples,
+        );
+      },
+    ),
+    test_case(
+      "match arms are bounded by stable syntax identities",
+      `Quick,
+      () => {
+        let m = init(~example=2, parse(snd(examples[2])));
+        let (mt, input, branches) = Option.get(first_match(project(m)));
+        let empty = branch_expression(List.nth(branches, 0));
+        let nonempty = branch_expression(List.nth(branches, 1));
+        check(string, "unexecuted arm is blank", "", value_text(empty, m));
+        check(string, "executed arm", "2", value_text(nonempty, m));
+        let m2 = replace_text(empty, "100 + 200 + 300", m);
+        let (_, input2, branches2) = Option.get(first_match(project(m2)));
+        check(
+          bool,
+          "later arm address stable",
+          true,
+          nonempty == branch_expression(List.nth(branches2, 1)),
+        );
+        check(bool, "scrutinee address stable", true, input == input2);
+        check(string, "inactive edit leaves actual result", "3", result(m2));
+        let m3 = replace_text(input, "[]", m2);
+        check(
+          string,
+          "scrutinee edit routes through shared program",
+          "601",
+          result(m3),
+        );
+        check(
+          string,
+          "old branch value cleared",
+          "",
+          value_text(nonempty, m3),
+        );
+        check(string, "new branch value", "600", value_text(empty, m3));
+        check(
+          string,
+          "undo restores previous input",
+          "3",
+          result(update(Undo, m3)),
+        );
+        let code = update(ToggleScope(key(mt)), m3);
+        check(
+          bool,
+          "raw match stays editable",
+          true,
+          List.mem((mt, Sort.Exp), targets(project(code))),
+        );
+      },
+    ),
+    test_case(
+      "branch views preserve source and navigate shared echoes",
+      `Quick,
+      () => {
+        let m = init(~example=2, parse(snd(examples[2])));
+        let (mt, input, branches) = Option.get(first_match(project(m)));
+        let cells = nav_cells(m);
+        let echoes = List.filter(c => c.target == input, cells);
+        check(int, "one occurrence with two views", 2, List.length(echoes));
+        check(
+          bool,
+          "distinct view focus",
+          true,
+          List.nth(echoes, 0).view != List.nth(echoes, 1).view,
+        );
+        let m1 =
+          update(FocusView(input, List.nth(echoes, 1).view), m)
+          |> update(MatchMode(false));
+        check(
+          int,
+          "keeps focused branch",
+          1,
+          selected_branch(mt, branches, m1),
+        );
+        check(
+          int,
+          "single visible input",
+          1,
+          List.length(List.filter(c => c.target == input, nav_cells(m1))),
+        );
+        let m2 = update(BranchStep(key(mt), 1), m1);
+        check(
+          int,
+          "cycles to first branch",
+          0,
+          selected_branch(mt, branches, m2),
+        );
+        check(
+          string,
+          "focus remains in expression attribute",
+          key(input),
+          m2.document.active,
+        );
+        check(
+          bool,
+          "source unchanged",
+          true,
+          m.document.segment === m2.document.segment,
+        );
+        check(bool, "evaluation unchanged", true, m.samples === m2.samples);
+        check(int, "no undo entry", 0, List.length(m2.undo));
+      },
+    ),
+    test_case(
+      "branch switching handles hidden attributes and unequal arms",
+      `Quick,
+      () => {
+        let m =
+          start(
+            "let f = case 1 | 0 => 7 | x => let y = x + 2 in y * 3 end in f",
+          );
+        let (mt, _, branches) = Option.get(first_match(project(m)));
+        let all = nav_cells(m);
+        let binding = named("f", m);
+        let echo =
+          List.find(
+            c =>
+              c.target == binding
+              && List.assoc_opt(key(mt), c.path) == Some(1),
+            all,
+          );
+        let m2 =
+          update(FocusView(binding, echo.view), m)
+          |> update(MatchMode(false))
+          |> update(BranchStep(key(mt), -1));
+        check(
+          bool,
+          "stays in pattern attribute across different arm lengths",
+          true,
+          Option.get(active_cell(m2)).root == Sort.Pat,
+        );
+        let hidden =
+          m2
+          |> update(Toggle("bindings"))
+          |> update(Toggle("expressions"))
+          |> update(BranchStep(key(mt), 1));
+        check(
+          int,
+          "values-only can still switch",
+          1,
+          selected_branch(mt, branches, hidden),
+        );
+        check(bool, "no editors required", true, nav_cells(hidden) == []);
+        check(string, "program unaffected", "9", result(hidden));
+      },
+    ),
+    test_case(
+      "recursive values belong to the selected invocation",
+      `Quick,
+      () => {
+        let m = init(~example=3, parse(snd(examples[3])));
+        check(string, "recursive result", "12", result(m));
+        let (fn, parameter, body) = Option.get(first_function(project(m)));
+        let calls = function_calls(body, None, m);
+        check(int, "four recursive invocations", 4, List.length(calls));
+        List.iteri(
+          (i, _sample: Language.Sample.t) => {
+            let m2 =
+              refresh_values({
+                ...m,
+                call_choices: [(key(fn), i)],
+              });
+            let argument = value_text(parameter, m2);
+            let (_, _, branches) = Option.get(first_match(project(m2)));
+            let empty = branch_expression(List.hd(branches));
+            check(bool, "argument is a real list", true, argument != "");
+            check(
+              string,
+              "only base invocation has a base result",
+              argument == "[]" ? "0" : "",
+              value_text(empty, m2),
+            );
+            let tail = rhs("tail", m2);
+            check(
+              string,
+              "recursive call comes from same frame",
+              argument == "[]"
+                ? ""
+                : argument == "[6]" ? "0" : argument == "[4, 6]" ? "6" : "10",
+              value_text(tail, m2),
+            );
+            check(
+              bool,
+              "no rerun to inspect a call",
+              true,
+              m.samples === m2.samples,
+            );
+            check(
+              string,
+              "outer call remains its own result",
+              "12",
+              result(m2),
+            );
+          },
+          calls,
+        );
+      },
+    ),
+    test_case(
+      "nested match layout adds lanes and preserves code",
+      `Quick,
+      () => {
+        let m =
+          start("case 1 | 0 => 7 | x => case x | 1 => 8 | _ => 9 end end");
+        check(string, "nested match result", "8", result(m));
+        check(int, "parallel nested lanes", 3, lanes(m, project(m)));
+        let single = update(MatchMode(false), m);
+        check(int, "one lane per match", 1, lanes(single, project(single)));
+        check(
+          bool,
+          "source untouched",
+          true,
+          m.document.segment === single.document.segment,
+        );
+      },
+    ),
     test_case(
       "vertical navigation retains its goal through short cells",
       `Quick,

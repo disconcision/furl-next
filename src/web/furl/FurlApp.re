@@ -80,16 +80,25 @@ let component = () => {
               expressions: model.expressions,
               values: model.values,
               indentation: model.indentation,
+              match_columns: model.match_columns,
             }
           };
         switch (action) {
-        | Document(CaretTone(_)) =>
+        | Document(
+            CaretTone(_) | BranchStep(_) | MatchMode(_) | ToggleScope(_) |
+            FurlAll,
+          ) =>
           Haz3lcore.ProbePerform.FocusEffect.schedule_cell()
         | _ => ()
         };
         switch (action) {
-        | Document(Edit(_, Perform(Move(Point(_))))) => ()
-        | Document(Edit(_) | Navigate(_)) => reveal_caret := true
+        | Document(
+            Edit(_, Perform(Move(Point(_)))) |
+            EditView(_, _, Perform(Move(Point(_)))),
+          ) =>
+          ()
+        | Document(Edit(_) | EditView(_) | Navigate(_) | BranchStep(_)) =>
+          reveal_caret := true
         | _ => ()
         };
         let should_save =

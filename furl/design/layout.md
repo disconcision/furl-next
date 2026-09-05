@@ -38,3 +38,9 @@ This borrows sample navigation and step-into concepts from Hazel's probe UI; it 
 - Navigating calls leaves the source program unchanged.
 
 Nested branch planning and live sample routing should remain separate: geometric nesting is not a substitute for runtime call identity.
+
+## Live branch projection
+
+The live implementation now applies the shared lane plan to nested matches. `All columns` sums branch widths; `One branch` shows one selected arm at each match. Native editor measurements determine shared attribute widths before rendering; branch results align at the bottom when neighboring arms contain different numbers of let rows. The live view scrolls the whole grid on narrow surfaces.
+
+Syntax addresses and view IDs are separate: repeated match inputs and result bindings share editable syntax, while focus identifies exactly one visual echo. A branch choice does not alter execution. Function call selection uses real Hazel probe call stacks and step intervals, independently of the geometric branch choice.
