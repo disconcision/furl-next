@@ -22,3 +22,11 @@ The deck and old Furl repo remain separate reference sources. This repository co
 The hazelnut mark is embedded from `src/web/www/img/hazelnut.svg`, recolored for this interface. Inherited attribution is in `licenses/Icons.md`; the MIT notice is in `LICENSE`.
 
 The navigation study at `/live/navigation.html` compares new branch gestures without extra code rows. A fresh inspection of the Big Book's match sequence (37–44) and trace sequence (49–52), including the rendered shared-scrutinee and trace diagrams on 41 and 50, found parallel columns rather than a specified branch-switching gesture. The selected-value arrows follow Hazel's probe affordance (`ProbeProj.re` and `proj-probe.css`); Furl uses its own call-context selection and layout.
+
+## Interaction inventory (September 2026)
+
+`furl/interactions/` and `design/interactions.md` add a source-backed interaction inventory and a separate offline proposal. The implementation was inspected at old Furl `4967561c010bdfc65a5100d6c2db266b3fcc0a50`; Hazel refactorings was inspected at `7dbd77039d7caccc2d077ce922a8beece97167d6`. Neither historical app nor refactor suite was run as part of that source inventory.
+
+The full PowerPoint was extracted and rendered, including hidden slides 56, 57, and 97. All slide references use the original 103-slide order. Default PDF export omits those three, so its page numbers diverge after slide 55. Gesture sources are especially slides 10–12, 17–18, 37–48, 53–55, and 84–96. Row insertion/movement/reference demos are new isolated prototypes; the eight larger transforms are fixed before/after states with preset values.
+
+Dragology assessment uses the local `draggable-diagrams/d2-paper.pdf` (Fig. 1 and architectural discussion), `declarative-dragging/main.tex` as a separate draft source, and the library guide/code. No paper or PowerPoint binary is republished. `design/interactions.md` includes a bounded voice-input assessment with current official API/browser sources.

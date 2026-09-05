@@ -1,0 +1,262 @@
+[
+  {
+    "action": "Insert a binding row",
+    "origin": "Old Furl",
+    "mouse": "Structure: hover a row boundary, then click. Held Option/Alt temporarily reveals the same targets.",
+    "keyboard": "⌘/Ctrl+Enter below; add Shift for above. Enter keeps its native cell meaning.",
+    "rule": "Focus the new expression. Insert in a named lexical scope, never at an alignment spacer. A draft row is an edit, not a proven no-op.",
+    "source": "BlockView.re:27; Update.re:161–177; Big Book 65, 94",
+    "url": "https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/view/BlockView.re#L27",
+    "phase": "Next"
+  },
+  {
+    "action": "Move a row",
+    "origin": "Old Furl",
+    "mouse": "Drag the row handle outside the comb; preview the destination before release.",
+    "keyboard": "Focus the handle; Space picks up, ↑/↓ chooses a destination, Enter drops, Escape cancels.",
+    "rule": "Refactor offers checked destinations. Free edit permits scope/dependency changes but always produces valid structural syntax. The final result is not an ordinary movable let.",
+    "source": "BlockView.re:50; Update.re:179–225; Big Book 84–88",
+    "url": "https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L179",
+    "phase": "Next"
+  },
+  {
+    "action": "Copy a row",
+    "origin": "Old Furl",
+    "mouse": "Choose Copy in the structure commands; later compare Shift-drag with the deck’s left-then-down gesture.",
+    "keyboard": "Row command “Duplicate below”; then use the same keyboard pickup.",
+    "rule": "Fresh syntax IDs and a fresh binder; redirect references inside the copied subtree only. Copying evaluation is not generally a refactor.",
+    "source": "Update.re:205–210; Big Book 87–88",
+    "url": "https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L205",
+    "phase": "Next"
+  },
+  {
+    "action": "Create a reference from a binding",
+    "origin": "Old Furl",
+    "mouse": "Drag a binder to a hole or insertion slot. The binding stays where it was.",
+    "keyboard": "“Insert reference” at the caret opens in-scope bindings; arrows and Enter choose. Study: pick a binder, Tab to a hole, Enter.",
+    "rule": "Resolve by binder identity and lexical context, not matching spelling. Never silently capture a different same-named binding.",
+    "source": "PatView.re:43; Update.re:246–327",
+    "url": "https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L246",
+    "phase": "Next"
+  },
+  {
+    "action": "Move or copy an expression",
+    "origin": "Old Furl",
+    "mouse": "Structure: drag an indicated expression to a typed slot; explicit Copy variant.",
+    "keyboard": "Native structural cut/copy/paste; command “Move expression” can reuse destination picking.",
+    "rule": "Old Furl moved single words, not arbitrary Hazel subtrees. Expand to subterms only with source-slot and capture rules.",
+    "source": "ExpView.re:23; Update.re:246–327",
+    "url": "https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/view/ExpView.re#L23",
+    "phase": "Soon"
+  },
+  {
+    "action": "Extract a literal or subexpression",
+    "origin": "Old Furl",
+    "mouse": "Pull the selected expression to an earlier binding boundary.",
+    "keyboard": "Command “Extract binding”; reuse Hazel’s refactor chord where available.",
+    "rule": "Old implementation only extracted a literal immediately above its own row. Hazel ExtractLet/Explode can supply broader candidates.",
+    "source": "Update.re:193–203; Big Book 47–48, 55",
+    "url": "https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L193",
+    "phase": "Next"
+  },
+  {
+    "action": "Define an unresolved name",
+    "origin": "Old Furl",
+    "mouse": "Drag an unresolved occurrence to the boundary above its row.",
+    "keyboard": "At that occurrence, command “Create binding above”.",
+    "rule": "Keep the occurrence; create a binder of that name with a hole. Check for collisions.",
+    "source": "Update.re:187–192",
+    "url": "https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L187",
+    "phase": "Soon"
+  },
+  {
+    "action": "Insert a word / syntax template",
+    "origin": "Old Furl",
+    "mouse": "Old editor: click between words or drag from its word palette. Proposed: native Hazel completion or a compact structure menu.",
+    "keyboard": "Use Hazel typing and completion; Tab moves through new holes.",
+    "rule": "Do not reimplement a second token editor. Old Space made a new word; that mapping should not replace Hazel’s input model.",
+    "source": "CommonView.re:38; View.re:19; Keyboard.re:16",
+    "url": "https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/view/CommonView.re#L38",
+    "phase": "Soon"
+  },
+  {
+    "action": "Delete and recover",
+    "origin": "Old Furl",
+    "mouse": "Explicit row Delete command; Undo restores it. Keep a stash concept for later.",
+    "keyboard": "Delete on a focused row handle; ⌘/Ctrl+Z restores.",
+    "rule": "Old background drops delete into a visible trash collection; picking up trash removes it before a successful drop. Do not inherit that cancellation behavior.",
+    "source": "View.re:108–126; Update.re:115–158",
+    "url": "https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L115",
+    "phase": "Next"
+  },
+  {
+    "action": "Navigate rows, cells, and uses",
+    "origin": "Old Furl",
+    "mouse": "Click a cell; binder/use highlighting helps follow references.",
+    "keyboard": "Existing Furl arrows retain column targets. Tab should visit structural targets only when explicitly entering that layer.",
+    "rule": "Old Shift+↑/↓ swaps rows; retain native Shift-selection in text. Do not globally steal it.",
+    "source": "Keyboard.re:3–20; PatView.re:27",
+    "url": "https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Keyboard.re#L3",
+    "phase": "Live / extend"
+  },
+  {
+    "action": "Create a nested block",
+    "origin": "Big Book",
+    "mouse": "Select a contiguous row range, then Group; compare Alt-drag / left-then-up as an expert gesture.",
+    "keyboard": "Row selection + “Group into block”; name the resulting binding.",
+    "rule": "A nested let changes scope. Reject or explicitly export bindings still used outside the chosen block.",
+    "source": "Slides 85, 87–88, 95",
+    "url": "",
+    "phase": "Soon"
+  },
+  {
+    "action": "Resize a block",
+    "origin": "Big Book",
+    "mouse": "Structure: drag the top or bottom comb endpoint across row boundaries.",
+    "keyboard": "Focus an endpoint; arrows preview moving it one boundary, Enter commits.",
+    "rule": "The endpoints change lexical extent, not CSS height. Show escaping uses and keep required exports.",
+    "source": "Slide 89",
+    "url": "",
+    "phase": "Later"
+  },
+  {
+    "action": "Turn leading rows into parameters",
+    "origin": "Big Book",
+    "mouse": "Pull the top comb boundary downward; crossed definitions become parameter candidates.",
+    "keyboard": "“Abstract leading rows”; choose a range, preview parameters and call, then commit.",
+    "rule": "Create a function plus a call supplying old definitions. Preserve evaluation order; update all affected uses. Start with one tuple parameter.",
+    "source": "Slides 10–12, 48, 90",
+    "url": "",
+    "phase": "Soon"
+  },
+  {
+    "action": "Add / remove / reorder parameters",
+    "origin": "Hazel branch",
+    "mouse": "Structure: drag parameter slots or use an endpoint command.",
+    "keyboard": "Commands plus directional parameter navigation; reuse the same transform planner.",
+    "rule": "Hazel patches known calls and rejects bare escaping uses in relevant transforms. Adding argument holes is an edit; reordering needs evaluation-order checks.",
+    "source": "RefactorMove.re: add_param_impl, swap_params_rewrite, remove_param_impl",
+    "url": "https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorMove.re",
+    "phase": "Soon"
+  },
+  {
+    "action": "Turn a binding into a match",
+    "origin": "Big Book",
+    "mouse": "After a refutable pattern is complete, show a fork preview; accept on the comb.",
+    "keyboard": "Commit pattern, then command “Branch on this pattern”.",
+    "rule": "Deck proposes automatic creation. Start with an explicit acceptance so intermediate typing does not rearrange the editor; add a fallback hole without claiming semantic equivalence.",
+    "source": "Slides 37–38, 48, 91, 94",
+    "url": "",
+    "phase": "Soon"
+  },
+  {
+    "action": "Add a match branch",
+    "origin": "Big Book",
+    "mouse": "Structure: click or pull the match fork right. In normal mode it keeps its current view action.",
+    "keyboard": "At the branch handle, command “Add branch”; Tab enters its pattern/body.",
+    "rule": "A branch is a pattern plus a body, not a let row. Place a new branch before a catch-all or use a coverage witness.",
+    "source": "Slides 91, 94; Hazel AddCaseArm",
+    "url": "https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorMove.re#L212",
+    "phase": "Soon"
+  },
+  {
+    "action": "Reorder match branches",
+    "origin": "Hazel branch",
+    "mouse": "Drag a whole branch column by its comb handle in Structure mode.",
+    "keyboard": "Pick up a branch handle; ←/→ previews, Enter commits.",
+    "rule": "Case order is semantic. Refactor requires disjointness or a stronger proof; the branch currently uses a conservative disjoint-pattern test.",
+    "source": "RefactorMove.re:1991",
+    "url": "https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorMove.re#L1991",
+    "phase": "Later"
+  },
+  {
+    "action": "Inline a binding / one use",
+    "origin": "Big Book",
+    "mouse": "Pull a definition toward an occurrence; preview whether it is copied or consumed.",
+    "keyboard": "Commands “Inline binding” / “Inline this use”; use Hazel FeedLet and InlineLet.",
+    "rule": "Distinguish one use from all uses. Preserve precedence, capture avoidance, evaluation behavior, and comments.",
+    "source": "Slides 48, 92; RefactorInline.re",
+    "url": "https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorInline.re",
+    "phase": "Soon"
+  },
+  {
+    "action": "Carry dependencies while moving",
+    "origin": "Big Book",
+    "mouse": "Refactor drag pauses at a dependency; offer a preview carrying the necessary rows.",
+    "keyboard": "At a blocked move, choose “Move with dependencies”.",
+    "rule": "Make the larger operation explicit. Do not silently turn a small reorder into a helper extraction.",
+    "source": "Slide 93; RefactorMove.re:1405",
+    "url": "https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorMove.re#L1405",
+    "phase": "Soon"
+  },
+  {
+    "action": "Extract a helper at a scope boundary",
+    "origin": "Big Book",
+    "mouse": "Pull a dependency group beyond a function ceiling, then accept a helper preview.",
+    "keyboard": "“Extract helper”; review free variables as parameters and rewritten uses.",
+    "rule": "Hazel LiftFunction handles a specific contiguous dependency run and enclosure shapes, not every arbitrary selected Furl region.",
+    "source": "Slides 93, 95–96; RefactorLift.re",
+    "url": "https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorLift.re",
+    "phase": "Soon"
+  },
+  {
+    "action": "Explode / implode applications",
+    "origin": "Hazel branch",
+    "mouse": "Select an expression, choose “Expose intermediates” / “Inline intermediates”.",
+    "keyboard": "Use Hazel Explode / Implode commands; bind an optional chord after testing conflicts.",
+    "rule": "Introducing let-bound intermediates is a source refactor. Merely furling existing syntax is a view change; keep the two actions distinct.",
+    "source": "Slides 2, 47, 53, 55; RefactorInline.re",
+    "url": "https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorInline.re",
+    "phase": "Soon"
+  },
+  {
+    "action": "Inspect / specialize a call or case",
+    "origin": "Big Book",
+    "mouse": "Select a live call, then inspect a substituted view. A separate command applies a source rewrite.",
+    "keyboard": "Value arrows navigate; explicit “Step here” / “Bind argument” are source commands.",
+    "rule": "A rewrite justified by one sample is not valid for every input. A temporary inspection must not mutate source, history, or persistence.",
+    "source": "Slides 48, 53, 55, 92; RefactorReduce.re",
+    "url": "https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorReduce.re",
+    "phase": "Later"
+  },
+  {
+    "action": "Furl, unfurl, switch branches and calls",
+    "origin": "Current Furl",
+    "mouse": "Existing comb clicks, all/one branch choice, and selected-value arrows.",
+    "keyboard": "Existing cross-cell arrows and Ctrl+Alt+←/→ for branch inspection.",
+    "rule": "View operations stay available outside Structure mode and never become undoable syntax edits. Windows refactor chord conflicts with branch navigation: use handle-focused arrows first.",
+    "source": "furl/design/architecture.md",
+    "url": "",
+    "phase": "Live"
+  },
+  {
+    "action": "Choose attributes / trace columns",
+    "origin": "Big Book",
+    "mouse": "Existing binding/expression/value toggles; later add types, environments, assertions, and trace pinning.",
+    "keyboard": "Focus a toolbar control; Space toggles it. Commands can restore a hidden caret column.",
+    "rule": "Extra value columns are invocation views, not duplicated source. No new code row for controls.",
+    "source": "Slides 49–52, 76, 79–82, 98–102",
+    "url": "",
+    "phase": "Live / later"
+  },
+  {
+    "action": "Animation and identity tracking",
+    "origin": "Old Furl",
+    "mouse": "Preview a candidate while dragging; settle identified rows on release.",
+    "keyboard": "Keyboard moves get the same preview and settled state; reduced-motion gets immediate transitions.",
+    "rule": "Old editor used UID-based 150ms position transitions. Do not animate syntax by interpolating token text or save intermediate states.",
+    "source": "Animate.re:1–124; Dragology Fig. 1, §§3–4",
+    "url": "https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Animate.re",
+    "phase": "Next"
+  },
+  {
+    "action": "Voice-assisted text entry",
+    "origin": "New proposal",
+    "mouse": "Click a microphone at the focused cell, dictate, correct a small transcript, then insert.",
+    "keyboard": "Focusable record/stop and accept/cancel controls; ordinary typing remains available.",
+    "rule": "One insertion transaction at a retained source target. A late transcript cannot land in a different cell. Service choice remains open.",
+    "source": "Voice assessment in this study",
+    "url": "",
+    "phase": "Later"
+  }
+]

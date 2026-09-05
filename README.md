@@ -2,7 +2,7 @@
 
 An environment for working with code, bindings, and the values they produce. Furl owns the interface; Hazel supplies the language and structural editing foundation.
 
-**[Try the live editor](https://andrewblinn.com/furl-next/live/)** · [Interactive reference](https://andrewblinn.com/furl-next/) · [Study switcher](https://andrewblinn.com/furl-next/studies.html)
+**[Try the live editor](https://andrewblinn.com/furl-next/live/)** · [Interactive reference](https://andrewblinn.com/furl-next/) · [Study switcher](https://andrewblinn.com/furl-next/studies.html) · [Interaction studies](https://andrewblinn.com/furl-next/interactions.html)
 
 The live study embeds Hazel's structural expression and pattern editors in Furl's grid. Editing a cell changes one underlying program, rechecks its lexical context, and updates dependent values using Hazel's evaluator and probes. Lets, function literals, and matches can be furled into rows or unfurled into source. Arrow keys move between editors: up/down preserve the intended column through short lines and nested indentation, and left/right cross cell boundaries. Undo/redo, display toggles, reset, and browser persistence work across four examples. Matches offer **All columns** and **One branch** views. In one-branch mode click the vertical match stem to cycle branches (Shift-click reverses); **Ctrl+Alt+Left/Right** switches branches in the focused match in either mode. Select a live value inside a function to reveal its call arrows; ←/→ steps through coherent parameter/body values, and Escape returns to code. These controls use the existing margins without adding rows. A [self-contained navigation study](https://andrewblinn.com/furl-next/live/navigation.html) compares three provisional branch gestures. Temporary Violet, Coral, and Teal controls let us compare caret colors.
 
@@ -13,6 +13,7 @@ The reference contains seven interactive design studies with preset values, incl
 | Location | Purpose |
 | --- | --- |
 | [`furl/reference/`](furl/reference/) | Editable page, shared study renderer, styles, and preset programs |
+| [`furl/interactions/`](furl/interactions/) | Offline row/reference experiments, transformation storyboards, and sourced interaction inventory |
 | [`furl/design/`](furl/design/) | Layout model, implementation decisions, and source notes |
 | [`furl/archive/`](furl/archive/) | Preserved conversation study and its original standalone export |
 | [`src/web/furl/`](src/web/furl/) | Live program model, projection, app, and embedded editor views |
@@ -20,6 +21,7 @@ The reference contains seven interactive design studies with preset values, incl
 | [`docs/live/`](docs/live/) | Generated live app and its local assets |
 | [`docs/index.html`](docs/index.html) | Generated reference page; GitHub Pages entry point |
 | [`docs/studies.html`](docs/studies.html) | Generated tabbed study view, using the same renderer |
+| [`docs/interactions.html`](docs/interactions.html) | Generated self-contained interaction proposal |
 | `src/`, `test/`, build files | Inherited Hazel implementation and toolchain |
 | [`furl/UPSTREAM-README.md`](furl/UPSTREAM-README.md) | Original Hazel overview and build instructions |
 
@@ -80,3 +82,15 @@ The live projection expands lets, function parameters/bodies, and match arms, in
 The reference remains fast to change as this integration develops. Stable syntax identities, call identities, and grid constraints should be shared across both implementations; preset samples must not become a substitute evaluator.
 
 Hazel build instructions are in [INSTALL.md](INSTALL.md), with tests in [test/README.md](test/README.md). The existing MIT [license](LICENSE) and [icon notices](licenses/Icons.md) are retained.
+
+## Explore editing interactions
+
+The [interaction studies](https://andrewblinn.com/furl-next/interactions.html) inventory old Furl, the Big Book, and Hazel's refactorings branch. They include modal row insertion and movement, reference placement, and eight before/after transformations. These are isolated proposals; the live editor has not acquired these commands yet.
+
+```sh
+python3 furl/interactions/build.py
+python3 furl/interactions/build.py --check
+node furl/interactions/test.cjs
+```
+
+Open `docs/interactions.html` directly for the offline page. See [the design decisions](furl/design/interactions.md) and [the port ledger](furl/design/ports.md) before integrating structural editing or Hazel feature branches.

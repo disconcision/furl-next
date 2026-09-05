@@ -1,0 +1,1940 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><title>Furl — interaction studies</title><style>:root {color-scheme:light dark;--page:light-dark(#f5f8fa,#182630);--text:light-dark(#243944,#e1edf1);--muted-text:light-dark(#566f7c,#a3b8c4);--rule:light-dark(#cbd8df,#405662);--purple:light-dark(#796393,#bca7d9);--blue:light-dark(#237898,#81cae4);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.6;color:var(--text);background:var(--page);}
+* {box-sizing:border-box;}
+body {margin:0;font-size:15px;}
+a {color:inherit;text-underline-offset:4px;text-decoration-color:var(--rule);}
+a:hover {text-decoration-color:var(--purple);}
+a:focus-visible,summary:focus-visible {outline:2px solid var(--purple);outline-offset:4px;}
+.book {max-width:1120px;margin:0 auto;padding:0 28px;}
+.masthead {display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding:23px 0;border-bottom:1px solid var(--rule);}
+.wordmark {font-size:34px;line-height:1;letter-spacing:-1px;font-weight:500;color:var(--purple);text-decoration:none;}
+.wordmark span {color:var(--blue);}
+.masthead nav {display:flex;flex-wrap:wrap;gap:18px;font-size:13px;color:var(--muted-text);}
+.introduction {max-width:690px;margin:50px 0 28px;}
+.eyebrow {color:var(--muted-text);font-size:12px;}
+h1 {font-size:clamp(26px,4.1vw,36px);font-weight:500;line-height:1.25;letter-spacing:-.6px;margin:14px 0 21px;}
+p {margin:12px 0;}
+.note,.try {color:var(--muted-text);font-size:13px;}
+.note {max-width:650px;margin-top:20px;}
+.contents {display:flex;flex-wrap:wrap;gap:8px 20px;padding:19px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);font-size:12px;color:var(--muted-text);}
+.contents a {text-decoration:none;}
+.chapter {margin-top:54px;scroll-margin-top:24px;}
+.chapter-copy {max-width:700px;margin-bottom:23px;}
+h2 {font-size:22px;font-weight:500;line-height:1.35;letter-spacing:-.25px;margin:0 0 16px;}
+h2 > span {font:12px/1.5 ui-monospace,monospace;color:var(--purple);display:inline-block;width:29px;vertical-align:middle;letter-spacing:0;}
+code {font-family:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;font-size:.92em;}
+.integral {font:19px/1 Georgia,serif;color:var(--purple);}
+.direction {max-width:700px;margin:64px 0 44px;padding-top:27px;border-top:1px solid var(--rule);}
+footer {border-top:1px solid var(--rule);padding:24px 0 35px;font-size:12px;color:var(--muted-text);}
+.footer-line {display:flex;flex-wrap:wrap;gap:15px;justify-content:space-between;align-items:center;}
+.powered {display:flex;align-items:center;gap:6px;text-decoration:none;}
+.powered img {filter:none;}
+.credits {margin-top:18px;max-width:700px;}
+.credits summary {cursor:pointer;}
+.skip {position:absolute;left:20px;top:-70px;padding:8px;background:var(--page);z-index:10;}
+.skip:focus {top:8px;}
+@media(prefers-color-scheme:dark) {.powered img {filter:brightness(1.85);}}
+@media(max-width:600px) {.book {padding:0 12px;}.masthead {padding:20px 0;gap:18px;}.masthead nav {gap:13px;font-size:12px;}.introduction {margin-top:32px;}.chapter {margin-top:40px;}.chapter-copy {padding:0 4px;}h2 {font-size:20px;}.contents {gap:8px 17px;}}
+@media print {.book {max-width:none;padding:0;}.masthead nav,.contents,.try,.furl-study .bar,.furl-study .review-foot,.credits {display:none;}.chapter {break-inside:avoid;}.introduction {margin-top:20px;}a {text-decoration:none;}}
+
+:root {
+  --panel: light-dark(#e8f0f4, #20333f);
+  --well: light-dark(#d9e7ee, #29414d);
+  --green: light-dark(#33694b, #a0d1ad);
+  --danger: light-dark(#994332, #ffc09d);
+  --accent-fill: light-dark(#e0d7ed, #463e58);
+  --rowhover: light-dark(#dde8ef, #293f4c);
+  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+button,
+select {
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+button:hover {
+  background: var(--well);
+}
+button[aria-pressed="true"] {
+  background: var(--accent-fill);
+  border-color: var(--purple);
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--purple);
+  outline-offset: 2px;
+}
+button[hidden],
+[hidden] {
+  display: none !important;
+}
+input[type="checkbox"] {
+  accent-color: var(--purple);
+}
+select {
+  max-width: 100%;
+  background: var(--page);
+}
+.lab {
+  border: 1px solid var(--rule);
+  background: var(--panel);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.toolbar {
+  padding: 10px 13px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  align-items: center;
+  font-size: 12px;
+  border-bottom: 1px solid var(--rule);
+}
+.toolbar label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.mode-note {
+  font-size: 11px;
+  color: var(--muted-text);
+  margin-right: auto;
+}
+.policy {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.policy > span {
+  margin-right: 3px;
+  color: var(--muted-text);
+}
+.toolbar .structure-toggle {
+  color: var(--purple);
+}
+.program-scroll {
+  padding: 25px 18px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+.row-program,
+.reference-program,
+.story-program {
+  font: 14px/22px var(--mono);
+  position: relative;
+  min-width: 600px;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.row-program {
+  padding: 0 0 0 48px;
+  --pattern: 14ch;
+  --expr: 29ch;
+  --value: 11ch;
+}
+.edit-row {
+  height: 22px;
+  display: grid;
+  grid-template-columns: var(--pattern) var(--expr) minmax(var(--value), 1fr);
+  align-items: center;
+  position: relative;
+  isolation: isolate;
+}
+.edit-row input {
+  font: inherit;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  width: 100%;
+  height: 22px;
+  background: transparent;
+  min-width: 0;
+  outline-offset: -1px;
+}
+.edit-row input::placeholder {
+  color: var(--purple);
+  opacity: 0.85;
+}
+.edit-row .pattern {
+  color: var(--blue);
+}
+.edit-row .static-pattern {
+  color: var(--muted-text);
+  font-style: italic;
+}
+.edit-row .value {
+  color: var(--green);
+  padding-left: 2ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.edit-row .invalid {
+  color: var(--danger);
+}
+.edit-row.focused {
+  background: var(--rowhover);
+}
+.armed .edit-row:hover {
+  background: var(--rowhover);
+}
+.row-handle {
+  position: absolute;
+  left: -48px;
+  top: 0;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  padding: 0;
+  opacity: 0;
+  color: var(--purple);
+  border-radius: 0;
+  touch-action: none;
+  cursor: grab;
+}
+.armed .row-handle,
+.row-handle:focus-visible {
+  opacity: 1;
+}
+.row-handle:active {
+  cursor: grabbing;
+}
+.row-handle[aria-pressed="true"] {
+  background: var(--accent-fill);
+}
+.gap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 8px;
+  transform: translateY(-4px);
+  padding: 0;
+  border: 0;
+  background: none !important;
+  z-index: 4;
+  opacity: 0;
+  pointer-events: none;
+  border-radius: 0;
+}
+.armed .gap {
+  pointer-events: auto;
+}
+.gap::after {
+  content: "";
+  height: 2px;
+  position: absolute;
+  left: 29px;
+  right: 0;
+  top: 3px;
+  background: var(--purple);
+}
+.gap::before {
+  content: "+";
+  position: absolute;
+  left: 4px;
+  top: -7px;
+  font: 16px/22px var(--mono);
+  color: var(--purple);
+}
+.armed .gap:hover,
+.gap:focus-visible,
+.gap.destination {
+  opacity: 1;
+}
+.gap.destination::before {
+  content: "→";
+}
+.gap.blocked::after {
+  background: var(--danger);
+}
+.gap.blocked::before {
+  content: "×";
+  color: var(--danger);
+}
+.comb {
+  position: absolute;
+  left: 29px;
+  top: 0;
+  width: 12px;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  color: var(--purple);
+}
+.comb path {
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.lab-status {
+  font-size: 12px;
+  line-height: 1.55;
+  min-height: 42px;
+  color: var(--muted-text);
+  padding: 11px 14px;
+  border-top: 1px solid var(--rule);
+}
+.lab-status.warn {
+  color: var(--danger);
+}
+.source-details {
+  padding: 8px 14px;
+  border-top: 1px solid var(--rule);
+  font-size: 12px;
+  color: var(--muted-text);
+}
+summary {
+  cursor: pointer;
+}
+pre {
+  font: 12px/1.7 var(--mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--text);
+}
+.input-notes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px;
+  font-size: 12px;
+  color: var(--muted-text);
+  margin-top: 12px;
+}
+.input-notes strong {
+  font-weight: 600;
+  color: var(--text);
+}
+kbd {
+  font: 11px var(--mono);
+  padding: 1px 4px;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.drag-ghost {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  background: var(--well);
+  color: var(--blue);
+  font: 14px/22px var(--mono);
+  padding: 0 6px;
+  box-shadow: 0 2px 8px #0002;
+  border-radius: 3px;
+}
+.reference-program {
+  padding-left: 48px;
+  min-width: 440px;
+}
+.reference-row {
+  display: grid;
+  grid-template-columns: 14ch 29ch 1fr;
+  height: 22px;
+}
+.ref-name {
+  color: var(--blue);
+}
+button.ref-name {
+  justify-self: start;
+  font: inherit;
+  padding: 0;
+  border: 0;
+  height: 22px;
+  border-radius: 0;
+  touch-action: none;
+  cursor: default;
+}
+button.ref-name:disabled {
+  opacity: 1;
+}
+button.ref-name.picked {
+  background: var(--accent-fill);
+}
+.armed button.ref-name {
+  cursor: grab;
+}
+.ref-value {
+  color: var(--green);
+  padding-left: 2ch;
+}
+.hole {
+  font: inherit;
+  border: 0;
+  padding: 0 2px;
+  min-width: 1ch;
+  height: 22px;
+  border-radius: 0;
+  vertical-align: top;
+  color: var(--purple);
+  touch-action: none;
+}
+.hole.target {
+  background: var(--accent-fill);
+  outline: 1px solid var(--purple);
+}
+.hole.filled {
+  color: var(--blue);
+}
+.story-position {
+  margin-left: auto;
+  display: flex;
+  gap: 5px;
+}
+.motion-label {
+  color: var(--muted-text);
+  margin-left: 10px;
+}
+.story-program {
+  height: 176px;
+  min-width: 760px;
+  padding: 0;
+}
+.story-row {
+  position: absolute;
+  left: 48px;
+  top: 0;
+  width: calc(100% - 48px);
+  height: 22px;
+  display: grid;
+  grid-template-columns: 18ch 35ch minmax(9ch, 1fr);
+  transition:
+    transform 180ms ease-out,
+    opacity 180ms ease-out;
+  will-change: transform;
+  white-space: pre;
+}
+.story-row .p {
+  color: var(--blue);
+}
+.story-row .v {
+  color: var(--green);
+}
+.story-row .parameter {
+  color: var(--purple);
+}
+.story-combs {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--purple);
+  pointer-events: none;
+}
+.story-combs path {
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.source-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.source-pair > div {
+  min-width: 0;
+}
+.source-pair > div > span {
+  font-size: 11px;
+  color: var(--purple);
+}
+.inventory-controls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 12px;
+  margin-bottom: 16px;
+}
+.inventory-controls label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.inventory-controls input {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  padding: 5px 7px;
+  border-radius: 4px;
+  width: 250px;
+  max-width: 65vw;
+}
+.table-scroll {
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  line-height: 1.6;
+  min-width: 760px;
+  text-align: left;
+}
+th {
+  font-weight: 500;
+  color: var(--muted-text);
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--rule);
+}
+td {
+  padding: 14px 12px;
+  vertical-align: top;
+  border-bottom: 1px solid var(--rule);
+  width: 25%;
+}
+td:first-child {
+  padding-left: 0;
+}
+td strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+td .origin {
+  display: block;
+  font-size: 11px;
+  color: var(--purple);
+  margin-top: 6px;
+}
+td .evidence {
+  display: block;
+  color: var(--muted-text);
+  font-size: 11px;
+  margin-top: 5px;
+}
+.pipeline {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font: 13px var(--mono);
+  padding: 18px 0;
+  border-block: 1px solid var(--rule);
+  margin: 24px 0;
+}
+.pipeline b {
+  color: var(--purple);
+  font-weight: 400;
+}
+.prose-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+.prose-grid p {
+  font-size: 14px;
+}
+h3 {
+  font-size: 16px;
+  font-weight: 500;
+  margin-top: 24px;
+}
+.next {
+  max-width: 700px;
+  margin-top: 28px;
+}
+.next ol {
+  padding-left: 22px;
+  font-size: 14px;
+}
+.next li {
+  padding: 3px 0;
+}
+footer {
+  margin-top: 48px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+.no-motion * {
+  transition: none !important;
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
+@media (max-width: 640px) {
+  .input-notes,
+  .source-pair,
+  .prose-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .toolbar {
+    padding: 9px;
+    gap: 6px;
+  }
+  .mode-note {
+    min-width: 45%;
+  }
+  .policy {
+    flex-wrap: wrap;
+  }
+  .program-scroll {
+    padding: 22px 10px;
+  }
+  .row-program {
+    min-width: 535px;
+    --pattern: 12ch;
+    --expr: 24ch;
+    --value: 9ch;
+  }
+  .story-position {
+    margin-left: 0;
+  }
+  .motion-label {
+    margin-left: auto;
+  }
+  .pipeline {
+    font-size: 11px;
+    gap: 7px;
+  }
+  .inventory-controls {
+    gap: 9px;
+  }
+  .lab-status {
+    min-height: 60px;
+  }
+}
+@media print {
+  .toolbar,
+  .inventory-controls {
+    display: none;
+  }
+  .lab,
+  .table-scroll {
+    overflow: visible;
+  }
+  table {
+    min-width: 0;
+  }
+  .program-scroll {
+    overflow: visible;
+  }
+  .story-program {
+    min-width: 0;
+  }
+  .chapter {
+    break-inside: auto;
+  }
+}
+.story-program[data-lanes="2"] .story-row {
+  grid-template-columns: 12ch 26ch 9ch;
+  font-size: 13px;
+  width: 440px;
+}
+.gap::before,
+.gap::after {
+  pointer-events: none;
+}
+</style></head>
+<body><a class="skip" href="#rows">Skip to the interactions</a><div class="book">
+<header class="masthead"><a class="wordmark" href="./index.html">f<span>u</span>rl</a><nav aria-label="Study links"><a href="./live/">Live editor</a><a href="./index.html">Reference</a><a href="./interactions.html" download="furl-interactions.html">Save HTML</a><a href="https://github.com/disconcision/furl-next/blob/furl/furl/design/interactions.md">Design notes</a></nav></header>
+<main>
+<div class="introduction"><p class="eyebrow">Interaction study · 5 September 2026</p><h1>Writing and reshaping programs.</h1><p>The old Furl editor makes rows and names tangible. The Big Book extends that idea to scopes, parameters, branches, and helpers. These studies bring those actions together with mouse and keyboard controls.</p><p class="note">Proposed interactions, separate from the live Hazel editor. The first lab evaluates a tiny arithmetic language; the other examples use fixed programs and preset values. This entire page works offline.</p></div>
+<nav class="contents" aria-label="On this page"><a href="#rows">01 Rows</a><a href="#references">02 References</a><a href="#transformations">03 Transformations</a><a href="#inventory">04 Inventory</a><a href="#foundation">05 Implementation</a><a href="#voice">06 Voice</a></nav>
+<section class="chapter" id="rows"><div class="chapter-copy"><h2><span>01</span> Quiet until you reach for structure</h2><p>Turn on <strong>Structure</strong>, or hold <strong>Option / Alt</strong> while pointing here. Gaps insert; handles move. The action gutter sits outside the comb and never shifts the code.</p><p class="try">Try moving <code>bonus</code> above <code>n</code>. Then try moving <code>twice</code> above <code>n</code>. Refactor blocks the dependency break; Free edit lets you see it.</p></div>
+<div class="lab" id="row-lab">
+<div class="toolbar"><button class="structure-toggle" aria-pressed="false">Structure</button><span class="mode-note">Editing cells</span><div class="policy"><span>Move policy</span><button data-policy="refactor" aria-pressed="true">Refactor</button><button data-policy="free" aria-pressed="false">Free edit</button></div><button data-action="insert">Insert below</button><button data-action="undo" disabled>Undo</button><button data-action="reset">Reset</button></div>
+<div class="program-scroll"><div class="row-program" tabindex="-1" aria-label="Arithmetic row experiment"></div></div>
+<div class="lab-status" role="status" aria-live="polite">Click an expression to edit it. Structure mode reveals row controls.</div>
+<details class="source-details"><summary>Underlying source</summary><pre class="row-source"></pre></details>
+</div>
+<div class="input-notes"><p><strong>Mouse</strong> · Drag a handle, or click it and then click a destination gap. Release/drop commits once; Escape cancels. Click a gap without a picked-up row to insert.</p><p><strong>Keyboard</strong> · <kbd>⌘/Ctrl</kbd> <kbd>Enter</kbd> inserts below the active row; add <kbd>Shift</kbd> for above. Tab to a handle, <kbd>Space</kbd> picks up, <kbd>↑</kbd> <kbd>↓</kbd> previews, <kbd>Enter</kbd> drops. <kbd>Escape</kbd> cancels. Native Enter is reserved for the cell.</p></div>
+<p class="note">The refactor gate here is deliberately small: unique names, valid arithmetic, and preserved lexical dependencies. It is not Hazel’s refactor checker. New rows contain holes and are ordinary source edits, not guaranteed semantic no-ops. Source: old Furl’s row handlers; Big Book 84–88, 94.</p>
+</section>
+<section class="chapter" id="references"><div class="chapter-copy"><h2><span>02</span> Carry a reference, leave the binding</h2><p>With Structure active, pull a name into a hole. This differs from moving its defining row. Both the drag and the keyboard operation carry the binding’s identity.</p></div>
+<div class="lab" id="reference-lab"><div class="toolbar"><button class="structure-toggle" aria-pressed="false">Structure</button><span class="mode-note">Editing cells</span><button data-action="undo" disabled>Undo</button><button data-action="reset">Reset</button></div><div class="program-scroll"><div class="reference-program" aria-label="Reference creation experiment"></div></div><div class="lab-status" role="status" aria-live="polite">Turn on Structure, then drag width and height to the two holes.</div></div>
+<div class="input-notes"><p><strong>Mouse</strong> · Drag <code>width</code> or <code>height</code> to a hole. Click-to-pick and click-to-place work too.</p><p><strong>Keyboard</strong> · Tab to a binding; <kbd>Enter</kbd> or <kbd>Space</kbd> picks it up. Tab to a hole and press <kbd>Enter</kbd>. Escape cancels. In the live editor, an “Insert reference” chooser at the caret would list in-scope names.</p></div><p class="note">Old Furl implements this for names in later rows. The full editor needs lexical resolution across nested functions, matches, and shadowing. Creating a new use is an edit, not a refactor.</p></section>
+<section class="chapter" id="transformations"><div class="chapter-copy"><h2><span>03</span> The same grid can change shape</h2><p>The Big Book’s larger moves turn rows into blocks, parameters, and branches. Step between the states below. The wording outside the program proposes the gesture; these are before-and-after studies, not general implementations of the transforms.</p></div>
+<div class="lab" id="story-lab"><div class="toolbar"><label>Action <select id="story-choice" aria-label="Transformation"></select></label><div class="story-position"><button data-step="0" aria-pressed="true">Before</button><button data-step="1" aria-pressed="false">After</button></div><label class="motion-label"><input type="checkbox" id="motion" checked> Motion</label></div><div class="program-scroll"><div class="story-program" role="img" aria-label="Transformation preview"></div></div><div class="lab-status story-status" role="status" aria-live="polite"></div><details class="source-details"><summary>Source before and after</summary><div class="source-pair"><div><span>Before</span><pre class="story-before"></pre></div><div><span>After</span><pre class="story-after"></pre></div></div></details></div>
+<div class="input-notes"><p class="story-mouse"></p><p class="story-keyboard"></p></div><p class="note story-rule"></p><p class="note story-evidence"></p>
+</section>
+<section class="chapter" id="inventory"><div class="chapter-copy"><h2><span>04</span> What there is to build</h2><p>The inventory separates working paths in the old editor, proposals in the slides, reusable Hazel transformations, and current Furl behavior. Every row includes a mouse and keyboard path. “Next” and “Soon” are a proposed sequence, not a delivery estimate.</p></div><div class="inventory-controls"><label>Filter <input type="search" id="inventory-search" placeholder="Try: scope, branch, keyboard…"></label><label>Source <select id="inventory-origin"><option value="">All sources</option><option>Old Furl</option><option>Big Book</option><option>Hazel branch</option><option>Current Furl</option><option>New proposal</option></select></label><span id="inventory-count" role="status"></span></div><div class="table-scroll"><table><caption class="sr-only">Furl interaction inventory and proposed controls</caption><thead><tr><th>Action / evidence</th><th>Mouse</th><th>Keyboard</th><th>Constraint</th></tr></thead><tbody><tr data-origin="Old Furl"><td><strong>Insert a binding row</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/view/BlockView.re#L27">BlockView.re:27; Update.re:161–177; Big Book 65, 94</a></span></td><td>Structure: hover a row boundary, then click. Held Option/Alt temporarily reveals the same targets.</td><td>⌘/Ctrl+Enter below; add Shift for above. Enter keeps its native cell meaning.</td><td>Focus the new expression. Insert in a named lexical scope, never at an alignment spacer. A draft row is an edit, not a proven no-op.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Move a row</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L179">BlockView.re:50; Update.re:179–225; Big Book 84–88</a></span></td><td>Drag the row handle outside the comb; preview the destination before release.</td><td>Focus the handle; Space picks up, ↑/↓ chooses a destination, Enter drops, Escape cancels.</td><td>Refactor offers checked destinations. Free edit permits scope/dependency changes but always produces valid structural syntax. The final result is not an ordinary movable let.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Copy a row</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L205">Update.re:205–210; Big Book 87–88</a></span></td><td>Choose Copy in the structure commands; later compare Shift-drag with the deck’s left-then-down gesture.</td><td>Row command “Duplicate below”; then use the same keyboard pickup.</td><td>Fresh syntax IDs and a fresh binder; redirect references inside the copied subtree only. Copying evaluation is not generally a refactor.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Create a reference from a binding</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L246">PatView.re:43; Update.re:246–327</a></span></td><td>Drag a binder to a hole or insertion slot. The binding stays where it was.</td><td>“Insert reference” at the caret opens in-scope bindings; arrows and Enter choose. Study: pick a binder, Tab to a hole, Enter.</td><td>Resolve by binder identity and lexical context, not matching spelling. Never silently capture a different same-named binding.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Move or copy an expression</strong><span class="origin">Old Furl · Soon</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/view/ExpView.re#L23">ExpView.re:23; Update.re:246–327</a></span></td><td>Structure: drag an indicated expression to a typed slot; explicit Copy variant.</td><td>Native structural cut/copy/paste; command “Move expression” can reuse destination picking.</td><td>Old Furl moved single words, not arbitrary Hazel subtrees. Expand to subterms only with source-slot and capture rules.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Extract a literal or subexpression</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L193">Update.re:193–203; Big Book 47–48, 55</a></span></td><td>Pull the selected expression to an earlier binding boundary.</td><td>Command “Extract binding”; reuse Hazel’s refactor chord where available.</td><td>Old implementation only extracted a literal immediately above its own row. Hazel ExtractLet/Explode can supply broader candidates.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Define an unresolved name</strong><span class="origin">Old Furl · Soon</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L187">Update.re:187–192</a></span></td><td>Drag an unresolved occurrence to the boundary above its row.</td><td>At that occurrence, command “Create binding above”.</td><td>Keep the occurrence; create a binder of that name with a hole. Check for collisions.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Insert a word / syntax template</strong><span class="origin">Old Furl · Soon</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/view/CommonView.re#L38">CommonView.re:38; View.re:19; Keyboard.re:16</a></span></td><td>Old editor: click between words or drag from its word palette. Proposed: native Hazel completion or a compact structure menu.</td><td>Use Hazel typing and completion; Tab moves through new holes.</td><td>Do not reimplement a second token editor. Old Space made a new word; that mapping should not replace Hazel’s input model.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Delete and recover</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L115">View.re:108–126; Update.re:115–158</a></span></td><td>Explicit row Delete command; Undo restores it. Keep a stash concept for later.</td><td>Delete on a focused row handle; ⌘/Ctrl+Z restores.</td><td>Old background drops delete into a visible trash collection; picking up trash removes it before a successful drop. Do not inherit that cancellation behavior.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Navigate rows, cells, and uses</strong><span class="origin">Old Furl · Live / extend</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Keyboard.re#L3">Keyboard.re:3–20; PatView.re:27</a></span></td><td>Click a cell; binder/use highlighting helps follow references.</td><td>Existing Furl arrows retain column targets. Tab should visit structural targets only when explicitly entering that layer.</td><td>Old Shift+↑/↓ swaps rows; retain native Shift-selection in text. Do not globally steal it.</td></tr>
+<tr data-origin="Big Book"><td><strong>Create a nested block</strong><span class="origin">Big Book · Soon</span><span class="evidence">Slides 85, 87–88, 95</span></td><td>Select a contiguous row range, then Group; compare Alt-drag / left-then-up as an expert gesture.</td><td>Row selection + “Group into block”; name the resulting binding.</td><td>A nested let changes scope. Reject or explicitly export bindings still used outside the chosen block.</td></tr>
+<tr data-origin="Big Book"><td><strong>Resize a block</strong><span class="origin">Big Book · Later</span><span class="evidence">Slide 89</span></td><td>Structure: drag the top or bottom comb endpoint across row boundaries.</td><td>Focus an endpoint; arrows preview moving it one boundary, Enter commits.</td><td>The endpoints change lexical extent, not CSS height. Show escaping uses and keep required exports.</td></tr>
+<tr data-origin="Big Book"><td><strong>Turn leading rows into parameters</strong><span class="origin">Big Book · Soon</span><span class="evidence">Slides 10–12, 48, 90</span></td><td>Pull the top comb boundary downward; crossed definitions become parameter candidates.</td><td>“Abstract leading rows”; choose a range, preview parameters and call, then commit.</td><td>Create a function plus a call supplying old definitions. Preserve evaluation order; update all affected uses. Start with one tuple parameter.</td></tr>
+<tr data-origin="Hazel branch"><td><strong>Add / remove / reorder parameters</strong><span class="origin">Hazel branch · Soon</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorMove.re">RefactorMove.re: add_param_impl, swap_params_rewrite, remove_param_impl</a></span></td><td>Structure: drag parameter slots or use an endpoint command.</td><td>Commands plus directional parameter navigation; reuse the same transform planner.</td><td>Hazel patches known calls and rejects bare escaping uses in relevant transforms. Adding argument holes is an edit; reordering needs evaluation-order checks.</td></tr>
+<tr data-origin="Big Book"><td><strong>Turn a binding into a match</strong><span class="origin">Big Book · Soon</span><span class="evidence">Slides 37–38, 48, 91, 94</span></td><td>After a refutable pattern is complete, show a fork preview; accept on the comb.</td><td>Commit pattern, then command “Branch on this pattern”.</td><td>Deck proposes automatic creation. Start with an explicit acceptance so intermediate typing does not rearrange the editor; add a fallback hole without claiming semantic equivalence.</td></tr>
+<tr data-origin="Big Book"><td><strong>Add a match branch</strong><span class="origin">Big Book · Soon</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorMove.re#L212">Slides 91, 94; Hazel AddCaseArm</a></span></td><td>Structure: click or pull the match fork right. In normal mode it keeps its current view action.</td><td>At the branch handle, command “Add branch”; Tab enters its pattern/body.</td><td>A branch is a pattern plus a body, not a let row. Place a new branch before a catch-all or use a coverage witness.</td></tr>
+<tr data-origin="Hazel branch"><td><strong>Reorder match branches</strong><span class="origin">Hazel branch · Later</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorMove.re#L1991">RefactorMove.re:1991</a></span></td><td>Drag a whole branch column by its comb handle in Structure mode.</td><td>Pick up a branch handle; ←/→ previews, Enter commits.</td><td>Case order is semantic. Refactor requires disjointness or a stronger proof; the branch currently uses a conservative disjoint-pattern test.</td></tr>
+<tr data-origin="Big Book"><td><strong>Inline a binding / one use</strong><span class="origin">Big Book · Soon</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorInline.re">Slides 48, 92; RefactorInline.re</a></span></td><td>Pull a definition toward an occurrence; preview whether it is copied or consumed.</td><td>Commands “Inline binding” / “Inline this use”; use Hazel FeedLet and InlineLet.</td><td>Distinguish one use from all uses. Preserve precedence, capture avoidance, evaluation behavior, and comments.</td></tr>
+<tr data-origin="Big Book"><td><strong>Carry dependencies while moving</strong><span class="origin">Big Book · Soon</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorMove.re#L1405">Slide 93; RefactorMove.re:1405</a></span></td><td>Refactor drag pauses at a dependency; offer a preview carrying the necessary rows.</td><td>At a blocked move, choose “Move with dependencies”.</td><td>Make the larger operation explicit. Do not silently turn a small reorder into a helper extraction.</td></tr>
+<tr data-origin="Big Book"><td><strong>Extract a helper at a scope boundary</strong><span class="origin">Big Book · Soon</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorLift.re">Slides 93, 95–96; RefactorLift.re</a></span></td><td>Pull a dependency group beyond a function ceiling, then accept a helper preview.</td><td>“Extract helper”; review free variables as parameters and rewritten uses.</td><td>Hazel LiftFunction handles a specific contiguous dependency run and enclosure shapes, not every arbitrary selected Furl region.</td></tr>
+<tr data-origin="Hazel branch"><td><strong>Explode / implode applications</strong><span class="origin">Hazel branch · Soon</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorInline.re">Slides 2, 47, 53, 55; RefactorInline.re</a></span></td><td>Select an expression, choose “Expose intermediates” / “Inline intermediates”.</td><td>Use Hazel Explode / Implode commands; bind an optional chord after testing conflicts.</td><td>Introducing let-bound intermediates is a source refactor. Merely furling existing syntax is a view change; keep the two actions distinct.</td></tr>
+<tr data-origin="Big Book"><td><strong>Inspect / specialize a call or case</strong><span class="origin">Big Book · Later</span><span class="evidence"><a href="https://github.com/hazelgrove/hazel/blob/7dbd77039d7caccc2d077ce922a8beece97167d6/src/haz3lcore/zipper/action/refactor/RefactorReduce.re">Slides 48, 53, 55, 92; RefactorReduce.re</a></span></td><td>Select a live call, then inspect a substituted view. A separate command applies a source rewrite.</td><td>Value arrows navigate; explicit “Step here” / “Bind argument” are source commands.</td><td>A rewrite justified by one sample is not valid for every input. A temporary inspection must not mutate source, history, or persistence.</td></tr>
+<tr data-origin="Current Furl"><td><strong>Furl, unfurl, switch branches and calls</strong><span class="origin">Current Furl · Live</span><span class="evidence">furl/design/architecture.md</span></td><td>Existing comb clicks, all/one branch choice, and selected-value arrows.</td><td>Existing cross-cell arrows and Ctrl+Alt+←/→ for branch inspection.</td><td>View operations stay available outside Structure mode and never become undoable syntax edits. Windows refactor chord conflicts with branch navigation: use handle-focused arrows first.</td></tr>
+<tr data-origin="Big Book"><td><strong>Choose attributes / trace columns</strong><span class="origin">Big Book · Live / later</span><span class="evidence">Slides 49–52, 76, 79–82, 98–102</span></td><td>Existing binding/expression/value toggles; later add types, environments, assertions, and trace pinning.</td><td>Focus a toolbar control; Space toggles it. Commands can restore a hidden caret column.</td><td>Extra value columns are invocation views, not duplicated source. No new code row for controls.</td></tr>
+<tr data-origin="Old Furl"><td><strong>Animation and identity tracking</strong><span class="origin">Old Furl · Next</span><span class="evidence"><a href="https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Animate.re">Animate.re:1–124; Dragology Fig. 1, §§3–4</a></span></td><td>Preview a candidate while dragging; settle identified rows on release.</td><td>Keyboard moves get the same preview and settled state; reduced-motion gets immediate transitions.</td><td>Old editor used UID-based 150ms position transitions. Do not animate syntax by interpolating token text or save intermediate states.</td></tr>
+<tr data-origin="New proposal"><td><strong>Voice-assisted text entry</strong><span class="origin">New proposal · Later</span><span class="evidence">Voice assessment in this study</span></td><td>Click a microphone at the focused cell, dictate, correct a small transcript, then insert.</td><td>Focusable record/stop and accept/cancel controls; ordinary typing remains available.</td><td>One insertion transaction at a retained source target. A late transcript cannot land in a different cell. Service choice remains open.</td></tr></tbody></table></div><p class="note">Old Furl was inspected at <code>4967561</code>; Hazel refactorings at <code>7dbd770</code>. Those source paths were inspected, not rerun as part of this study. Slide numbers include the three hidden slides in the 103-slide PowerPoint.</p></section>
+<section class="chapter" id="foundation"><div class="chapter-copy"><h2><span>05</span> One operation, several ways to reach it</h2><p>Reuse Hazel’s transformation layer, then project each candidate program into <em>Furl’s</em> layout. A keyboard command, pointer drag, or comb gesture should choose from the same candidates and commit through the same document transaction.</p><p>Dragology and gestures can coexist: direction chooses an operation family; candidate states determine the valid destinations. A leftward pull can mean Group while an upward move offers nearby binding slots. We do not need a different editing engine for each gesture.</p></div>
+<div class="pipeline" aria-label="Proposed operation pipeline"><span>Source target</span><b aria-hidden="true">→</b><span>Candidate program</span><b aria-hidden="true">→</b><span>Furl preview</span><b aria-hidden="true">→</b><span>One edit + undo</span></div>
+<div class="prose-grid"><div><h3>Refactor has to earn its name</h3><p>Hazel already checks dependencies, capture, and some branch-disjointness conditions. Its registry also includes edits that add holes. We need per-operation guarantees: an unused expression can still fail or diverge, and moving it across a branch can change when it runs.</p><p>A preview does not save, evaluate on every pointer move, or fill the undo stack. A source change during a drag cancels the stale preview. A match echo points to the same source occurrence, so it cannot duplicate an edit.</p></div><div><h3>Integrate deliberately, port periodically</h3><p>Keep <code>furl</code> as the deployment branch. Trial the refactorings snapshot in a separate integration branch: it brings newer Hazel work as well as refactors. The native drag renderer cannot supply Furl’s grid coordinates unchanged.</p><p>Keep reusable Hazel fixes in focused commits with native tests. Backport those to the relevant Hazel branch with provenance, and record imported snapshots and returned PRs in a small ledger. This study does not merge branches or create upstream PRs.</p></div></div>
+<div class="next"><h3>First live slice</h3><ol><li>Scope-aware row insertion, focus, persistence, and one-step undo.</li><li>Structure mode, offside handles, mouse/keyboard movement, and dependency feedback.</li><li>Reference creation and extraction, followed by helper, parameter, and branch operations.</li></ol><p class="note">Then compare the deck’s left-first gestures, endpoint resizing, and more continuous animation. The complete targeting rules, merge assessment, and acceptance cases are in the <a href="https://github.com/disconcision/furl-next/blob/furl/furl/design/interactions.md">design notes</a>.</p></div></section>
+<section class="chapter" id="voice"><div class="chapter-copy"><h2><span>06</span> Voice can fill the text-shaped gap</h2><p>A small microphone control could dictate into the selected cell, offer a correction, then insert once. Keep the source target and selection while recording; a late transcript must not land in whichever cell happens to be focused later.</p><p>Browser speech recognition is the smallest experiment, but support is uneven and audio may be processed by a service. On-device recognition requires capability checks. <a href="https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition">MDN: SpeechRecognition</a>.</p><p>A short recording sent to an authenticated transcription endpoint offers more control. OpenAI, for example, supports transcription context and keyword hints for domain terms; streaming is available if waiting for a completed clip feels slow. The Pages site can host the control, but a service key belongs on a backend. <a href="https://developers.openai.com/api/docs/guides/speech-to-text">File transcription</a> · <a href="https://developers.openai.com/api/docs/guides/realtime-transcription">Realtime transcription</a>.</p><p class="note">No recording or service is enabled here. The practical trial should measure how much correction names, punctuation, and casing need. Provider, retention, latency, and cost remain choices for that trial.</p></div></section>
+</main><footer><p>Sources: Andrew Blinn’s Furl Big Book; old Furl; Hazel’s refactorings branch; the local Declarative Dragging paper and Dragology implementation. New gestures and examples are design proposals. Full provenance and caveats are in the <a href="https://github.com/disconcision/furl-next/blob/furl/furl/design/interactions.md">design notes</a>.</p><p>Self-contained HTML · no external assets · <a href="./interactions.html" download="furl-interactions.html">Save this study</a></p></footer>
+</div><script>// Fixed program states for design review. Values are preset, not Hazel evaluation.
+const FURL_INTERACTION_STORIES = [
+  {
+    id: "extract",
+    title: "Extract an intermediate",
+    source: "Old Furl literal extraction; Big Book 47–48, 55; Hazel ExtractLet",
+    mouse:
+      "Structure: pull an indicated subexpression to the boundary above its row.",
+    keyboard:
+      "Select the subexpression → Extract binding → choose the boundary → Enter.",
+    rule: "Keep a fresh name, replace only the chosen occurrence, and preserve evaluation order. Here the selected arithmetic is total; the result stays 14.",
+    message:
+      "The subexpression has a row and a name; its use remains in the original expression.",
+    before: { rows: [["result", "result", "(3 + 4) * 2", "14"]], scopes: [] },
+    after: {
+      rows: [
+        ["part", "part", "3 + 4", "7"],
+        ["result", "result", "part * 2", "14"],
+      ],
+      scopes: [[0, 2, 0]],
+    },
+    codeBefore: "(3 + 4) * 2",
+    codeAfter: "let part = 3 + 4 in\npart * 2",
+  },
+  {
+    id: "group",
+    title: "Group rows into a block",
+    source: "Big Book 85, 87–88",
+    mouse:
+      "Select a row range, then Group. Compare the deck’s left-then-up gesture after the explicit version works.",
+    keyboard:
+      "Select rows through their handles → Group into block → name the result.",
+    rule: "Only subtotal escapes this new scope. Grouping rows whose binders are still used outside needs explicit exports or a refusal.",
+    message:
+      "A new comb marks the nested definition; the parent uses its named result.",
+    before: {
+      rows: [
+        ["base", "base", "3", "3"],
+        ["twice", "twice", "base * 2", "6"],
+        ["offset", "offset", "4", "4"],
+        ["sum", "result", "twice + offset", "10"],
+      ],
+      scopes: [[0, 4, 0]],
+    },
+    after: {
+      rows: [
+        ["base", "base", "3", "3"],
+        ["twice", "twice", "base * 2", "6"],
+        ["offset", "offset", "4", "4"],
+        ["sum", "subtotal", "twice + offset", "10"],
+        ["result", "result", "subtotal", "10"],
+      ],
+      scopes: [
+        [0, 5, 0],
+        [0, 4, 1],
+      ],
+    },
+    codeBefore:
+      "let base = 3 in\nlet twice = base * 2 in\nlet offset = 4 in\ntwice + offset",
+    codeAfter:
+      "let subtotal =\n  let base = 3 in\n  let twice = base * 2 in\n  let offset = 4 in\n  twice + offset\nin subtotal",
+  },
+  {
+    id: "resize",
+    title: "Resize a block — escaping use",
+    source: "Big Book 89; proposed rejection feedback",
+    mouse: "Structure: pull the upper comb endpoint upward over offset.",
+    keyboard:
+      "Focus the upper endpoint → ↑ previews one boundary → Enter only when valid.",
+    rule: "This candidate is rejected in Refactor: offset would leave the scope of its use on the last row. The study shows the rejected state, not a committed edit.",
+    message:
+      "Rejected candidate: offset is now hidden inside subtotal, but the parent still uses it.",
+    before: {
+      rows: [
+        ["offset", "offset", "4", "4"],
+        ["base", "base", "3", "3"],
+        ["sum", "subtotal", "base * 2", "6"],
+        ["result", "result", "subtotal + offset", "10"],
+      ],
+      scopes: [
+        [0, 4, 0],
+        [1, 3, 1],
+      ],
+    },
+    after: {
+      rows: [
+        ["offset", "offset", "4", "4"],
+        ["base", "base", "3", "3"],
+        ["sum", "subtotal", "base * 2", "6"],
+        ["result", "result", "subtotal + offset", "?"],
+      ],
+      scopes: [
+        [0, 4, 0],
+        [0, 3, 1],
+      ],
+    },
+    codeBefore:
+      "let offset = 4 in\nlet subtotal =\n  let base = 3 in base * 2\nin subtotal + offset",
+    codeAfter:
+      "let subtotal =\n  let offset = 4 in\n  let base = 3 in base * 2\nin subtotal + offset\n\n# Rejected: offset escapes its scope",
+  },
+  {
+    id: "abstract",
+    title: "Turn leading rows into parameters",
+    source: "Big Book 10–12, 48, 90",
+    mouse:
+      "Pull the top comb boundary down past factor and x; preview a function and the application supplying their old definitions.",
+    keyboard:
+      "Select the leading rows → Abstract leading rows → review parameter order and call → Enter.",
+    rule: "Use a single tuple parameter initially. In general, preserve evaluation order and rewrite affected uses; existing effectful or escaping definitions can block the transformation.",
+    message:
+      "Two definitions become tuple parameters; the new call carries their original values.",
+    before: {
+      rows: [
+        ["factor", "factor", "3", "3"],
+        ["x", "x", "7", "7"],
+        ["body", "scaled", "factor * x", "21"],
+        ["result", "result", "scaled + 1", "22"],
+      ],
+      scopes: [[0, 4, 0]],
+    },
+    after: {
+      rows: [
+        ["params", "(factor, x)", "·", "(3, 7)"],
+        ["body", "scale", "factor * x", "〈fun〉"],
+        ["call", "scaled", "scale(3, 7)", "21"],
+        ["result", "result", "scaled + 1", "22"],
+      ],
+      scopes: [
+        [0, 4, 0],
+        [0, 2, 1, 1],
+      ],
+    },
+    codeBefore:
+      "let factor = 3 in\nlet x = 7 in\nlet scaled = factor * x in\nscaled + 1",
+    codeAfter:
+      "let scale = fun (factor, x) ->\n  factor * x\nin\nlet scaled = scale(3, 7) in\nscaled + 1",
+  },
+  {
+    id: "branch",
+    title: "Add the empty-list branch",
+    source: "Big Book 91, 94; Hazel AddCaseArm",
+    mouse:
+      "Structure: click or pull the fork to the right. Normal comb clicks remain view operations.",
+    keyboard:
+      "Focus the branch handle → Add branch → Tab through its pattern and expression.",
+    rule: "A branch is a pattern and a body, not an inserted let. This is an edit completing missing behavior. Shared scrutinee displays still address one source occurrence.",
+    message:
+      "The new column handles []; xs remains one scrutinee, echoed in both columns.",
+    before: {
+      rows: [
+        ["xs", "xs", "[2, 4]", "[2, 4]"],
+        ["pat", "h :: t", "xs", "[2, 4]"],
+        ["result", "result", "h", "2"],
+      ],
+      scopes: [
+        [0, 3, 0],
+        [1, 3, 1],
+      ],
+    },
+    after: {
+      lanes: 2,
+      rows: [
+        ["xs", "xs", "[2, 4]", "[2, 4]"],
+        ["pat", "h :: t", "xs", "[2, 4]"],
+        ["result", "result", "h", "2"],
+        ["pat2", "[]", "xs", "[2, 4]", 1, 1],
+        ["result2", "result", "0", "", 1, 2],
+      ],
+      scopes: [
+        [0, 3, 0],
+        [1, 3, 1],
+      ],
+      fork: true,
+    },
+    codeBefore: "let xs = [2, 4] in\ncase xs\n| h :: t => h\nend",
+    codeAfter: "let xs = [2, 4] in\ncase xs\n| h :: t => h\n| [] => 0\nend",
+  },
+  {
+    id: "carry",
+    title: "Move with a dependency",
+    source: "Big Book 93; Hazel HoistCarry",
+    mouse:
+      "Move total upward; at the dependency boundary, explicitly choose the larger preview carrying twice.",
+    keyboard:
+      "At a blocked upward move → Move with dependencies → review the selected group → Enter.",
+    rule: "A larger move should not appear as a surprise. Here twice and total cross an independent bonus row; n stays in scope.",
+    message:
+      "The carried pair moves together. Their internal order and lexical dependencies stay intact.",
+    before: {
+      rows: [
+        ["n", "n", "3", "3"],
+        ["bonus", "bonus", "4", "4"],
+        ["twice", "twice", "n * 2", "6"],
+        ["total", "total", "twice + 1", "7"],
+        ["result", "result", "total + bonus", "11"],
+      ],
+      scopes: [[0, 5, 0]],
+    },
+    after: {
+      rows: [
+        ["n", "n", "3", "3"],
+        ["twice", "twice", "n * 2", "6"],
+        ["total", "total", "twice + 1", "7"],
+        ["bonus", "bonus", "4", "4"],
+        ["result", "result", "total + bonus", "11"],
+      ],
+      scopes: [[0, 5, 0]],
+    },
+    codeBefore:
+      "let n = 3 in\nlet bonus = 4 in\nlet twice = n * 2 in\nlet total = twice + 1 in\ntotal + bonus",
+    codeAfter:
+      "let n = 3 in\nlet twice = n * 2 in\nlet total = twice + 1 in\nlet bonus = 4 in\ntotal + bonus",
+  },
+  {
+    id: "helper",
+    title: "Cross the ceiling as a helper",
+    source: "Big Book 93, 95–96; Hazel LiftFunction",
+    mouse:
+      "Pull y and its dependency scale above the function ceiling; accept the helper preview rather than breaking x’s scope.",
+    keyboard:
+      "Select y → Extract helper → review x as a parameter and the rewritten use → Enter.",
+    rule: "Carry scale into the helper, abstract over x, and replace y’s definition with a call. This concrete case is total; arbitrary helper extraction has more capture and evaluation constraints.",
+    message:
+      "x becomes the helper parameter; the local dependency travels inside the helper.",
+    before: {
+      rows: [
+        ["param", "x", "·", "5"],
+        ["scale", "scale", "2", "2"],
+        ["y", "y", "x * scale", "10"],
+        ["calc", "calc", "y + 1", "〈fun〉"],
+        ["result", "result", "calc(5)", "11"],
+      ],
+      scopes: [
+        [0, 5, 0],
+        [0, 4, 1, 1],
+      ],
+    },
+    after: {
+      rows: [
+        ["hparam", "x", "·", "5"],
+        ["scale", "scale", "2", "2"],
+        ["helper", "helper", "x * scale", "〈fun〉"],
+        ["param", "x", "·", "5"],
+        ["y", "y", "helper(x)", "10"],
+        ["calc", "calc", "y + 1", "〈fun〉"],
+        ["result", "result", "calc(5)", "11"],
+      ],
+      scopes: [
+        [0, 7, 0],
+        [0, 3, 1, 1],
+        [3, 6, 1, 4],
+      ],
+    },
+    codeBefore:
+      "let calc = fun x ->\n  let scale = 2 in\n  let y = x * scale in\n  y + 1\nin calc(5)",
+    codeAfter:
+      "let helper = fun x ->\n  let scale = 2 in x * scale\nin\nlet calc = fun x ->\n  let y = helper(x) in y + 1\nin calc(5)",
+  },
+  {
+    id: "unabstract",
+    title: "Un-abstract a single-use function",
+    source: "Big Book 48, 92; Hazel staged substitution",
+    mouse:
+      "Pull the argument into the parameter opening, preview the consumed call, then apply explicitly.",
+    keyboard:
+      "At the call → Bind argument / un-abstract → inspect the whole source change → Enter.",
+    rule: "Here f has exactly one use and the argument is a total literal. Do not globally specialize a reusable function from one live sample; offer a separate inspection-only view for that.",
+    message:
+      "The parameter becomes a local definition. The sole call disappears; the result stays 7.",
+    before: {
+      rows: [
+        ["x", "x", "·", "3"],
+        ["delta", "delta", "4", "4"],
+        ["f", "f", "x + delta", "〈fun〉"],
+        ["result", "result", "f(3)", "7"],
+      ],
+      scopes: [
+        [0, 4, 0],
+        [0, 3, 1, 1],
+      ],
+    },
+    after: {
+      rows: [
+        ["x", "x", "3", "3"],
+        ["delta", "delta", "4", "4"],
+        ["f", "f", "x + delta", "7"],
+        ["result", "result", "f", "7"],
+      ],
+      scopes: [
+        [0, 4, 0],
+        [0, 3, 1],
+      ],
+    },
+    codeBefore: "let f = fun x ->\n  let delta = 4 in x + delta\nin f(3)",
+    codeAfter: "let f =\n  let x = 3 in\n  let delta = 4 in x + delta\nin f",
+  },
+];
+
+(() => {
+  "use strict";
+  const $ = (s, root = document) => root.querySelector(s);
+  const $$ = (s, root = document) => [...root.querySelectorAll(s)];
+  const copy = (value) => JSON.parse(JSON.stringify(value));
+  const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const primary = (e) => (e.metaKey || e.ctrlKey) && !e.altKey;
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+  const svgNS = "http://www.w3.org/2000/svg";
+  function comb(height) {
+    const s = document.createElementNS(svgNS, "svg");
+    s.classList.add("comb");
+    s.setAttribute("aria-hidden", "true");
+    const p = document.createElementNS(svgNS, "path");
+    p.setAttribute("d", `M 8 1 Q 2 1 2 7 L 2 ${height - 2}`);
+    s.append(p);
+    return s;
+  }
+  function status(root, message, warn = false) {
+    const n = $(".lab-status", root);
+    n.textContent = message;
+    n.classList.toggle("warn", warn);
+  }
+  function mode(root, changed) {
+    let pinned = false,
+      held = false,
+      inside = false,
+      latched = false,
+      last = false;
+    const button = $(".structure-toggle", root);
+    const active = () => pinned || latched || (held && inside);
+    const update = () => {
+      const a = active();
+      root.classList.toggle("armed", a);
+      button.setAttribute("aria-pressed", String(pinned));
+      $(".mode-note", root).textContent = a
+        ? pinned
+          ? "Structure active"
+          : latched
+            ? "Structure picked up"
+            : "Option / Alt held"
+        : "Editing cells";
+      if (a !== last) {
+        last = a;
+        changed(a);
+      }
+    };
+    button.addEventListener("click", () => {
+      pinned = !pinned;
+      update();
+    });
+    root.addEventListener("pointerenter", () => {
+      inside = true;
+      update();
+    });
+    root.addEventListener("pointerleave", () => {
+      inside = false;
+      update();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (
+        e.key === "Alt" &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.getModifierState("AltGraph")
+      ) {
+        held = true;
+        update();
+      }
+    });
+    document.addEventListener("keyup", (e) => {
+      if (e.key === "Alt") {
+        held = false;
+        update();
+      }
+    });
+    const clear = () => {
+      held = false;
+      update();
+    };
+    window.addEventListener("blur", clear);
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) clear();
+    });
+    return {
+      active,
+      enable: () => {
+        pinned = true;
+        update();
+      },
+      latch: (value) => {
+        latched = value;
+        update();
+      },
+    };
+  }
+  // A deliberately small parser for this study, never JavaScript eval.
+  function arithmetic(source, env) {
+    const tokens =
+      source.match(
+        /[A-Za-z_][A-Za-z_0-9]*|(?:\d+(?:\.\d*)?|\.\d+)|[()+*\-]|\S/g,
+      ) || [];
+    let i = 0;
+    function atom() {
+      const t = tokens[i++];
+      if (t === "(") {
+        const v = sum();
+        if (tokens[i++] !== ")") throw Error("Missing )");
+        return v;
+      }
+      if (t === "-") return -atom();
+      if (t && /^(?:\d+(?:\.\d*)?|\.\d+)$/.test(t)) return Number(t);
+      if (t && /^[A-Za-z_]\w*$/.test(t)) {
+        if (!env.has(t)) throw Error(`${t} is not bound here`);
+        const v = env.get(t);
+        if (v === null) throw Error(`${t} has no value yet`);
+        return v;
+      }
+      throw Error(
+        t === undefined ? "An expression is needed" : `Unsupported token ${t}`,
+      );
+    }
+    function product() {
+      let v = atom();
+      while (tokens[i] === "*") {
+        i++;
+        v *= atom();
+      }
+      return v;
+    }
+    function sum() {
+      let v = product();
+      while (tokens[i] === "+" || tokens[i] === "-") {
+        const op = tokens[i++],
+          right = product();
+        v = op === "+" ? v + right : v - right;
+      }
+      return v;
+    }
+    const v = sum();
+    if (i !== tokens.length) throw Error(`Unexpected token ${tokens[i]}`);
+    if (!Number.isFinite(v)) throw Error("Value is too large");
+    return v;
+  }
+  function analyze(rows) {
+    const env = new Map(),
+      seen = new Set(),
+      values = new Map(),
+      errors = [];
+    for (const row of rows) {
+      let value = null,
+        problem = "";
+      try {
+        value = arithmetic(row.e, env);
+      } catch (e) {
+        problem = e.message;
+      }
+      if (!row.result) {
+        if (!/^[A-Za-z_]\w*$/.test(row.p))
+          problem = problem || "A binding name is needed";
+        else if (seen.has(row.p))
+          problem = problem || `Duplicate binding ${row.p}`;
+        else seen.add(row.p);
+        if (/^[A-Za-z_]\w*$/.test(row.p)) env.set(row.p, value);
+      }
+      values.set(row.id, { value, problem });
+      if (problem) errors.push(`${row.p || "New row"}: ${problem}`);
+    }
+    return { values, errors };
+  }
+  function initRows() {
+    const root = $("#row-lab"),
+      program = $(".row-program", root);
+    let rows = [
+      { id: "n", p: "n", e: "3" },
+      { id: "twice", p: "twice", e: "n * 2" },
+      { id: "bonus", p: "bonus", e: "4" },
+      { id: "total", p: "total", e: "twice + bonus" },
+      { id: "result", p: "result", e: "total", result: true },
+    ];
+    const initial = copy(rows);
+    let history = [],
+      serial = 0,
+      selected = "n",
+      policy = "refactor",
+      session = null;
+    const nodes = new Map();
+    let controls;
+    const undo = $("[data-action=undo]", root);
+    const source = $(".row-source", root);
+    function focusRow(id, part = "expression") {
+      selected = id;
+      const row = nodes.get(id);
+      if (row) $(part === "handle" ? ".row-handle" : `.${part}`, row)?.focus();
+    }
+    function render(shown = rows, animate = true) {
+      const focused = document.activeElement;
+      const focusedHandle = focused?.classList.contains("row-handle")
+        ? focused.closest(".edit-row").dataset.id
+        : null;
+      const focusInfo = focused?.dataset.field
+        ? {
+            id: focused.closest(".edit-row").dataset.id,
+            field: focused.dataset.field,
+            start: focused.selectionStart,
+            end: focused.selectionEnd,
+          }
+        : null;
+      const before = new Map(
+        [...nodes].map(([id, n]) => [id, n.getBoundingClientRect().top]),
+      );
+      $$(".gap,.comb", program).forEach((n) => n.remove());
+      const analysis = analyze(shown),
+        present = new Set(shown.map((r) => r.id));
+      for (const [id, n] of nodes) {
+        if (!present.has(id)) {
+          n.remove();
+          nodes.delete(id);
+        }
+      }
+      shown.forEach((row, index) => {
+        let n = nodes.get(row.id);
+        if (!n) {
+          n = el("div", "edit-row");
+          n.dataset.id = row.id;
+          if (!row.result) {
+            const handle = el("button", "row-handle", "⋮");
+            handle.type = "button";
+            handle.setAttribute("aria-label", `Move ${row.p || "new row"}`);
+            handle.addEventListener("pointerdown", (e) =>
+              startPointer(e, row.id),
+            );
+            handle.addEventListener("keydown", (e) => handleKey(e, row.id));
+            handle.addEventListener("focus", () => {
+              selected = row.id;
+              n.classList.add("focused");
+            });
+            handle.addEventListener("blur", () =>
+              n.classList.remove("focused"),
+            );
+            n.append(handle);
+          }
+          if (row.result) n.append(el("span", "static-pattern", "result"));
+          else {
+            const p = el("input", "pattern");
+            p.placeholder = "□";
+            p.dataset.field = "pattern";
+            p.spellcheck = false;
+            p.autocomplete = "off";
+            p.setAttribute("aria-label", `Binding ${row.p || "new row"}`);
+            n.append(p);
+          }
+          const expression = el("input", "expression");
+          expression.dataset.field = "expression";
+          expression.placeholder = "□";
+          expression.spellcheck = false;
+          expression.autocomplete = "off";
+          n.append(expression, el("span", "value"));
+          $$("input", n).forEach((input) => {
+            input.addEventListener("focus", () => {
+              selected = row.id;
+              n.classList.add("focused");
+            });
+            input.addEventListener("blur", () => n.classList.remove("focused"));
+            input.addEventListener("input", () => {
+              if (session) cancel("The edit canceled the movement preview.");
+              const base = copy(rows);
+              const current = rows.find((r) => r.id === row.id);
+              if (!current) return;
+              current[input.dataset.field === "pattern" ? "p" : "e"] =
+                input.value;
+              history.push(base);
+              render(rows, false);
+              status(
+                root,
+                analyze(rows).errors[0] || "Arithmetic values updated.",
+                analyze(rows).errors.length > 0,
+              );
+            });
+          });
+          nodes.set(row.id, n);
+        }
+        n.dataset.index = index;
+        n.classList.toggle("focused", row.id === selected);
+        const pat = $(".pattern", n);
+        if (pat) {
+          pat.value = row.p;
+          pat.setAttribute("aria-label", `Binding ${row.p || "new row"}`);
+        }
+        const expression = $(".expression", n);
+        expression.value = row.e;
+        expression.setAttribute(
+          "aria-label",
+          `Expression for ${row.p || "new row"}`,
+        );
+        const value = analysis.values.get(row.id);
+        $(".value", n).textContent = value.problem ? "?" : String(value.value);
+        $(".value", n).classList.toggle("invalid", !!value.problem);
+        $(".value", n).title = value.problem;
+        const handle = $(".row-handle", n);
+        if (handle) {
+          handle.setAttribute("aria-label", `Move ${row.p || "new row"}`);
+          handle.setAttribute("aria-pressed", String(session?.id === row.id));
+        }
+        program.append(n);
+        if (animate && !reduced() && before.has(row.id)) {
+          const delta = before.get(row.id) - n.getBoundingClientRect().top;
+          if (delta) {
+            n.getAnimations().forEach((a) => a.cancel());
+            n.animate(
+              [
+                { transform: `translateY(${delta}px)` },
+                { transform: "translateY(0)" },
+              ],
+              { duration: 150, easing: "ease-out" },
+            );
+          }
+        }
+      });
+      program.append(comb(shown.length * 22));
+      // Slots precede real rows, including the terminal expression. None follow result.
+      for (let i = 0; i < shown.length; i++) {
+        const gap = el("button", "gap");
+        gap.type = "button";
+        gap.tabIndex = -1;
+        gap.style.top = `${i * 22}px`;
+        gap.dataset.slot = i;
+        gap.setAttribute(
+          "aria-label",
+          `Insert before ${shown[i].p || "new row"}`,
+        );
+        gap.setAttribute("aria-hidden", String(!controls?.active()));
+        gap.addEventListener("click", () => {
+          if (!controls.active() && !session) return;
+          if (session) {
+            const from = session.base.findIndex((r) => r.id === session.id);
+            preview(Math.min(i > from ? i - 1 : i, rows.length - 2));
+            finish();
+          } else insert(i);
+        });
+        program.append(gap);
+      }
+      undo.disabled = history.length === 0;
+      source.textContent = shown
+        .map((r) => (r.result ? r.e : `let ${r.p || "□"} = ${r.e || "□"} in`))
+        .join("\n");
+      if (focusedHandle) focusRow(focusedHandle, "handle");
+      if (focusInfo && nodes.has(focusInfo.id)) {
+        const input = $(
+          `[data-field=${focusInfo.field}]`,
+          nodes.get(focusInfo.id),
+        );
+        if (input) {
+          input.focus({ preventScroll: true });
+          input.setSelectionRange(focusInfo.start, focusInfo.end);
+        }
+      }
+    }
+    function commit(next, message, focus = selected) {
+      history.push(copy(rows));
+      rows = copy(next);
+      selected = focus;
+      render();
+      status(root, message);
+    }
+    function insert(index) {
+      if (session) cancel();
+      const id = `draft${++serial}`;
+      const next = copy(rows);
+      next.splice(index, 0, { id, p: "", e: "" });
+      commit(
+        next,
+        "Inserted a draft binding. Its expression is focused; this is one undoable edit.",
+        id,
+      );
+      focusRow(id);
+    }
+    function cancel(message = "Canceled. Source and row order are unchanged.") {
+      if (!session) return;
+      session.ghost?.remove();
+      session = null;
+      controls.latch(false);
+      render();
+      status(root, message);
+    }
+    function begin(id, pin = true) {
+      const row = rows.find((r) => r.id === id);
+      if (!row || row.result) return;
+      if (pin) controls.enable();
+      controls.latch(true);
+      selected = id;
+      session = {
+        id,
+        base: copy(rows),
+        to: rows.findIndex((r) => r.id === id),
+        candidate: copy(rows),
+        allowed: true,
+        pointer: false,
+        began: false,
+      };
+      render(rows, false);
+      status(
+        root,
+        `Picked up ${row.p || "new row"}. Choose a destination; Enter drops, Escape cancels.`,
+      );
+    }
+    function preview(to) {
+      if (!session) return;
+      const s = session;
+      s.to = Math.max(0, Math.min(s.base.length - 2, to));
+      const next = copy(s.base);
+      const from = next.findIndex((r) => r.id === s.id);
+      const [moving] = next.splice(from, 1);
+      next.splice(s.to, 0, moving);
+      const oldErrors = analyze(s.base).errors,
+        newErrors = analyze(next).errors;
+      const reason = oldErrors[0] || newErrors[0];
+      s.allowed = policy === "free" || !reason;
+      s.candidate = next;
+      render(s.allowed ? next : s.base);
+      const gap = $(`.gap[data-slot="${s.to}"]`, program);
+      if (gap) {
+        gap.classList.add("destination");
+        gap.classList.toggle("blocked", !s.allowed);
+      }
+      status(
+        root,
+        !s.allowed
+          ? `Blocked: ${reason}. Choose another destination or cancel.`
+          : newErrors.length
+            ? `Free edit preview — ${newErrors[0]}. Drop to apply.`
+            : `Preview: ${moving.p || "new row"} at position ${s.to + 1}. Drop commits one edit.`,
+        !s.allowed || newErrors.length > 0,
+      );
+    }
+    function finish() {
+      if (!session) return;
+      const s = session;
+      if (!s.allowed) {
+        cancel(
+          "Move refused. The dependency-breaking candidate was not applied.",
+        );
+        return;
+      }
+      const moved = JSON.stringify(rows) !== JSON.stringify(s.candidate);
+      s.ghost?.remove();
+      session = null;
+      controls.latch(false);
+      if (moved) {
+        const errors = analyze(s.candidate).errors;
+        commit(
+          s.candidate,
+          errors.length
+            ? `Moved in Free edit. ${errors[0]}`
+            : "Moved the row. One Undo restores the original order.",
+          s.id,
+        );
+        status(root, $(".lab-status", root).textContent, errors.length > 0);
+      } else {
+        render();
+        status(root, "No change to the row order.");
+      }
+      focusRow(s.id, "handle");
+    }
+    function startPointer(e, id) {
+      if (e.button !== 0 || (!controls.active() && !session)) return;
+      e.preventDefault();
+      if (session) cancel();
+      begin(id, false);
+      session.pointer = true;
+      session.startX = e.clientX;
+      session.startY = e.clientY;
+      session.from = session.to;
+    }
+    window.addEventListener("pointermove", (e) => {
+      const s = session;
+      if (!s?.pointer) return;
+      const delta = e.clientY - s.startY;
+      if (!s.began && Math.hypot(e.clientX - s.startX, delta) < 5) return;
+      if (!s.began) {
+        s.began = true;
+        s.ghost = el(
+          "div",
+          "drag-ghost",
+          s.base.find((r) => r.id === s.id).p || "□",
+        );
+        document.body.append(s.ghost);
+      }
+      s.ghost.style.left = `${e.clientX + 14}px`;
+      s.ghost.style.top = `${e.clientY - 10}px`;
+      const to = Math.max(
+        0,
+        Math.min(s.base.length - 2, s.from + Math.round(delta / 22)),
+      );
+      if (to !== s.to) preview(to);
+    });
+    window.addEventListener("pointerup", () => {
+      if (!session?.pointer) return;
+      if (session.began) finish();
+      else session.pointer = false;
+    });
+    window.addEventListener("pointercancel", () => cancel());
+    window.addEventListener("blur", () => cancel());
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && session) {
+        e.preventDefault();
+        const id = session.id;
+        cancel();
+        focusRow(id, "handle");
+      }
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) cancel();
+    });
+    function handleKey(e, id) {
+      if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        if (session) finish();
+        else begin(id);
+      } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const d = e.key === "ArrowDown" ? 1 : -1;
+        if (session) preview(session.to + d);
+        else {
+          const i = rows.findIndex((r) => r.id === id);
+          focusRow(
+            rows[Math.max(0, Math.min(rows.length - 2, i + d))].id,
+            "handle",
+          );
+        }
+      }
+    }
+    root.addEventListener("keydown", (e) => {
+      if (e.isComposing) return;
+      if (e.key === "Escape" && session) {
+        e.preventDefault();
+        const id = session.id;
+        cancel();
+        focusRow(id, "handle");
+      } else if (primary(e) && e.key === "Enter") {
+        e.preventDefault();
+        const i = rows.findIndex((r) => r.id === selected);
+        insert(Math.min(rows.length - 1, i + (e.shiftKey ? 0 : 1)));
+      } else if (primary(e) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undoAction();
+      }
+    });
+    function undoAction() {
+      if (session) cancel();
+      if (history.length) {
+        rows = history.pop();
+        selected = rows.some((r) => r.id === selected) ? selected : rows[0].id;
+        render();
+        status(root, "Undid one edit.");
+        focusRow(selected);
+      }
+    }
+    undo.addEventListener("click", undoAction);
+    $("[data-action=insert]", root).addEventListener("click", () =>
+      insert(
+        Math.min(rows.length - 1, rows.findIndex((r) => r.id === selected) + 1),
+      ),
+    );
+    $("[data-action=reset]", root).addEventListener("click", () => {
+      cancel();
+      commit(
+        initial,
+        "Restored the starting example. Reset can also be undone.",
+        "n",
+      );
+    });
+    $$("[data-policy]", root).forEach((b) =>
+      b.addEventListener("click", () => {
+        if (session) cancel();
+        policy = b.dataset.policy;
+        $$("[data-policy]", root).forEach((n) =>
+          n.setAttribute("aria-pressed", String(n === b)),
+        );
+        status(
+          root,
+          policy === "free"
+            ? "Free edit: row moves may change meaning or introduce errors."
+            : "Refactor: this lab only admits valid independent arithmetic rows.",
+        );
+      }),
+    );
+    controls = mode(root, (active) => {
+      $$(".gap", program).forEach((g) =>
+        g.setAttribute("aria-hidden", String(!active)),
+      );
+    });
+    render(rows, false);
+  }
+  function initReferences() {
+    const root = $("#reference-lab"),
+      program = $(".reference-program", root);
+    const bindings = [
+      { id: "width-binding", name: "width", value: 6 },
+      { id: "height-binding", name: "height", value: 4 },
+    ];
+    let slots = [null, null],
+      history = [],
+      picked = null,
+      drag = null,
+      controls;
+    function render() {
+      program.replaceChildren();
+      for (const b of bindings) {
+        const row = el("div", "reference-row"),
+          name = el("button", "ref-name", b.name);
+        name.type = "button";
+        name.dataset.binder = b.id;
+        name.disabled = !controls?.active();
+        name.classList.toggle("picked", picked === b.id);
+        name.setAttribute("aria-label", `Use ${b.name}`);
+        name.addEventListener("click", () => {
+          if (drag?.moved) return;
+          pick(b.id);
+        });
+        name.addEventListener("pointerdown", (e) => {
+          if (e.button || !controls.active()) return;
+          drag = { id: b.id, x: e.clientX, y: e.clientY, moved: false };
+        });
+        row.append(
+          name,
+          el("span", "", String(b.value)),
+          el("span", "ref-value", String(b.value)),
+        );
+        program.append(row);
+      }
+      const row = el("div", "reference-row");
+      row.append(el("span", "ref-name", "area"));
+      const expression = el("span");
+      slots.forEach((id, i) => {
+        if (i) expression.append(document.createTextNode(" * "));
+        const b = bindings.find((b) => b.id === id),
+          hole = el("button", `hole${b ? " filled" : ""}`, b?.name || "□");
+        hole.type = "button";
+        hole.dataset.hole = i;
+        hole.disabled = !controls?.active();
+        hole.setAttribute(
+          "aria-label",
+          `${i ? "Second" : "First"} factor${b ? `: ${b.name}` : ": empty"}`,
+        );
+        hole.addEventListener("click", () => place(i));
+        expression.append(hole);
+      });
+      row.append(
+        expression,
+        el(
+          "span",
+          "ref-value",
+          slots.every(Boolean)
+            ? String(
+                slots.reduce(
+                  (v, id) => v * bindings.find((b) => b.id === id).value,
+                  1,
+                ),
+              )
+            : "?",
+        ),
+      );
+      program.append(row, comb(66));
+      $("[data-action=undo]", root).disabled = !history.length;
+    }
+    function pick(id) {
+      picked = id;
+      controls.latch(true);
+      render();
+      $(`[data-binder="${id}"]`, root)?.focus({ preventScroll: true });
+      status(
+        root,
+        `Carrying a reference to ${bindings.find((b) => b.id === id).name}. Choose a factor; Escape cancels.`,
+      );
+    }
+    function place(index) {
+      if (!picked) {
+        status(root, "Choose a binding first.");
+        return;
+      }
+      history.push([...slots]);
+      slots[index] = picked;
+      picked = null;
+      controls.latch(false);
+      render();
+      $(`[data-hole="${index}"]`, root).focus({ preventScroll: true });
+      status(
+        root,
+        slots.every(Boolean)
+          ? "Both uses are in place. The original bindings remain; area has a value."
+          : "Inserted the reference. The defining row stayed in place.",
+      );
+    }
+    window.addEventListener("pointermove", (e) => {
+      if (!drag) return;
+      if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) < 5)
+        return;
+      if (!drag.moved) {
+        drag.moved = true;
+        picked = drag.id;
+        controls.latch(true);
+        drag.ghost = el(
+          "div",
+          "drag-ghost",
+          bindings.find((b) => b.id === picked).name,
+        );
+        document.body.append(drag.ghost);
+      }
+      drag.ghost.style.left = `${e.clientX + 12}px`;
+      drag.ghost.style.top = `${e.clientY - 10}px`;
+      const target = document
+        .elementFromPoint(e.clientX, e.clientY)
+        ?.closest("#reference-lab [data-hole]");
+      $$("[data-hole]", root).forEach((n) =>
+        n.classList.toggle("target", n === target),
+      );
+      drag.target = target ? Number(target.dataset.hole) : null;
+    });
+    window.addEventListener("pointerup", () => {
+      if (!drag) return;
+      const d = drag;
+      if (d.moved) {
+        d.ghost?.remove();
+        if (d.target !== null && d.target !== undefined) place(d.target);
+        else {
+          picked = null;
+          controls.latch(false);
+          render();
+          status(root, "Canceled. No reference was inserted.");
+        } // Suppress the synthetic click after a completed drag.
+        setTimeout(() => {
+          drag = null;
+        }, 0);
+      } else drag = null;
+    });
+    function cancel() {
+      drag?.ghost?.remove();
+      drag = null;
+      picked = null;
+      controls.latch(false);
+      render();
+      status(root, "Canceled. Bindings and references are unchanged.");
+    }
+    root.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        cancel();
+      }
+      if (primary(e) && e.key.toLowerCase() === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      }
+    });
+    window.addEventListener("pointercancel", () => {
+      if (drag) cancel();
+    });
+    window.addEventListener("blur", () => {
+      if (drag || picked) cancel();
+    });
+    function undo() {
+      if (drag || picked) cancel();
+      if (history.length) {
+        slots = history.pop();
+        render();
+        status(root, "Undid reference insertion.");
+      }
+    }
+    $("[data-action=undo]", root).addEventListener("click", undo);
+    $("[data-action=reset]", root).addEventListener("click", () => {
+      cancel();
+      history.push([...slots]);
+      slots = [null, null];
+      render();
+      status(root, "The two factors are empty again.");
+    });
+    controls = mode(root, (active) => {
+      if (!active && !drag) picked = null;
+      render();
+    });
+    render();
+  }
+  function initStories() {
+    const root = $("#story-lab"),
+      choice = $("#story-choice"),
+      program = $(".story-program", root);
+    let story = FURL_INTERACTION_STORIES[0],
+      step = 0;
+    const nodes = new Map();
+    for (const s of FURL_INTERACTION_STORIES) {
+      const option = el("option", "", s.title);
+      option.value = s.id;
+      choice.append(option);
+    }
+    function render() {
+      const state = step ? story.after : story.before;
+      const maxRows = Math.max(
+        story.before.rows.length,
+        story.after.rows.length,
+        5,
+      );
+      const lanes = story.before.lanes || story.after.lanes || 1;
+      program.dataset.lanes = lanes;
+      program.style.minWidth = lanes === 2 ? "980px" : "760px";
+      program.style.height = `${maxRows * 22}px`;
+      const laneWidth = lanes === 2 ? 470 : 0;
+      const present = new Set();
+      state.rows.forEach((r, index) => {
+        const [id, p, e, v, lane = 0, slot = index] = r;
+        present.add(id);
+        let row = nodes.get(id);
+        if (!row) {
+          row = el("div", "story-row");
+          row.dataset.storyRow = id;
+          row.append(el("span", "p"), el("span", "e"), el("span", "v"));
+          program.append(row);
+          nodes.set(id, row);
+        }
+        $(".p", row).textContent = p;
+        $(".e", row).textContent = e;
+        $(".e", row).classList.toggle("parameter", e === "·");
+        $(".v", row).textContent = v;
+        row.style.transform = `translate(${lane * laneWidth}px, ${slot * 22}px)`;
+        row.style.opacity = "1";
+        row.setAttribute("aria-hidden", "false");
+      });
+      for (const [id, row] of nodes)
+        if (!present.has(id)) {
+          row.style.opacity = "0";
+          row.setAttribute("aria-hidden", "true");
+        }
+      $(".story-combs", program)?.remove();
+      const svg = document.createElementNS(svgNS, "svg");
+      svg.classList.add("story-combs");
+      svg.setAttribute("aria-hidden", "true");
+      function path(d) {
+        const p = document.createElementNS(svgNS, "path");
+        p.setAttribute("d", d);
+        svg.append(p);
+      }
+      for (const [start, end, depth, parameterEnd] of state.scopes) {
+        const x = 29 + depth * 10,
+          y = start * 22 + 2;
+        path(
+          `M ${x + 5} ${y} Q ${x} ${y} ${x} ${y + 6} L ${x} ${end * 22 - 2}`,
+        );
+        if (parameterEnd !== undefined)
+          path(`M ${x} ${parameterEnd * 22} H ${x + 6}`);
+      }
+      if (state.fork) {
+        path(
+          `M 39 22 C 39 16 43 16 48 16 H ${laneWidth + 34} Q ${laneWidth + 39} 16 ${laneWidth + 39} 22 V 64`,
+        );
+      }
+      program.prepend(svg);
+      program.setAttribute(
+        "aria-label",
+        `${story.title}. ${step ? "After" : "Before"}. ${state.rows.map((r) => `${r[1]}: ${r[2]}`).join("; ")}`,
+      );
+      $(".story-status", root).textContent = step
+        ? story.message
+        : "Before the proposed operation. Choose After to inspect the change.";
+      $(".story-status", root).classList.toggle(
+        "warn",
+        step === 1 && story.id === "resize",
+      );
+      $(".story-mouse").replaceChildren(
+        el("strong", "", "Mouse"),
+        document.createTextNode(` · ${story.mouse}`),
+      );
+      $(".story-keyboard").replaceChildren(
+        el("strong", "", "Keyboard"),
+        document.createTextNode(` · ${story.keyboard}`),
+      );
+      $(".story-rule").textContent = story.rule;
+      $(".story-evidence").textContent =
+        `Source: ${story.source}. Values are preset.`;
+      $(".story-before", root).textContent = story.codeBefore;
+      $(".story-after", root).textContent = story.codeAfter;
+      $$("[data-step]", root).forEach((b) =>
+        b.setAttribute("aria-pressed", String(Number(b.dataset.step) === step)),
+      );
+    }
+    choice.addEventListener("change", () => {
+      story = FURL_INTERACTION_STORIES.find((s) => s.id === choice.value);
+      step = 0;
+      nodes.forEach((n) => n.remove());
+      nodes.clear();
+      render();
+    });
+    $$("[data-step]", root).forEach((b) =>
+      b.addEventListener("click", () => {
+        step = Number(b.dataset.step);
+        render();
+      }),
+    );
+    $("#motion").checked = !reduced();
+    $("#motion").addEventListener("change", () =>
+      root.classList.toggle("no-motion", !$("#motion").checked),
+    );
+    render();
+  }
+  function initInventory() {
+    const search = $("#inventory-search"),
+      origin = $("#inventory-origin"),
+      rows = $$("#inventory tbody tr");
+    function filter() {
+      const q = search.value.trim().toLowerCase();
+      let count = 0;
+      rows.forEach((row) => {
+        row.hidden = !(
+          row.textContent.toLowerCase().includes(q) &&
+          (!origin.value || row.dataset.origin === origin.value)
+        );
+        if (!row.hidden) count++;
+      });
+      $("#inventory-count").textContent = `${count} of ${rows.length} actions`;
+    }
+    search.addEventListener("input", filter);
+    origin.addEventListener("change", filter);
+    filter();
+  }
+  initRows();
+  initReferences();
+  initStories();
+  initInventory();
+})();
+</script></body></html>
