@@ -2,9 +2,11 @@
 
 An environment for working with code, bindings, and the values they produce. Furl owns the interface; Hazel supplies the language and structural editing foundation.
 
-**[Read the interactive reference](https://andrewblinn.com/furl-next/)** · [Study switcher](https://andrewblinn.com/furl-next/studies.html)
+**[Try the live editor](https://andrewblinn.com/furl-next/live/)** · [Interactive reference](https://andrewblinn.com/furl-next/) · [Study switcher](https://andrewblinn.com/furl-next/studies.html)
 
-The current page contains seven interactive design studies with preset values. It supports granular furling, attribute visibility, display alternatives, and call navigation. It does not yet edit or evaluate Hazel programs. Each published page is a self-contained HTML file that also opens offline.
+The live study embeds Hazel's structural expression and pattern editors in Furl's grid. Editing a cell changes one underlying program, rechecks its lexical context, and updates dependent values using Hazel's evaluator and probes. Let scopes can be furled into rows or unfurled into source. Undo/redo, display toggles, reset, and browser persistence work across three examples.
+
+The reference contains seven interactive design studies with preset values, including more developed function/match projections and call navigation. Each reference page is a self-contained HTML file that opens offline. The live app is a separate, compiled web application.
 
 ## Repository organization
 
@@ -13,6 +15,9 @@ The current page contains seven interactive design studies with preset values. I
 | [`furl/reference/`](furl/reference/) | Editable page, shared study renderer, styles, and preset programs |
 | [`furl/design/`](furl/design/) | Layout model, implementation decisions, and source notes |
 | [`furl/archive/`](furl/archive/) | Preserved conversation study and its original standalone export |
+| [`src/web/furl/`](src/web/furl/) | Live program model, projection, app, and embedded editor views |
+| [`furl/live/build.py`](furl/live/build.py) | Release compilation and Pages packaging |
+| [`docs/live/`](docs/live/) | Generated live app and its local assets |
 | [`docs/index.html`](docs/index.html) | Generated reference page; GitHub Pages entry point |
 | [`docs/studies.html`](docs/studies.html) | Generated tabbed study view, using the same renderer |
 | `src/`, `test/`, build files | Inherited Hazel implementation and toolchain |
@@ -36,7 +41,25 @@ Inherited workflows are preserved under `.github/upstream-workflows/`. The Furl 
 
 ## Build the live interface
 
-The next implementation slice is one Furl scope containing actual Hazel expression and pattern editors, with values obtained through the probe machinery. See the [architecture and first slice](furl/design/architecture.md), [layout invariants](furl/design/layout.md), and [source notes](furl/design/sources.md).
+With the Hazel opam dependencies installed:
+
+```sh
+python3 furl/live/build.py
+python3 -m http.server 8000 --directory docs
+```
+
+Open `http://localhost:8000/live/`. For a development build, run `opam exec -- dune build src/web/www/furl.js @src/web/default --profile dev`, serve `_build/default/src/web/www`, and open `/furl.html`. The Furl entry point is separate from Hazel's original `Main.re`.
+
+Run the shared-program tests with:
+
+```sh
+opam exec -- dune build test/haz3ltest.bc.js --profile dev
+IDB_STUB="$PWD/test/idb_stub.js" TEST_JS="$PWD/_build/default/test/haz3ltest.bc.js" bash test/run_node.sh test FurlDocument
+```
+
+Before publishing, run `python3 furl/live/build.py --check` to verify the generated live bundle. Commit live sources and `docs/live` together, then push to `furl`. The page uses only local assets; clipboard access depends on the browser's permissions.
+
+The current live projection expands let scopes. Function bodies, parameters, and match branches remain in Hazel syntax; invocation navigation, syntax-moving gestures, animations, and the reference's advanced comb geometry are future work. Evaluation runs on the UI thread with a 20,000-step limit, suitable for these small studies. Undo history is session-local; each example's program is saved in browser storage. See the [architecture](furl/design/architecture.md), [layout invariants](furl/design/layout.md), and [source notes](furl/design/sources.md).
 
 The reference remains fast to change as this integration develops. Stable syntax identities, call identities, and grid constraints should be shared across both implementations; preset samples must not become a substitute evaluator.
 

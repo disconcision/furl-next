@@ -10,11 +10,23 @@ The working branch, `furl`, starts at remote `modular-editors` commit `97cbeb348
 
 The reference is an executable design document. Its syntax and sample fixtures are small, use OCaml-like illustrative syntax, and do not evaluate code. It remains available offline and editable without the OCaml toolchain. The tabbed and continuous views use the same renderer, fixtures, and CSS.
 
-The live interface will use Hazel syntax, editing actions, typechecking, and evaluation. Reuse its editor core, caret and selection behavior, undo, clipboard support, and probe machinery where applicable. Furl supplies the projection and surrounding workspace. Avoid maintaining a second language model by scraping DOM text or reparsing each displayed cell independently.
+The live interface uses Hazel syntax, editing actions, typechecking, and evaluation. It reuses the editor core, caret, selection, clipboard support, and probe machinery. Furl supplies the projection, program-level undo, and surrounding workspace. It does not maintain a second language model by scraping DOM text or reparsing each displayed cell independently.
 
-The first live entry point can live under `src/web/furl/` and use the existing Dune/js_of_ocaml toolchain. This is a proposed location; no app scaffold has been implemented yet. The published root currently serves the reference. Once there is a useful live interface, it can take the root and the reference can move to `/reference/`.
+The live entry point is `src/web/FurlMain.re`, with the implementation under `src/web/furl/`, using the existing Dune/js_of_ocaml toolchain. It is published at `/live/`; the root continues to serve the reference during this first study. Hazel's original entry point remains available in the source tree.
 
-## First slice
+## Implemented first slice
+
+`FurlDocument` owns one Hazel `Segment.t`. A cell addresses a child of a stable tile ID, plus an offset for the trailing expression of a let scope. Native `CodeEditable` actions operate on an expression-root or pattern-root zipper; an edit splices its resulting pieces into the original program. Whole-program analysis supplies each cell's lexical context. Evaluation supplies real samples by syntax occurrence ID. Furling changes projection only.
+
+Each cached cell retains its last authoritative source slice as well as its editor. Reassembling a selected zipper can allocate fresh pieces, so comparing the zipper's reconstructed pieces would spuriously reset the editor and erase selection. Comparing the stored source slice preserves selection and carets across display changes and unrelated edits. Obsolete addresses are discarded after structural edits. Undo/redo snapshots contain the program and cell states; switching to source and back adds no history.
+
+The first projection recognizes continuous `let … = … in` tiles, including nested definitions. Other forms remain real Hazel syntax, so functions, cases, holes, and incomplete edits still use Hazel's normal language behavior. All rows share one column plan. Pattern indentation cannot shift expression/value columns or the offside comb.
+
+Limits are deliberate: evaluation is synchronous with a 20,000-step budget, values display the first probe sample at each visible expression occurrence, and there is no invocation-selection UI yet. This projection does not descend into functions or case alternatives, avoiding ambiguous sample mixtures inside those bodies. A future projection must select samples by invocation as well as occurrence. History and cell cursors are session-local; programs persist per example using Hazel's structured editor persistence. The UI reports storage failures rather than promising a save.
+
+`test/Test_FurlDocument.re` checks evaluation, dependent samples, lexical-context changes, nested splicing, stable targets, selection across projection changes, undo/redo, reset, and evaluation-limit recovery. Browser checks exercise actual keyboard editing and saved-program reloads.
+
+## Integration sequence
 
 1. Render one let scope using Furl's grid and colors. Replace one expression field and one pattern field with Hazel editors. Retain one underlying program and lexical context so edits update the appropriate source occurrence.
 2. Carry stable Hazel occurrence IDs into projected cells. Two visual echoes of a match scrutinee must route edits to the same occurrence. A display row is not a second binding or an independent program.

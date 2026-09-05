@@ -5,6 +5,9 @@
  (copy ../worker.bc.js worker.js))
 
 (rule
+ (copy ../furlMain.bc.js furl.js))
+
+(rule
  (targets bundled.js)
  (deps prebundle.js)
  (action

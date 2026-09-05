@@ -1,0 +1,69 @@
+:root {
+ color-scheme:light dark;
+ --furl-paper:light-dark(#d9e5eb,#202f3a);--furl-chrome:light-dark(#e9f0f3,#293b48);
+ --furl-page:light-dark(#f5f8fa,#182630);--furl-ink:light-dark(#243944,#e1edf1);
+ --furl-quiet:light-dark(#607783,#a3b8c4);--furl-line:light-dark(#becfd8,#405662);
+ --furl-binding:light-dark(#237898,#81cae4);--furl-scope:light-dark(#796393,#bca7d9);
+ --furl-value:light-dark(#497139,#b0d299);--furl-strip:light-dark(#bdd2df,#344858);
+ --code-font:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+ --base-font-size:14px;--line-height:22px;--row-height-px:22px;
+ --ui-font:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+ --STONE:var(--furl-ink);--SAND:var(--furl-paper);--T1:var(--furl-paper);--T2:var(--furl-chrome);
+ --T3:var(--furl-paper);--T4:var(--furl-strip);--BR1:var(--furl-strip);--BR2:var(--furl-binding);
+ --BR3:var(--furl-scope);--BR4:var(--furl-quiet);--PAT:var(--furl-binding);
+ --token-exp:var(--furl-ink);--token-pat:var(--furl-binding);--token-string-lit:var(--furl-value);
+ --token-buffer:var(--furl-scope);--caret-color:var(--furl-scope);
+ --ui-bkg:var(--furl-page);--cell-active:var(--furl-paper);--cell-bkg:var(--furl-paper);
+ --selection-fill:var(--furl-strip);--shard-lines-exp:var(--furl-line);
+}
+body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 var(--ui-font);}
+#container {height:auto;min-height:100vh;}
+#furl-app {max-width:1120px;margin:auto;padding:0 24px;}
+#furl-app button {font:inherit;color:inherit;cursor:pointer;border:1px solid var(--furl-line);border-radius:3px;background:transparent;padding:3px 8px;}
+#furl-app button:disabled {opacity:.4;cursor:default;}
+#furl-app button:focus-visible,#furl-app a:focus-visible,#furl-app select:focus-visible {outline:2px solid var(--furl-scope);outline-offset:2px;}
+.furl-header {display:flex;align-items:center;gap:16px;padding:23px 0;margin-bottom:35px;border-bottom:1px solid var(--furl-line);}
+.furl-wordmark {font-size:34px;line-height:1;letter-spacing:-1px;font-weight:500;color:var(--furl-scope);text-decoration:none;}
+.furl-subtitle {color:var(--furl-quiet);}
+.furl-header nav {display:flex;gap:20px;margin-left:auto;font-size:13px;}
+#furl-app a {color:inherit;text-underline-offset:4px;text-decoration-color:var(--furl-line);}
+#main.furl-main {display:block;position:relative;margin:0;padding:0;overflow:visible;background:transparent;height:auto;}
+.furl-toolbar,.furl-legend {display:flex;flex-wrap:wrap;align-items:center;gap:10px 17px;padding:10px 16px;background:var(--furl-chrome);border:1px solid var(--furl-line);font-size:12px;}
+.furl-toolbar {border-radius:4px 4px 0 0;}
+.furl-actions {display:flex;gap:6px;margin-left:auto;}
+#furl-app select {font:inherit;color:var(--furl-ink);background:var(--furl-paper);border:1px solid var(--furl-line);padding:4px 8px;border-radius:3px;}
+.furl-legend {border-top:0;background:var(--furl-paper);}
+#furl-app .furl-toggle {padding:1px 0;border:0;color:var(--furl-quiet);}
+#furl-app .furl-toggle[aria-pressed=true] {color:var(--furl-ink);}
+#furl-app .furl-toggle[aria-pressed=false] {text-decoration:line-through;}
+#furl-app .furl-toggle.comb {font:24px/1 Georgia,serif;color:var(--furl-scope);width:20px;}
+#furl-app .furl-toggle.bindings {color:var(--furl-binding);}
+#furl-app .furl-toggle.values {color:var(--furl-value);}
+#furl-app .furl-toggle.indentation {margin-left:auto;}
+.furl-program {position:relative;padding:28px 18px 28px 6ch;font:14px/22px var(--code-font);background:var(--furl-paper);border:1px solid var(--furl-line);border-top:0;overflow-x:auto;}
+.furl-row {position:relative;display:grid;grid-template-columns:var(--columns);column-gap:2ch;min-height:22px;align-items:start;}
+.furl-scope {position:relative;}
+.furl-pattern {min-width:0;padding-left:calc(var(--depth)*1ch);background:linear-gradient(to right,var(--furl-strip) calc(var(--depth)*1ch),transparent 0);color:var(--furl-binding);}
+.furl-expression,.furl-value {min-width:0;}
+.furl-expression {overflow-x:auto;}
+.furl-value {color:var(--furl-value);white-space:pre-wrap;overflow-wrap:anywhere;}
+.result-name {color:var(--furl-scope);}
+.terminal .furl-pattern {color:var(--furl-scope);}
+#main.furl-main .code-editor {padding:0;min-height:22px;display:block;min-width:0;width:max-content;max-width:none;outline:none;}
+#main.furl-main .code-container {padding:0;min-height:22px;}
+#main.furl-main .code {font:14px/22px var(--code-font);}
+#main.furl-main .token.keyword,#main.furl-main .token.poly {font-weight:400;}
+#main.furl-main .token.keyword {color:var(--furl-scope);}
+#furl-app .furl-comb,#furl-app .furl-open {position:absolute;transform:translateX(-4ch);font:14px/22px var(--code-font);width:1ch;padding:0;margin:0;border:0;border-radius:0;color:var(--furl-scope);z-index:5;}
+#furl-app .furl-comb {top:0;bottom:0;border-left:1.4px solid var(--furl-scope);border-radius:4px 0 0 0;}
+#furl-app .furl-comb:hover {background:color-mix(in srgb,var(--furl-scope) 12%,transparent);}
+#furl-app .furl-open {top:0;background:var(--furl-paper);}
+.furl-status {padding:7px 16px;border:1px solid var(--furl-line);border-top:0;border-radius:0 0 4px 4px;color:var(--furl-quiet);font-size:12px;}
+.furl-help {color:var(--furl-quiet);font-size:12px;margin:14px 0;max-width:760px;}
+#furl-app footer {display:flex;justify-content:flex-end;border-top:1px solid var(--furl-line);margin-top:35px;padding:20px 0;font-size:12px;color:var(--furl-quiet);}
+.furl-powered {display:flex;align-items:center;gap:5px;text-decoration:none;}
+.furl-powered img {width:18px;height:18px;filter:brightness(.5);}
+.furl-loading {padding:40px;}
+#font-specimen {position:absolute;left:0;top:0;visibility:hidden;pointer-events:none;font:14px/22px var(--code-font);}
+@media(prefers-color-scheme:dark){.furl-powered img{filter:brightness(.8);}}
+@media(max-width:650px){#furl-app{padding:0 10px;}.furl-header{flex-wrap:wrap;gap:10px;margin-bottom:22px;}.furl-header nav{gap:12px;}.furl-toolbar,.furl-legend{padding:9px 12px;}.furl-actions{margin-left:0;flex-wrap:wrap;}.furl-program{padding-left:5ch;padding-right:12px;}.furl-row{min-width:590px;}}

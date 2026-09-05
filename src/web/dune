@@ -26,7 +26,7 @@
  (instrumentation
   (backend bisect_ppx))
  (modules
-  (:standard \ Main)
+  (:standard \ Main FurlMain)
   \
   Worker
   WorkerServer)
@@ -67,6 +67,12 @@
    ppx_sexp_conv
    ppx_deriving.show
    bonsai.ppx_bonsai)))
+
+(executable
+ (name furlMain)
+ (modules FurlMain)
+ (libraries web)
+ (modes js))
 
 (executable
  (name worker)
