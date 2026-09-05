@@ -37,6 +37,8 @@ const url =
       await page.goto(url);
     };
     await reset();
+    await require("./motion-test.cjs")(page, output);
+    await reset();
     assert.deepEqual(await order(), ["n", "twice", "bonus", "total", "result"]);
     assert.equal(
       await page.locator("#inventory-count").textContent(),
@@ -257,7 +259,11 @@ const url =
     await page.locator("#story-choice").selectOption("helper");
     await page.locator('[data-step="1"]').click();
     await page.locator("#transformations").scrollIntoViewIfNeeded();
-    await page.locator(".story-program").evaluate(n => Promise.all(n.getAnimations({subtree:true}).map(a => a.finished)));
+    await page
+      .locator(".story-program")
+      .evaluate((n) =>
+        Promise.all(n.getAnimations({ subtree: true }).map((a) => a.finished)),
+      );
     await page.screenshot({ path: path.join(output, "helper-dark.png") });
     await page.locator("#inventory-search").fill("unresolved");
     assert.ok((await page.locator("#inventory tbody tr:visible").count()) > 0);
@@ -272,6 +278,34 @@ const url =
     await page.emulateMedia({ colorScheme: "light", reducedMotion: "reduce" });
     await page.reload();
     assert.equal(await page.locator("#motion").isChecked(), false);
+    // Reduced motion still moves rows directly, with no insertion/reflow tweens.
+    await expr("n").focus();
+    await page.keyboard.press("Meta+Enter");
+    assert.equal(
+      await page
+        .locator("#row-lab .row-program")
+        .evaluate((n) => n.getAnimations({ subtree: true }).length),
+      0,
+    );
+    await handle("bonus").focus();
+    await page.keyboard.press("Space");
+    await page.keyboard.press("ArrowUp");
+    await page.keyboard.press("Enter");
+    assert.deepEqual(await order(), [
+      "n",
+      "draft1",
+      "bonus",
+      "twice",
+      "total",
+      "result",
+    ]);
+    assert.equal(
+      await page
+        .locator("#row-lab .row-program")
+        .evaluate((n) => n.getAnimations({ subtree: true }).length),
+      0,
+    );
+    await page.reload();
     await page.locator("#rows").scrollIntoViewIfNeeded();
     await page.screenshot({ path: path.join(output, "rows-light.png") });
     await page.setViewportSize({ width: 390, height: 844 });
@@ -294,7 +328,7 @@ const url =
     assert.deepEqual(errors, []);
     if (url.startsWith("file:")) assert.deepEqual(requests, []);
     console.log(
-      "Passed: offline loading, mode gating, insertion/focus, keyboard/pointer movement, dependency refusal/free edits, undo/cancel/blur, reference placement, 8 storyboards, filtering, mobile, reduced motion.",
+      "Passed: insertion/drag/drop frame geometry and reversals, refactor movement through drafts, offline loading, mode gating, insertion/focus, keyboard/pointer movement, dependency refusal/free edits, undo/cancel/blur, reference placement, 8 storyboards, filtering, mobile, reduced motion.",
     );
     console.log("Screenshots:", output);
   } finally {

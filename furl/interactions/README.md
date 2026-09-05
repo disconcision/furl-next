@@ -7,7 +7,7 @@ A separate design document for source-editing gestures. It does not modify the l
 - `study.js`: arithmetic row lab, reference-placement lab, storyboard renderer, and inventory filters.
 - `page.html`, `style.css`: document and Furl presentation, sharing `../reference/book.css`.
 - `build.py`: inlines everything into `docs/interactions.html`; Python standard library only.
-- `test.cjs`: browser-level input, transaction, and offline checks.
+- `test.cjs`: browser-level input, transaction, and offline checks, including `motion-test.cjs` for intermediate animation frames.
 
 ```sh
 python3 furl/interactions/build.py
@@ -17,7 +17,11 @@ node --check furl/interactions/stories.js
 node furl/interactions/test.cjs
 ```
 
-The browser test requires Playwright and installed Chrome (make Playwright available through `NODE_PATH` if needed). It defaults to opening the generated artifact with `file://`, aborts external requests, and writes screenshots to a temporary directory. `TEST_URL` can point it at a served copy. The row lab accepts numbers, identifiers, parentheses, unary minus, addition, subtraction, and multiplication; it never evaluates input as JavaScript. It uses a small lexical dependency check, not Hazel refactoring. Reload resets both labs; Undo is session-local.
+The browser test requires Playwright and installed Chrome (make Playwright available through `NODE_PATH` if needed). It defaults to opening the generated artifact with `file://`, aborts external requests, and writes screenshots to a temporary directory. `TEST_URL` can point it at a served copy. Motion checks pause browser animations and seek through insertion, rapid drag reversals, drop, and refusal. They assert painted positions as well as final row order; the previous append-and-measure loop fails the first insertion-frame check.
+
+The row lab uses ordinary HTML inputs and a small JavaScript parser, with no Hazel editor or backend. It accepts numbers, identifiers, parentheses, unary minus, addition, subtraction, and multiplication; it never evaluates input as JavaScript. The refactor gate checks valid arithmetic and unique, in-scope names before and after a move. Completely blank drafts are omitted from that check because they bind and use no names, but remain visible as holes. Other invalid or incomplete arithmetic still blocks Refactor; this is not Hazel refactoring. Reload resets both labs; Undo is session-local.
+
+Row motion tracks stable IDs: capture current painted positions, cancel old tweens, complete all DOM moves, measure final positions, then animate the displacement. This ordering matters when a new preview interrupts an unfinished tween. The actual dragged row stays in document flow as its own placeholder, while a transform keeps all its columns at the pointer's original grab offset. Neighbors animate; the dragged row does not lag behind the pointer. Drop and cancellation settle from the last painted position. Reduced motion skips these tweens while retaining direct pointer tracking.
 
 The two syntax examples and layout studies elsewhere remain their own renderers. This page is an isolated input experiment; implement approved behavior through the live `FurlDocument` source/identity/history model, not by importing this arithmetic parser or scraping the DOM.
 

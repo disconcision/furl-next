@@ -106,6 +106,10 @@ Furl needs view-aware anchors: source occurrence + rendering instance + attribut
 
 Use bounded local successor states, not every permutation. Cache source analysis; project only candidate geometry; avoid evaluating whole programs at pointer frequency. Start with a floating row and neighboring-row position transitions. Interpolate positions/opacity, not source text or runtime values. Add fork/comb path morphing only once the state identities are reliable. Keyboard previews use the same candidates. Reduced motion removes the tween, not information about the proposed edit.
 
+The standalone row study now moves the actual complete row with the pointer and leaves its layout slot vacant while neighbors reflow. It follows the old Furl precedent of stable row identities and excluding the dragged row from neighbor animation. Measure all painted positions before a change, finish all layout mutations before measuring destinations, and retarget from the current painted positions when a tween is interrupted. Insertion only displaces following rows. Drop and refusal settle from the pointer position. Browser regression checks sample these intermediate frames and rapid reversals, rather than merely checking the eventual order.
+
+This study uses ordinary HTML inputs and a local arithmetic parser, not any part of Hazel's editor/evaluator. Its small refactor gate ignores fully empty draft bindings, which introduce no names or uses, so independent rows can cross them. The drafts remain visibly incomplete; their insertion is not reclassified as a semantic no-op. Other invalid arithmetic remains outside this prototype's refactor guarantee.
+
 ## Branch and upstream policy
 
 Keep `furl` as the integration/deployment branch. Bring a chosen Hazel feature snapshot into a temporary integration branch, resolve there, run both suites, then merge. Record imported source SHAs and follow-up Furl fixes. Preserve a merge commit for feature imports; avoid rebasing public shared history or repeatedly squash-importing the same branch.

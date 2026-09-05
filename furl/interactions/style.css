@@ -106,6 +106,9 @@ select {
   --expr: 29ch;
   --value: 11ch;
 }
+#row-lab {
+  overflow-anchor: none;
+}
 .edit-row {
   height: 22px;
   display: grid;
@@ -149,8 +152,24 @@ select {
 .edit-row.focused {
   background: var(--rowhover);
 }
-.armed .edit-row:hover {
+.armed .row-program:not(.dragging-row) .edit-row:hover {
   background: var(--rowhover);
+}
+.edit-row.dragging {
+  z-index: 6;
+  background: var(--well);
+  box-shadow: 0 2px 8px #0002;
+  pointer-events: none;
+}
+.edit-row.dragging::before {
+  content: "";
+  position: absolute;
+  inset: 0 100% 0 -48px;
+  background: var(--well);
+}
+.dragging-row,
+.dragging-row * {
+  cursor: grabbing !important;
 }
 .row-handle {
   position: absolute;
@@ -224,6 +243,13 @@ select {
 .gap.blocked::before {
   content: "×";
   color: var(--danger);
+}
+.dragging-row .gap {
+  opacity: 0;
+  pointer-events: none;
+}
+.dragging-row .gap.blocked {
+  opacity: 1;
 }
 .comb {
   position: absolute;

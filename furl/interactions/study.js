@@ -196,7 +196,24 @@
     function focusRow(id, part = "expression") {
       selected = id;
       const row = nodes.get(id);
-      if (row) $(part === "handle" ? ".row-handle" : `.${part}`, row)?.focus();
+      if (row)
+        $(part === "handle" ? ".row-handle" : `.${part}`, row)?.focus({
+          preventScroll: true,
+        });
+    }
+    function placeDraggedRow(rect) {
+      const s = session;
+      if (!s?.pointer || !s.began) return;
+      const n = nodes.get(s.id);
+      // This is the real row. Its normal-flow slot is the placeholder; only its
+      // painted position follows the pointer, without a tween or a name proxy.
+      if (!rect) {
+        n.getAnimations().forEach((a) => a.cancel());
+        n.style.transform = "";
+        rect = n.getBoundingClientRect();
+      }
+      n.classList.add("dragging");
+      n.style.transform = `translate(${s.x - s.grabX - rect.left}px, ${s.y - s.grabY - rect.top}px)`;
     }
     function render(shown = rows, animate = true) {
       const focused = document.activeElement;
@@ -212,8 +229,16 @@
           }
         : null;
       const before = new Map(
-        [...nodes].map(([id, n]) => [id, n.getBoundingClientRect().top]),
+        [...nodes].map(([id, n]) => [id, n.getBoundingClientRect()]),
       );
+      // Capture the *current painted* positions before canceling in-flight
+      // motion. Retargeting then starts where the user actually saw each row.
+      for (const n of nodes.values()) {
+        n.getAnimations().forEach((a) => a.cancel());
+        n.style.transform = "";
+        n.classList.remove("dragging");
+      }
+      program.classList.toggle("dragging-row", !!session?.began);
       $$(".gap,.comb", program).forEach((n) => n.remove());
       const analysis = analyze(shown),
         present = new Set(shown.map((r) => r.id));
@@ -275,7 +300,7 @@
               current[input.dataset.field === "pattern" ? "p" : "e"] =
                 input.value;
               history.push(base);
-              render(rows, false);
+              render();
               status(
                 root,
                 analyze(rows).errors[0] || "Arithmetic values updated.",
@@ -308,19 +333,6 @@
           handle.setAttribute("aria-pressed", String(session?.id === row.id));
         }
         program.append(n);
-        if (animate && !reduced() && before.has(row.id)) {
-          const delta = before.get(row.id) - n.getBoundingClientRect().top;
-          if (delta) {
-            n.getAnimations().forEach((a) => a.cancel());
-            n.animate(
-              [
-                { transform: `translateY(${delta}px)` },
-                { transform: "translateY(0)" },
-              ],
-              { duration: 150, easing: "ease-out" },
-            );
-          }
-        }
       });
       program.append(comb(shown.length * 22));
       // Slots precede real rows, including the terminal expression. None follow result.
@@ -344,6 +356,34 @@
           } else insert(i);
         });
         program.append(gap);
+      }
+      // Finish every DOM move before measuring any destination. Measuring in
+      // the append loop mistakes temporary sibling positions for the layout.
+      const after = new Map(
+        [...nodes].map(([id, n]) => [id, n.getBoundingClientRect()]),
+      );
+      for (const [id, n] of nodes) {
+        if (session?.pointer && session.began && session.id === id) {
+          placeDraggedRow(after.get(id));
+        } else if (animate && !reduced()) {
+          const old = before.get(id),
+            target = after.get(id);
+          const timing = { duration: 180, easing: "cubic-bezier(.2,0,0,1)" };
+          if (old) {
+            const dx = old.left - target.left,
+              dy = old.top - target.top;
+            if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01)
+              n.animate(
+                [
+                  { transform: `translate(${dx}px, ${dy}px)` },
+                  { transform: "none" },
+                ],
+                timing,
+              );
+          } else {
+            n.animate([{ opacity: 0 }, { opacity: 1 }], timing);
+          }
+        }
       }
       undo.disabled = history.length === 0;
       source.textContent = shown
@@ -382,7 +422,6 @@
     }
     function cancel(message = "Canceled. Source and row order are unchanged.") {
       if (!session) return;
-      session.ghost?.remove();
       session = null;
       controls.latch(false);
       render();
@@ -403,7 +442,7 @@
         pointer: false,
         began: false,
       };
-      render(rows, false);
+      render();
       status(
         root,
         `Picked up ${row.p || "new row"}. Choose a destination; Enter drops, Escape cancels.`,
@@ -417,8 +456,12 @@
       const from = next.findIndex((r) => r.id === s.id);
       const [moving] = next.splice(from, 1);
       next.splice(s.to, 0, moving);
-      const oldErrors = analyze(s.base).errors,
-        newErrors = analyze(next).errors;
+      // Empty draft rows introduce no names or uses. Keep their holes visible,
+      // but do not let them veto a move of otherwise independent bindings.
+      const withoutDrafts = (rs) =>
+        rs.filter((r) => r.result || r.p.trim() || r.e.trim());
+      const oldErrors = analyze(withoutDrafts(s.base)).errors,
+        newErrors = analyze(withoutDrafts(next)).errors;
       const reason = oldErrors[0] || newErrors[0];
       s.allowed = policy === "free" || !reason;
       s.candidate = next;
@@ -448,19 +491,22 @@
         return;
       }
       const moved = JSON.stringify(rows) !== JSON.stringify(s.candidate);
-      s.ghost?.remove();
       session = null;
       controls.latch(false);
       if (moved) {
         const errors = analyze(s.candidate).errors;
         commit(
           s.candidate,
-          errors.length
+          errors.length && policy === "free"
             ? `Moved in Free edit. ${errors[0]}`
             : "Moved the row. One Undo restores the original order.",
           s.id,
         );
-        status(root, $(".lab-status", root).textContent, errors.length > 0);
+        status(
+          root,
+          $(".lab-status", root).textContent,
+          errors.length > 0 && policy === "free",
+        );
       } else {
         render();
         status(root, "No change to the row order.");
@@ -471,11 +517,19 @@
       if (e.button !== 0 || (!controls.active() && !session)) return;
       e.preventDefault();
       if (session) cancel();
+      e.currentTarget.focus({ preventScroll: true });
+      const rect = nodes.get(id).getBoundingClientRect();
       begin(id, false);
       session.pointer = true;
       session.startX = e.clientX;
       session.startY = e.clientY;
-      session.from = session.to;
+      session.grabX = e.clientX - rect.left;
+      session.grabY = e.clientY - rect.top;
+      session.x = e.clientX;
+      session.y = e.clientY;
+      // Use stable slot geometry, never animated sibling positions, for picking
+      // a destination. A row picked up during a tween still tracks accurately.
+      session.pickupOffset = rect.top - program.getBoundingClientRect().top;
     }
     window.addEventListener("pointermove", (e) => {
       const s = session;
@@ -484,20 +538,16 @@
       if (!s.began && Math.hypot(e.clientX - s.startX, delta) < 5) return;
       if (!s.began) {
         s.began = true;
-        s.ghost = el(
-          "div",
-          "drag-ghost",
-          s.base.find((r) => r.id === s.id).p || "□",
-        );
-        document.body.append(s.ghost);
+        program.classList.add("dragging-row");
       }
-      s.ghost.style.left = `${e.clientX + 14}px`;
-      s.ghost.style.top = `${e.clientY - 10}px`;
+      s.x = e.clientX;
+      s.y = e.clientY;
       const to = Math.max(
         0,
-        Math.min(s.base.length - 2, s.from + Math.round(delta / 22)),
+        Math.min(s.base.length - 2, Math.round((s.pickupOffset + delta) / 22)),
       );
       if (to !== s.to) preview(to);
+      else placeDraggedRow();
     });
     window.addEventListener("pointerup", () => {
       if (!session?.pointer) return;
@@ -586,7 +636,7 @@
           root,
           policy === "free"
             ? "Free edit: row moves may change meaning or introduce errors."
-            : "Refactor: this lab only admits valid independent arithmetic rows.",
+            : "Refactor: move independent arithmetic rows, including past empty drafts.",
         );
       }),
     );

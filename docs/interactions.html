@@ -145,6 +145,9 @@ select {
   --expr: 29ch;
   --value: 11ch;
 }
+#row-lab {
+  overflow-anchor: none;
+}
 .edit-row {
   height: 22px;
   display: grid;
@@ -188,8 +191,24 @@ select {
 .edit-row.focused {
   background: var(--rowhover);
 }
-.armed .edit-row:hover {
+.armed .row-program:not(.dragging-row) .edit-row:hover {
   background: var(--rowhover);
+}
+.edit-row.dragging {
+  z-index: 6;
+  background: var(--well);
+  box-shadow: 0 2px 8px #0002;
+  pointer-events: none;
+}
+.edit-row.dragging::before {
+  content: "";
+  position: absolute;
+  inset: 0 100% 0 -48px;
+  background: var(--well);
+}
+.dragging-row,
+.dragging-row * {
+  cursor: grabbing !important;
 }
 .row-handle {
   position: absolute;
@@ -263,6 +282,13 @@ select {
 .gap.blocked::before {
   content: "×";
   color: var(--danger);
+}
+.dragging-row .gap {
+  opacity: 0;
+  pointer-events: none;
+}
+.dragging-row .gap.blocked {
+  opacity: 1;
 }
 .comb {
   position: absolute;
@@ -655,7 +681,7 @@ footer {
 <body><a class="skip" href="#rows">Skip to the interactions</a><div class="book">
 <header class="masthead"><a class="wordmark" href="./index.html">f<span>u</span>rl</a><nav aria-label="Study links"><a href="./live/">Live editor</a><a href="./index.html">Reference</a><a href="./interactions.html" download="furl-interactions.html">Save HTML</a><a href="https://github.com/disconcision/furl-next/blob/furl/furl/design/interactions.md">Design notes</a></nav></header>
 <main>
-<div class="introduction"><p class="eyebrow">Interaction study · 5 September 2026</p><h1>Writing and reshaping programs.</h1><p>The old Furl editor makes rows and names tangible. The Big Book extends that idea to scopes, parameters, branches, and helpers. These studies bring those actions together with mouse and keyboard controls.</p><p class="note">Proposed interactions, separate from the live Hazel editor. The first lab evaluates a tiny arithmetic language; the other examples use fixed programs and preset values. This entire page works offline.</p></div>
+<div class="introduction"><p class="eyebrow">Interaction study · 5 September 2026</p><h1>Writing and reshaping programs.</h1><p>The old Furl editor makes rows and names tangible. The Big Book extends that idea to scopes, parameters, branches, and helpers. These studies bring those actions together with mouse and keyboard controls.</p><p class="note">Proposed interactions, separate from the live Hazel editor. The row lab uses ordinary HTML text inputs and a small JavaScript arithmetic parser, with no Hazel editor or backend. The other examples use fixed programs and preset values. This entire page works offline.</p></div>
 <nav class="contents" aria-label="On this page"><a href="#rows">01 Rows</a><a href="#references">02 References</a><a href="#transformations">03 Transformations</a><a href="#inventory">04 Inventory</a><a href="#foundation">05 Implementation</a><a href="#voice">06 Voice</a></nav>
 <section class="chapter" id="rows"><div class="chapter-copy"><h2><span>01</span> Quiet until you reach for structure</h2><p>Turn on <strong>Structure</strong>, or hold <strong>Option / Alt</strong> while pointing here. Gaps insert; handles move. The action gutter sits outside the comb and never shifts the code.</p><p class="try">Try moving <code>bonus</code> above <code>n</code>. Then try moving <code>twice</code> above <code>n</code>. Refactor blocks the dependency break; Free edit lets you see it.</p></div>
 <div class="lab" id="row-lab">
@@ -665,7 +691,7 @@ footer {
 <details class="source-details"><summary>Underlying source</summary><pre class="row-source"></pre></details>
 </div>
 <div class="input-notes"><p><strong>Mouse</strong> · Drag a handle, or click it and then click a destination gap. Release/drop commits once; Escape cancels. Click a gap without a picked-up row to insert.</p><p><strong>Keyboard</strong> · <kbd>⌘/Ctrl</kbd> <kbd>Enter</kbd> inserts below the active row; add <kbd>Shift</kbd> for above. Tab to a handle, <kbd>Space</kbd> picks up, <kbd>↑</kbd> <kbd>↓</kbd> previews, <kbd>Enter</kbd> drops. <kbd>Escape</kbd> cancels. Native Enter is reserved for the cell.</p></div>
-<p class="note">The refactor gate here is deliberately small: unique names, valid arithmetic, and preserved lexical dependencies. It is not Hazel’s refactor checker. New rows contain holes and are ordinary source edits, not guaranteed semantic no-ops. Source: old Furl’s row handlers; Big Book 84–88, 94.</p>
+<p class="note">The refactor gate here is deliberately small: unique names, valid arithmetic, and preserved lexical dependencies. Completely empty draft rows do not block independent moves; their holes remain visible. It is not Hazel’s refactor checker. New rows contain holes and are ordinary source edits, not guaranteed semantic no-ops. Source: old Furl’s row handlers; Big Book 84–88, 94.</p>
 </section>
 <section class="chapter" id="references"><div class="chapter-copy"><h2><span>02</span> Carry a reference, leave the binding</h2><p>With Structure active, pull a name into a hole. This differs from moving its defining row. Both the drag and the keyboard operation carry the binding’s identity.</p></div>
 <div class="lab" id="reference-lab"><div class="toolbar"><button class="structure-toggle" aria-pressed="false">Structure</button><span class="mode-note">Editing cells</span><button data-action="undo" disabled>Undo</button><button data-action="reset">Reset</button></div><div class="program-scroll"><div class="reference-program" aria-label="Reference creation experiment"></div></div><div class="lab-status" role="status" aria-live="polite">Turn on Structure, then drag width and height to the two holes.</div></div>
@@ -1203,7 +1229,24 @@ const FURL_INTERACTION_STORIES = [
     function focusRow(id, part = "expression") {
       selected = id;
       const row = nodes.get(id);
-      if (row) $(part === "handle" ? ".row-handle" : `.${part}`, row)?.focus();
+      if (row)
+        $(part === "handle" ? ".row-handle" : `.${part}`, row)?.focus({
+          preventScroll: true,
+        });
+    }
+    function placeDraggedRow(rect) {
+      const s = session;
+      if (!s?.pointer || !s.began) return;
+      const n = nodes.get(s.id);
+      // This is the real row. Its normal-flow slot is the placeholder; only its
+      // painted position follows the pointer, without a tween or a name proxy.
+      if (!rect) {
+        n.getAnimations().forEach((a) => a.cancel());
+        n.style.transform = "";
+        rect = n.getBoundingClientRect();
+      }
+      n.classList.add("dragging");
+      n.style.transform = `translate(${s.x - s.grabX - rect.left}px, ${s.y - s.grabY - rect.top}px)`;
     }
     function render(shown = rows, animate = true) {
       const focused = document.activeElement;
@@ -1219,8 +1262,16 @@ const FURL_INTERACTION_STORIES = [
           }
         : null;
       const before = new Map(
-        [...nodes].map(([id, n]) => [id, n.getBoundingClientRect().top]),
+        [...nodes].map(([id, n]) => [id, n.getBoundingClientRect()]),
       );
+      // Capture the *current painted* positions before canceling in-flight
+      // motion. Retargeting then starts where the user actually saw each row.
+      for (const n of nodes.values()) {
+        n.getAnimations().forEach((a) => a.cancel());
+        n.style.transform = "";
+        n.classList.remove("dragging");
+      }
+      program.classList.toggle("dragging-row", !!session?.began);
       $$(".gap,.comb", program).forEach((n) => n.remove());
       const analysis = analyze(shown),
         present = new Set(shown.map((r) => r.id));
@@ -1282,7 +1333,7 @@ const FURL_INTERACTION_STORIES = [
               current[input.dataset.field === "pattern" ? "p" : "e"] =
                 input.value;
               history.push(base);
-              render(rows, false);
+              render();
               status(
                 root,
                 analyze(rows).errors[0] || "Arithmetic values updated.",
@@ -1315,19 +1366,6 @@ const FURL_INTERACTION_STORIES = [
           handle.setAttribute("aria-pressed", String(session?.id === row.id));
         }
         program.append(n);
-        if (animate && !reduced() && before.has(row.id)) {
-          const delta = before.get(row.id) - n.getBoundingClientRect().top;
-          if (delta) {
-            n.getAnimations().forEach((a) => a.cancel());
-            n.animate(
-              [
-                { transform: `translateY(${delta}px)` },
-                { transform: "translateY(0)" },
-              ],
-              { duration: 150, easing: "ease-out" },
-            );
-          }
-        }
       });
       program.append(comb(shown.length * 22));
       // Slots precede real rows, including the terminal expression. None follow result.
@@ -1351,6 +1389,34 @@ const FURL_INTERACTION_STORIES = [
           } else insert(i);
         });
         program.append(gap);
+      }
+      // Finish every DOM move before measuring any destination. Measuring in
+      // the append loop mistakes temporary sibling positions for the layout.
+      const after = new Map(
+        [...nodes].map(([id, n]) => [id, n.getBoundingClientRect()]),
+      );
+      for (const [id, n] of nodes) {
+        if (session?.pointer && session.began && session.id === id) {
+          placeDraggedRow(after.get(id));
+        } else if (animate && !reduced()) {
+          const old = before.get(id),
+            target = after.get(id);
+          const timing = { duration: 180, easing: "cubic-bezier(.2,0,0,1)" };
+          if (old) {
+            const dx = old.left - target.left,
+              dy = old.top - target.top;
+            if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01)
+              n.animate(
+                [
+                  { transform: `translate(${dx}px, ${dy}px)` },
+                  { transform: "none" },
+                ],
+                timing,
+              );
+          } else {
+            n.animate([{ opacity: 0 }, { opacity: 1 }], timing);
+          }
+        }
       }
       undo.disabled = history.length === 0;
       source.textContent = shown
@@ -1389,7 +1455,6 @@ const FURL_INTERACTION_STORIES = [
     }
     function cancel(message = "Canceled. Source and row order are unchanged.") {
       if (!session) return;
-      session.ghost?.remove();
       session = null;
       controls.latch(false);
       render();
@@ -1410,7 +1475,7 @@ const FURL_INTERACTION_STORIES = [
         pointer: false,
         began: false,
       };
-      render(rows, false);
+      render();
       status(
         root,
         `Picked up ${row.p || "new row"}. Choose a destination; Enter drops, Escape cancels.`,
@@ -1424,8 +1489,12 @@ const FURL_INTERACTION_STORIES = [
       const from = next.findIndex((r) => r.id === s.id);
       const [moving] = next.splice(from, 1);
       next.splice(s.to, 0, moving);
-      const oldErrors = analyze(s.base).errors,
-        newErrors = analyze(next).errors;
+      // Empty draft rows introduce no names or uses. Keep their holes visible,
+      // but do not let them veto a move of otherwise independent bindings.
+      const withoutDrafts = (rs) =>
+        rs.filter((r) => r.result || r.p.trim() || r.e.trim());
+      const oldErrors = analyze(withoutDrafts(s.base)).errors,
+        newErrors = analyze(withoutDrafts(next)).errors;
       const reason = oldErrors[0] || newErrors[0];
       s.allowed = policy === "free" || !reason;
       s.candidate = next;
@@ -1455,19 +1524,22 @@ const FURL_INTERACTION_STORIES = [
         return;
       }
       const moved = JSON.stringify(rows) !== JSON.stringify(s.candidate);
-      s.ghost?.remove();
       session = null;
       controls.latch(false);
       if (moved) {
         const errors = analyze(s.candidate).errors;
         commit(
           s.candidate,
-          errors.length
+          errors.length && policy === "free"
             ? `Moved in Free edit. ${errors[0]}`
             : "Moved the row. One Undo restores the original order.",
           s.id,
         );
-        status(root, $(".lab-status", root).textContent, errors.length > 0);
+        status(
+          root,
+          $(".lab-status", root).textContent,
+          errors.length > 0 && policy === "free",
+        );
       } else {
         render();
         status(root, "No change to the row order.");
@@ -1478,11 +1550,19 @@ const FURL_INTERACTION_STORIES = [
       if (e.button !== 0 || (!controls.active() && !session)) return;
       e.preventDefault();
       if (session) cancel();
+      e.currentTarget.focus({ preventScroll: true });
+      const rect = nodes.get(id).getBoundingClientRect();
       begin(id, false);
       session.pointer = true;
       session.startX = e.clientX;
       session.startY = e.clientY;
-      session.from = session.to;
+      session.grabX = e.clientX - rect.left;
+      session.grabY = e.clientY - rect.top;
+      session.x = e.clientX;
+      session.y = e.clientY;
+      // Use stable slot geometry, never animated sibling positions, for picking
+      // a destination. A row picked up during a tween still tracks accurately.
+      session.pickupOffset = rect.top - program.getBoundingClientRect().top;
     }
     window.addEventListener("pointermove", (e) => {
       const s = session;
@@ -1491,20 +1571,16 @@ const FURL_INTERACTION_STORIES = [
       if (!s.began && Math.hypot(e.clientX - s.startX, delta) < 5) return;
       if (!s.began) {
         s.began = true;
-        s.ghost = el(
-          "div",
-          "drag-ghost",
-          s.base.find((r) => r.id === s.id).p || "□",
-        );
-        document.body.append(s.ghost);
+        program.classList.add("dragging-row");
       }
-      s.ghost.style.left = `${e.clientX + 14}px`;
-      s.ghost.style.top = `${e.clientY - 10}px`;
+      s.x = e.clientX;
+      s.y = e.clientY;
       const to = Math.max(
         0,
-        Math.min(s.base.length - 2, s.from + Math.round(delta / 22)),
+        Math.min(s.base.length - 2, Math.round((s.pickupOffset + delta) / 22)),
       );
       if (to !== s.to) preview(to);
+      else placeDraggedRow();
     });
     window.addEventListener("pointerup", () => {
       if (!session?.pointer) return;
@@ -1593,7 +1669,7 @@ const FURL_INTERACTION_STORIES = [
           root,
           policy === "free"
             ? "Free edit: row moves may change meaning or introduce errors."
-            : "Refactor: this lab only admits valid independent arithmetic rows.",
+            : "Refactor: move independent arithmetic rows, including past empty drafts.",
         );
       }),
     );
