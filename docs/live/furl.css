@@ -66,7 +66,7 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 .furl-value {color:var(--furl-value);white-space:pre;overflow-wrap:normal;}
 .result-name {color:var(--furl-quiet);font-style:italic;cursor:default;}
 .terminal .furl-pattern {color:var(--furl-scope);}
-#main.furl-main .code-editor {padding:0;min-height:22px;display:block;min-width:0;width:max-content;max-width:none;outline:none;}
+#main.furl-main .code-editor {padding:0;min-height:22px;display:block;min-width:0;width:max-content;max-width:none;outline:none;-webkit-user-select:none;user-select:none;}
 #main.furl-main .code-container {padding:0;min-height:22px;}
 #main.furl-main .code {font:14px/22px var(--code-font);}
 #main.furl-main .token.keyword,#main.furl-main .token.poly {font-weight:400;}
@@ -74,6 +74,10 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 #furl-app #caret.blink {animation:none;scroll-margin:1ch;}
 #furl-app svg.shard.selected,#furl-app svg.shard.selected-expanded {filter:none;}
 #furl-app svg.shard.selected > path,#furl-app svg.shard.selected-expanded > path {stroke:var(--furl-scope);stroke-width:.8px;}
+/* Diagnostic color is a solid backing; Hazel still draws the selection. */
+#furl-app :is(.errors .errors-piece,.warnings .warnings-piece) svg.shard > path,
+#furl-app :is(.errors .errors-piece,.warnings .warnings-piece) svg .child-line,
+#furl-app .projector.error:not(.selected) > svg path {stroke:none;stroke-dasharray:none;}
 .furl-caret-options {display:flex;align-items:center;gap:6px;color:var(--furl-quiet);}
 #furl-app .caret-option {padding:1px 5px;font-size:11px;border-color:transparent;}
 #furl-app .caret-option[aria-pressed=true] {border-color:currentColor;}
