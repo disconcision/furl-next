@@ -81,6 +81,8 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 #furl-app .caret-option.coral {color:var(--furl-coral);}
 #furl-app .caret-option.teal {color:var(--furl-teal);}
 .furl-status {padding:7px 16px;border:1px solid var(--furl-line);border-top:0;border-radius:0 0 4px 4px;color:var(--furl-quiet);font-size:12px;}
+.furl-program {border-radius:0 0 4px 4px;}
+.furl-program:has(+ .furl-status) {border-radius:0;}
 .furl-help {color:var(--furl-quiet);font-size:12px;margin:14px 0;max-width:760px;}
 .furl-powered {display:flex;align-items:center;gap:5px;text-decoration:none;font-size:12px;color:var(--furl-quiet);}
 .furl-powered img {width:18px;height:18px;filter:brightness(.5);}

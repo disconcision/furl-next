@@ -594,7 +594,7 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
       : model.statics.error_ids != []
           ? string_of_int(List.length(model.statics.error_ids))
             ++ " incomplete or inconsistent term(s)"
-          : "Live values";
+          : "";
   Node.div(
     ~attrs=[
       Attr.id("furl-app"),
@@ -843,13 +843,15 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
               ),
             ],
           ),
-          Node.div(
-            ~attrs=[
-              Attr.class_("furl-status"),
-              Attr.create("aria-live", "polite"),
-            ],
-            [Node.text(status)],
-          ),
+          status == ""
+            ? Node.none
+            : Node.div(
+                ~attrs=[
+                  Attr.class_("furl-status"),
+                  Attr.create("role", "status"),
+                ],
+                [Node.text(status)],
+              ),
           Node.p(
             ~attrs=[Attr.class_("furl-help")],
             [
