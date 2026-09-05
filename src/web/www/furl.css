@@ -63,7 +63,7 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 .furl-pattern {min-width:0;padding-left:calc(var(--depth)*1ch);background:linear-gradient(to right,var(--furl-indent) calc(var(--depth)*1ch),transparent 0);color:var(--furl-binding);}
 .furl-expression,.furl-value {min-width:0;}
 .furl-expression {overflow:visible;}
-.furl-value {color:var(--furl-value);white-space:pre-wrap;overflow-wrap:anywhere;}
+.furl-value {color:var(--furl-value);white-space:pre;overflow-wrap:normal;}
 .result-name {color:var(--furl-quiet);font-style:italic;cursor:default;}
 .terminal .furl-pattern {color:var(--furl-scope);}
 #main.furl-main .code-editor {padding:0;min-height:22px;display:block;min-width:0;width:max-content;max-width:none;outline:none;}
@@ -124,7 +124,7 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 
 /* Call controls occupy the existing value gutter, never a new code row. */
 .furl-value-inspector {position:relative;display:inline-block;max-width:calc(100% - 2ch);min-width:1ch;vertical-align:top;}
-#furl-app .furl-value-text {display:block;padding:0;border:0;border-radius:2px;min-width:1ch;min-height:22px;max-width:100%;font:inherit;color:inherit;white-space:pre-wrap;overflow-wrap:anywhere;text-align:left;}
+#furl-app .furl-value-text {display:block;padding:0;border:0;border-radius:2px;min-width:1ch;min-height:22px;max-width:100%;font:inherit;color:inherit;white-space:pre;overflow-wrap:normal;text-align:left;}
 #furl-app .furl-value-text:hover {background:color-mix(in srgb,var(--furl-value) 8%,transparent);}
 .furl-value-inspector[data-selected=true] {background:color-mix(in srgb,var(--furl-value) 10%,transparent);box-shadow:0 1px 0 var(--furl-value);}
 #furl-app .furl-call-arrow {position:absolute;top:0;width:1.3ch;height:22px;line-height:22px;font-size:17px;padding:0;border:0;color:var(--furl-value);background:var(--furl-paper);z-index:6;}

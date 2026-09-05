@@ -179,7 +179,7 @@ type cell = {
   target,
   source: Segment.t,
   editor: CodeEditable.Model.t,
-  value: string,
+  value: option(Language.Exp.t),
 };
 [@deriving (show, sexp, yojson)]
 type snapshot = {
@@ -459,10 +459,8 @@ let samples_for = (target, model) =>
     model.samples,
   )
   |> Option.value(~default=[]);
-let sample_text = (s: Language.Sample.t) =>
-  text_of_exp(
-    Language.Substitution.in_exp(Language.Builtins.env_init, s.value),
-  );
+let sample_value = (s: Language.Sample.t) =>
+  Language.Substitution.in_exp(Language.Builtins.env_init, s.value);
 let in_context = (context, sample: Language.Sample.t) =>
   switch (context) {
   | None => sample.call_stack == []
@@ -489,11 +487,7 @@ let refresh_values = model => {
   let values = ref([]);
   let call_counts = ref([]);
   let put = (target, sample) =>
-    values :=
-      [
-        (key(target), Option.fold(~none="", ~some=sample_text, sample)),
-        ...values^,
-      ];
+    values := [(key(target), Option.map(sample_value, sample)), ...values^];
   let value = (target, context) =>
     put(
       target,
@@ -548,7 +542,7 @@ let refresh_values = model => {
               value:
                 Option.value(
                   List.assoc_opt(key(c.target), values^),
-                  ~default="",
+                  ~default=None,
                 ),
             },
           model.document.cells,
@@ -589,7 +583,7 @@ let refresh_cells = model => {
           target,
           source: seg,
           editor,
-          value: "",
+          value: None,
         };
       },
       visible,
@@ -700,7 +694,8 @@ let init = (~example=0, segment) =>
     call_counts: [],
     selected_value: None,
   });
-let value_text = (target, model) => cell(target, model).value;
+let value_text = (target, model) =>
+  Option.fold(~none="", ~some=text_of_exp, cell(target, model).value);
 
 /* Navigation uses the visible projection, not the underlying syntax order.
    Values and the static result label are deliberately not focus targets. */

@@ -133,6 +133,8 @@ let component = () => {
         }
       }
     );
+  let%sub (available_width, report_width) =
+    Bonsai.state((module FurlValue.Width), ~default_model=0.);
   let%sub size =
     BonsaiUtil.SizeObserver.observer(
       () => JsUtil.get_elem_by_id("font-specimen"),
@@ -174,8 +176,12 @@ let component = () => {
     );
   let%arr model = model
   and inject = inject
-  and size = size;
+  and size = size
+  and available_width = available_width
+  and report_width = report_width;
   FurlView.view(
+    ~available_width,
+    ~report_width,
     ~font_metrics={
       col_width: size.width,
       row_height: size.height,

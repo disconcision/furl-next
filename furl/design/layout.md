@@ -41,7 +41,7 @@ Nested branch planning and live sample routing should remain separate: geometric
 
 ## Live branch projection
 
-The live implementation now applies the shared lane plan to nested matches. `All columns` sums branch widths; `One branch` shows one selected arm at each match. Native editor measurements determine shared attribute widths before rendering; branch results align at the bottom when neighboring arms contain different numbers of let rows. The live view scrolls the whole grid on narrow surfaces.
+The live implementation now applies the shared lane plan to nested matches. `All columns` sums branch widths; `One branch` shows one selected arm at each match. Native editor measurements determine shared source attribute widths before rendering; live values divide the container’s remaining width among the visible lanes and use Hazel’s structural probe abbreviation to fit. They do not wrap, change row heights, or enlarge the grid. Single-branch mode measures all source arms, so cycling branches keeps column starts stable. Branch results align at the bottom when neighboring arms contain different numbers of let rows. The live view scrolls the whole grid on narrow surfaces.
 
 Syntax addresses and view IDs are separate: repeated match inputs and result bindings share editable syntax, while focus identifies exactly one visual echo. A branch choice does not alter execution. Function call selection uses real Hazel probe call stacks and step intervals, independently of the geometric branch choice.
 

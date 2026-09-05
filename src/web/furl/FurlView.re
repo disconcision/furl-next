@@ -14,7 +14,15 @@ let button = (~attrs=[], ~disabled=false, ~label, effect, text) =>
     [Node.text(text)],
   );
 
-let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
+let view =
+    (
+      ~font_metrics,
+      ~available_width,
+      ~report_width,
+      ~inject,
+      ~choose_example,
+      model: FurlDocument.t,
+    ) => {
   let globals = {
     ...Globals.Model.init(~settings=FurlDocument.settings, ~font_metrics, ()),
     inject_global:
@@ -36,6 +44,48 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
   let rail_style = (lane, level) =>
     "left:" ++ Printf.sprintf("%g", rail_x(lane, level) -. 0.5) ++ "ch";
   let active = model.selected_value == None ? active_cell(model) : None;
+  /* One measured column plan for all rows. The whole program scrolls if
+     necessary; individual editors never clip their caret or SVG decoration. */
+  let width = c => {
+    let measured = cell(c.target, model).editor.editor.syntax.measured;
+    List.init(measured.total_rows, i =>
+      Option.fold(
+        ~none=0,
+        ~some=shape => shape.Haz3lcore.Measured.Rows.max_col,
+        Haz3lcore.Measured.row_shape(i, measured),
+      )
+    )
+    |> List.fold_left(max, 0);
+  };
+  let visible = measured_cells;
+  let widest = (root, minimum) =>
+    List.fold_left(
+      (w, c) => c.root == root ? max(w, width(c) + c.inset + 1) : w,
+      minimum,
+      visible,
+    );
+  let pat_width = model.bindings ? widest(Haz3lcore.Sort.Pat, 15) : 0;
+  let exp_width = model.expressions ? widest(Haz3lcore.Sort.Exp, 18) : 0;
+  let attributes =
+    (model.bindings ? 1 : 0)
+    + (model.expressions ? 1 : 0)
+    + (model.values ? 1 : 0);
+  let code_width = pat_width + exp_width + max(0, attributes - 1) * 2;
+  let value_width =
+    model.values
+      ? FurlValue.columns(
+          ~available_width,
+          ~col_width=font_metrics.col_width,
+          ~lanes=lanes(model, tree),
+          ~lane_gap,
+          ~code_width,
+        )
+      : 0;
+  let columns =
+    (model.bindings ? [string_of_int(pat_width) ++ "ch"] : [])
+    @ (model.expressions ? [string_of_int(exp_width) ++ "ch"] : [])
+    @ (model.values ? [string_of_int(value_width) ++ "ch"] : []);
+  let min_width = code_width + value_width;
   let editor = (view, target) => {
     let c = cell(target, model);
     let focus = () => inject(FocusView(target, view));
@@ -61,8 +111,6 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
     );
   };
   let live_value = (id, owner, target) => {
-    let value =
-      Option.fold(~none="", ~some=t => value_text(t, model), target);
     let selected = model.selected_value == Some(id);
     let count =
       Option.fold(
@@ -71,6 +119,17 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
           id =>
             Option.value(List.assoc_opt(id, model.call_counts), ~default=0),
         owner,
+      );
+    let value =
+      Option.fold(
+        ~none="",
+        ~some=
+          t =>
+            FurlValue.render(
+              ~columns=max(1, value_width - (count > 1 ? 2 : 0)),
+              cell(t, model).value,
+            ),
+        target,
       );
     count > 1 && (value != "" || selected)
       ? {
@@ -556,38 +615,6 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
       inject(Toggle(name)),
       label,
     );
-  /* One measured column plan for all rows. The whole program scrolls if
-     necessary; individual editors never clip their caret or SVG decoration. */
-  let width = c => {
-    let measured = cell(c.target, model).editor.editor.syntax.measured;
-    List.init(measured.total_rows, i =>
-      Option.fold(
-        ~none=0,
-        ~some=shape => shape.Haz3lcore.Measured.Rows.max_col,
-        Haz3lcore.Measured.row_shape(i, measured),
-      )
-    )
-    |> List.fold_left(max, 0);
-  };
-  let visible = measured_cells;
-  let widest = (root, minimum) =>
-    List.fold_left(
-      (w, c) => c.root == root ? max(w, width(c) + c.inset + 1) : w,
-      minimum,
-      visible,
-    );
-  let pat_width = model.bindings ? widest(Haz3lcore.Sort.Pat, 15) : 0;
-  let exp_width = model.expressions ? widest(Haz3lcore.Sort.Exp, 18) : 0;
-  let columns =
-    (model.bindings ? [string_of_int(pat_width) ++ "ch"] : [])
-    @ (model.expressions ? [string_of_int(exp_width) ++ "ch"] : [])
-    @ (model.values ? ["12ch"] : []);
-  let min_width =
-    pat_width
-    + exp_width
-    + (model.values ? 12 : 0)
-    + max(0, List.length(columns) - 1)
-    * 2;
   Node.div(
     ~attrs=[
       Attr.id("furl-app"),
@@ -803,6 +830,7 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
           Node.div(
             ~attrs=[
               Attr.class_("furl-program"),
+              FurlValue.observe_width(report_width),
               Attr.create(
                 "style",
                 "--columns:"

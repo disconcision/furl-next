@@ -490,12 +490,19 @@ let rec abbreviate_exp = (exp: Exp.t): Exp.t => {
 
     let term: Exp.term =
       switch (exp |> Exp.term_of) {
-      | Fun(_p, _e, _, Some(s)) => Invalid("<" ++ s ++ ">")
-      | Fun(_p, _e, _, None) => Invalid("<function>")
-      | BuiltinFun(f) => Invalid("<" ++ f ++ ">")
+      | Fun(_p, _e, _, Some(s)) =>
+        Invalid(abbreviate_str(available^, "<" ++ s ++ ">"))
+      | Fun(_p, _e, _, None) =>
+        Invalid(abbreviate_str(available^, "<function>"))
+      | BuiltinFun(f) => Invalid(abbreviate_str(available^, "<" ++ f ++ ">"))
       | Tuple([e]) => Tuple([abbreviate_exp(e)])
       | DynamicErrorHole(_exp, err) =>
-        Invalid("<" ++ InvalidOperationError.show(err) ++ ">")
+        Invalid(
+          abbreviate_str(
+            available^,
+            "<" ++ InvalidOperationError.show(err) ++ ">",
+          ),
+        )
 
       // Atomic string cases
       | Invalid(x) =>
@@ -513,7 +520,7 @@ let rec abbreviate_exp = (exp: Exp.t): Exp.t => {
           let str = abbreviate_string_token(~min_len=available^, s);
           Atom(String(str));
         };
-      | DrvQuote(_, _) => Invalid("<drv term>")
+      | DrvQuote(_, _) => Invalid(abbreviate_str(available^, "<drv term>"))
       | Var(v) => Var(abbreviate_str(available^, v))
       | Label(v) =>
         switch (abbreviate_label(v)) {

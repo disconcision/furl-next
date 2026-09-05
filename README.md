@@ -63,11 +63,14 @@ Browser navigation checks use Playwright with Chrome installed (or make Playwrig
 TEST_URL=http://localhost:8000/live/ node furl/live/test-navigation.cjs
 node furl/live/test-navigation-study.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-inspector.cjs
+TEST_URL=http://localhost:8000/live/ node furl/live/test-values.cjs
 ```
 
-The first checks value inspection, caret restoration, branch gestures, nested call contexts, and control geometry. The second opens the study from `file://` with network requests blocked and exercises all three concepts. The inspector check covers caret/type/error information, shared-source error counts, holes, and evaluation feedback. All save light/dark screenshots in a temporary directory.
+The first checks value inspection, caret restoration, branch gestures, nested call contexts, and control geometry. The second opens the study from `file://` with network requests blocked and exercises all three concepts. The inspector check covers caret/type/error information, shared-source error counts, holes, and evaluation feedback. The value check covers responsive structural abbreviation, bounded rows, shared branch widths, and call navigation. All save light/dark screenshots in a temporary directory.
 
 Before publishing, run `python3 furl/live/build.py --check` to verify the generated live bundle. Commit live sources and `docs/live` together, then push to `furl`. The page uses only local assets; clipboard access depends on the browser's permissions.
+
+Live values use the remaining column space, then Hazel’s structural probe abbreviation when they need to shrink. Resizing reveals or abbreviates detail without changing the program or reevaluating it.
 
 The footer follows the caret with Hazel's syntactic form, type, and error explanation. The right side counts whole-program errors, with holes and warnings shown separately when present.
 

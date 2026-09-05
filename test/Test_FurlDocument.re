@@ -81,6 +81,92 @@ let tests = (
   "FurlDocument",
   [
     test_case(
+      "probe abbreviation uses the available width without changing samples",
+      `Quick,
+      () => {
+        let m = start("let xs = [1, 2, 3, 4, 5, 6, 7, 8] in xs");
+        let target = rhs("xs", m);
+        let value = cell(target, m).value;
+        let full = FurlValue.render(~columns=80, value);
+        check(
+          string,
+          "wide display is complete",
+          "[1, 2, 3, 4, 5, 6, 7, 8]",
+          full,
+        );
+        let short = FurlValue.render(~columns=12, value);
+        check(
+          bool,
+          "list retains its delimiters",
+          true,
+          short.[0] == '[' && short.[String.length(short) - 1] == ']',
+        );
+        check(
+          bool,
+          "narrow display is structurally abbreviated",
+          true,
+          short != full && Util.Unicode.Width.columns_of_string(short) <= 12,
+        );
+        let moved = at_col(target, 1, m);
+        check(
+          bool,
+          "caret retains sampled term",
+          true,
+          cell(target, moved).value === value,
+        );
+        check(
+          bool,
+          "caret retains execution",
+          true,
+          moved.samples === m.samples,
+        );
+        check(
+          bool,
+          "caret reuses abbreviated display",
+          true,
+          FurlValue.render(~columns=12, cell(target, moved).value) === short,
+        );
+        check(
+          string,
+          "widening restores full detail",
+          full,
+          FurlValue.render(~columns=80, value),
+        );
+        check(
+          string,
+          "missing samples stay blank",
+          "",
+          FurlValue.render(~columns=12, None),
+        );
+        check(int, "display does not add history", 0, List.length(m.undo));
+        List.iter(
+          src => {
+            let value = start(src).result;
+            List.iter(
+              columns => {
+                let text = FurlValue.render(~columns, value);
+                check(
+                  bool,
+                  src ++ " fits " ++ string_of_int(columns),
+                  true,
+                  Util.Unicode.Width.columns_of_string(text) <= columns,
+                );
+              },
+              [1, 3, 5, 8, 12, 24, 48],
+            );
+          },
+          [
+            "fun x -> x",
+            "(fun x -> x, fun y -> y)",
+            "[fun x -> x, fun y -> y]",
+            "(name = \"a long name\", values = [1, 2, 3, 4, 5, 6])",
+            "[[1, 2, 3], [4, 5, 6], [7, 8, 9]]",
+            "\"日本語の長い文字列と🙂🙂🙂\"",
+          ],
+        );
+      },
+    ),
+    test_case(
       "inspector counts the underlying program once",
       `Quick,
       () => {
