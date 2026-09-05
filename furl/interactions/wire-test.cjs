@@ -99,15 +99,31 @@ module.exports = async function checkReferenceWires(page, output) {
   await endpoints(binder("width"), hole(0));
   const oldWidth = (await hole(0).boundingBox()).width,
     secondX = (await hole(1).boundingBox()).x;
-  await page.mouse.up();
   // Inspect the actual width tween: the following factor must slide across as
-  // the new word opens, without a one-frame layout jump at insertion.
-  await hole(0).evaluate((n) =>
-    n.getAnimations({ subtree: true }).forEach((a) => {
-      a.pause();
-      a.currentTime = 0;
-    }),
-  );
+  // the new word opens. Freeze on creation, before releasing the pointer:
+  // a busy browser may finish the tween before the next Playwright command.
+  await page.evaluate(() => {
+    const animate = Element.prototype.animate;
+    window.restoreReferenceAnimate = () => {
+      Element.prototype.animate = animate;
+    };
+    Element.prototype.animate = function (...args) {
+      const a = animate.apply(this, args);
+      if (
+        this.matches('#reference-lab [data-hole="0"]') ||
+        this.closest('#reference-lab [data-hole="0"]')
+      ) {
+        a.pause();
+        a.currentTime = 0;
+      }
+      return a;
+    };
+  });
+  await page.mouse.up();
+  await page.evaluate(() => {
+    window.restoreReferenceAnimate();
+    delete window.restoreReferenceAnimate;
+  });
   close(
     (await hole(0).boundingBox()).width,
     oldWidth,

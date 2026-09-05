@@ -920,7 +920,7 @@
         pick(b.id, e.detail ? { x: e.clientX, y: e.clientY } : null);
       });
       name.addEventListener("pointerdown", (e) => {
-        if (e.button || !controls.active()) return;
+        if (e.button || !controls.active() || picked) return;
         e.preventDefault();
         name.focus({ preventScroll: true });
         clearLanding();
@@ -1091,7 +1091,7 @@
       names.get(id).focus({ preventScroll: true });
       status(
         root,
-        `Connect ${bindings.find((b) => b.id === id).name} to a factor. The binding stays in place; Escape cancels.`,
+        `Connect ${bindings.find((b) => b.id === id).name} to a factor, or click elsewhere to retract the cable. Escape also cancels.`,
       );
     }
     function place(index) {
@@ -1179,7 +1179,7 @@
       holes.forEach((hole, i) =>
         hole.classList.toggle("target", !!picked && aimed === i),
       );
-      const unplug = originSlot !== null && aimed === null;
+      const unplug = originSlot !== null && aimed === null && !!drag?.moved;
       root.classList.toggle("delete-preview", unplug);
       root.classList.toggle(
         "delete-blocked",
@@ -1193,7 +1193,7 @@
             : "Unplugging requires Free edit. Return to a factor or press Escape.",
           settings.policy !== "free",
         );
-      else if (originSlot !== null)
+      else if (originSlot !== null && aimed !== null)
         status(
           root,
           aimed === originSlot
@@ -1202,6 +1202,11 @@
               ? "Release to move this use to the highlighted factor."
               : "Moving a use requires Free edit. Return to its original factor or press Escape.",
           aimed !== originSlot && settings.policy !== "free",
+        );
+      else if (originSlot !== null)
+        status(
+          root,
+          "Click here to cancel the pickup and retract the cable. The original use stays in place.",
         );
       updateLink();
     }
@@ -1229,7 +1234,7 @@
         aimAt(e);
         if (aimed !== null) place(aimed);
         else if (originSlot !== null) removeUse(originSlot, freePoint);
-        else cancel();
+        else cancelWithRetraction(freePoint);
         // A completed drag must not also fire a binder/hole click.
         suppressClick = true;
         setTimeout(() => {
@@ -1240,8 +1245,35 @@
         controls.latch(false);
       }
     });
-    function cancel() {
-      wire.clear();
+    // Capture before binder/control handlers: the initiating click runs before
+    // there is a pickup, but the next non-target click dismisses that pickup
+    // instead of starting another cable or activating an unrelated control.
+    document.addEventListener(
+      "click",
+      (e) => {
+        if (
+          !picked ||
+          suppressClick ||
+          drag?.moved ||
+          e.button !== 0 ||
+          e.target.closest("#reference-lab [data-hole]")
+        )
+          return;
+        const point = e.detail
+          ? { x: e.clientX, y: e.clientY }
+          : freePoint ||
+            wire.anchor(
+              aimed === null ? names.get(picked) : holes[aimed],
+              { left: 0, top: 0 },
+              false,
+            );
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        cancelWithRetraction(point);
+      },
+      true,
+    );
+    function clearPickup() {
       clearLanding();
       drag = null;
       picked = null;
@@ -1252,8 +1284,25 @@
       floating.style.display = "none";
       root.classList.remove("delete-preview", "delete-blocked");
       controls.latch(false);
+    }
+    function cancel() {
+      wire.clear();
+      clearPickup();
       render();
       status(root, "Canceled. Bindings and references are unchanged.");
+    }
+    function cancelWithRetraction(point) {
+      if (!picked) {
+        cancel();
+        return;
+      }
+      wire.retract(names.get(picked), point);
+      clearPickup();
+      render();
+      status(
+        root,
+        "Canceled the connection. Bindings and references are unchanged.",
+      );
     }
     function removeUse(index, point = null) {
       const id = slots[index];

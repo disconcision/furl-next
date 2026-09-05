@@ -37,6 +37,8 @@ const url =
       await page.locator("#row-lab").scrollIntoViewIfNeeded();
     };
     await reset();
+    await require("./connection-cancel-test.cjs")(page, output);
+    await reset();
     await require("./tool-test.cjs")(page, output);
     await reset();
     await require("./wire-test.cjs")(page, output);
