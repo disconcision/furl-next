@@ -35,7 +35,7 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
   let rail_x = (lane, level) => FurlCombs.x(rail_depths, lane, level);
   let rail_style = (lane, level) =>
     "left:" ++ Printf.sprintf("%g", rail_x(lane, level) -. 0.5) ++ "ch";
-  let active = active_cell(model);
+  let active = model.selected_value == None ? active_cell(model) : None;
   let editor = (view, target) => {
     let c = cell(target, model);
     let focus = () => inject(FocusView(target, view));
@@ -60,12 +60,120 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
       c.editor,
     );
   };
+  let live_value = (id, owner, target) => {
+    let value =
+      Option.fold(~none="", ~some=t => value_text(t, model), target);
+    let selected = model.selected_value == Some(id);
+    let count =
+      Option.fold(
+        ~none=0,
+        ~some=
+          id =>
+            Option.value(List.assoc_opt(id, model.call_counts), ~default=0),
+        owner,
+      );
+    count > 1 && (value != "" || selected)
+      ? {
+        let owner = Option.get(owner);
+        let index = choice(owner, count, model.call_choices);
+        let description =
+          "Call "
+          ++ string_of_int(index + 1)
+          ++ " of "
+          ++ string_of_int(count);
+        Node.span(
+          ~attrs=[
+            Attr.class_("furl-value-inspector"),
+            Attr.create("data-selected", string_of_bool(selected)),
+            Attr.create("data-call", string_of_int(index)),
+            Key.listener(~f=key =>
+              switch (key) {
+              | {
+                  key: D(("ArrowLeft" | "ArrowRight") as direction),
+                  ctrl: Up,
+                  alt: Up,
+                  meta: Up,
+                  shift: Up,
+                  _,
+                } =>
+                Effect.Many([
+                  Effect.Prevent_default,
+                  Effect.Stop_propagation,
+                  inject(
+                    CallStep(owner, direction == "ArrowRight" ? 1 : (-1)),
+                  ),
+                ])
+              | {key: D("Escape"), _} =>
+                Haz3lcore.ProbePerform.FocusEffect.schedule_cell();
+                Effect.Many([
+                  Effect.Prevent_default,
+                  Effect.Stop_propagation,
+                  inject(SelectValue(None)),
+                ]);
+              | _ => Effect.Ignore
+              }
+            ),
+          ],
+          [
+            button(
+              ~attrs=[
+                Attr.class_("furl-value-text"),
+                Attr.create("aria-pressed", string_of_bool(selected)),
+                Attr.title(
+                  description
+                  ++ ". Select this value, then use ← → to inspect calls.",
+                ),
+                Attr.on_focus(_ => inject(SelectValue(Some(id)))),
+              ],
+              ~label=
+                (
+                  value == ""
+                    ? "No value in this call" : "Inspect value " ++ value
+                )
+                ++ ". "
+                ++ description,
+              inject(SelectValue(Some(id))),
+              value,
+            ),
+          ]
+          @ (
+            selected
+              ? [
+                button(
+                  ~attrs=[Attr.class_("furl-call-arrow previous")],
+                  ~disabled=index == 0,
+                  ~label="Previous function call",
+                  inject(CallStep(owner, -1)),
+                  "‹",
+                ),
+                button(
+                  ~attrs=[Attr.class_("furl-call-arrow next")],
+                  ~disabled=index + 1 == count,
+                  ~label="Next function call",
+                  inject(CallStep(owner, 1)),
+                  "›",
+                ),
+                Node.span(
+                  ~attrs=[
+                    Attr.class_("furl-sr-only"),
+                    Attr.create("role", "status"),
+                  ],
+                  [Node.text(description)],
+                ),
+              ]
+              : []
+          ),
+        );
+      }
+      : Node.text(value);
+  };
   let row =
       (
         ~id,
         ~pattern,
         ~expression,
         ~value,
+        ~owner=None,
         ~depth,
         ~terminal=false,
         ~mark="",
@@ -155,15 +263,7 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
                 Attr.class_("furl-value"),
                 Attr.create("aria-label", "Evaluation value"),
               ],
-              [
-                Node.text(
-                  Option.fold(
-                    ~none="",
-                    ~some=t => value_text(t, model),
-                    value,
-                  ),
-                ),
-              ],
+              [live_value(id, owner, value)],
             ),
           ]
           : []
@@ -185,7 +285,7 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
       ),
     );
   };
-  let comb = (target, lane, rail, kind, first) =>
+  let comb = (~joined=false, target, lane, rail, kind, first) =>
     model.comb
       ? [
         Node.button(
@@ -200,25 +300,39 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
             Attr.create("data-comb-kind", kind),
             Attr.create(
               "aria-label",
-              "Unfurl this " ++ kind ++ " to Hazel code",
+              kind == "match" && !model.match_columns
+                ? "Next match branch (Shift-click for previous)"
+                : "Unfurl this " ++ kind ++ " to Hazel code",
             ),
             Attr.title(
-              Haz3lcore.Printer.of_segment(
-                ~indent=" ",
-                read(target, model.document.segment),
-              ),
+              kind == "match" && !model.match_columns
+                ? "Click stem: next branch. Shift-click: previous. Click horizontal fork: Hazel code."
+                : Haz3lcore.Printer.of_segment(
+                    ~indent=" ",
+                    read(target, model.document.segment),
+                  ),
             ),
-            Attr.on_click(_ => inject(ToggleScope(key(target)))),
+            Attr.on_click(evt =>
+              inject(
+                kind == "match" && !model.match_columns
+                  ? BranchStep(key(target), Key.shift_held(evt) ? (-1) : 1)
+                  : ToggleScope(key(target)),
+              )
+            ),
           ],
-          [FurlCombs.stem(~pitch=font_metrics.col_width, ~kind, ~first, ())],
+          [
+            FurlCombs.stem(
+              ~pitch=font_metrics.col_width,
+              ~kind,
+              ~first,
+              ~joined,
+              (),
+            ),
+          ],
         ),
       ]
       : [];
-  let step_branch = (target, direction) => {
-    Haz3lcore.ProbePerform.FocusEffect.schedule_cell();
-    inject(BranchStep(key(target), direction));
-  };
-  let rec projection = (lane, rail, node) =>
+  let rec projection = (owner, joined, lane, rail, node) =>
     switch (node) {
     | Row({pattern, expression, depth, terminal}) =>
       row(
@@ -226,6 +340,7 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
         ~pattern,
         ~expression=Some(expression),
         ~value=Some(expression),
+        ~owner,
         ~depth,
         ~terminal,
         ~rail,
@@ -240,51 +355,16 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
           Attr.create("data-scope", key(target)),
         ],
         comb(target, lane, rail, "let block", false)
-        @ List.map(projection(lane, rail + 1), rows),
+        @ List.map(projection(owner, false, lane, rail + 1), rows),
       )
     | Function({target, parameter, body_target: _, depth, body}) =>
-      let call_count =
-        Option.value(
-          List.assoc_opt(key(target), model.call_counts),
-          ~default=0,
-        );
-      let index = choice(key(target), call_count, model.call_choices);
       Node.div(
         ~key="function-" ++ key(target),
         ~attrs=[
           Attr.class_("furl-function"),
           Attr.create("data-function", key(target)),
         ],
-        (
-          call_count > 1
-            ? [
-              Node.div(
-                ~attrs=[Attr.class_("furl-context")],
-                [
-                  Node.text("Call "),
-                  button(
-                    ~disabled=index == 0,
-                    ~label="Previous function call",
-                    inject(CallStep(key(target), -1)),
-                    "‹",
-                  ),
-                  Node.text(
-                    string_of_int(index + 1)
-                    ++ " / "
-                    ++ string_of_int(call_count),
-                  ),
-                  button(
-                    ~disabled=index + 1 == call_count,
-                    ~label="Next function call",
-                    inject(CallStep(key(target), 1)),
-                    "›",
-                  ),
-                ],
-              ),
-            ]
-            : []
-        )
-        @ [
+        [
           Node.div(
             ~attrs=[Attr.class_("furl-function-content")],
             comb(target, lane, rail, "function", false)
@@ -297,6 +377,7 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
                     ~pattern=Some(parameter),
                     ~expression=None,
                     ~value=Some(parameter),
+                    ~owner=Some(key(target)),
                     ~depth=depth + 1,
                     ~mark="·",
                     (),
@@ -317,13 +398,12 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
                     : Node.none,
                 ],
               ),
-              projection(lane, rail + 1, body),
+              projection(Some(key(target)), true, lane, rail + 1, body),
             ],
           ),
         ],
-      );
+      )
     | Match({target, input, depth, branches}) =>
-      let selected = selected_branch(target, branches, model);
       let shown = shown_branches(target, branches, model);
       let next_lane = ref(lane);
       let placements =
@@ -363,44 +443,6 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
           ),
         ],
         [
-          Node.div(
-            ~attrs=[Attr.class_("furl-context furl-match-context")],
-            [Node.text(model.match_columns ? "Branches" : "Branch")]
-            @ (
-              model.match_columns
-                ? []
-                : [
-                  button(
-                    ~label="Previous match branch",
-                    step_branch(target, -1),
-                    "‹",
-                  ),
-                  Node.span(
-                    ~attrs=[Attr.create("aria-live", "polite")],
-                    [
-                      Node.text(
-                        string_of_int(selected + 1)
-                        ++ " / "
-                        ++ string_of_int(List.length(branches)),
-                      ),
-                    ],
-                  ),
-                  button(
-                    ~label="Next match branch",
-                    step_branch(target, 1),
-                    "›",
-                  ),
-                ]
-            )
-            @ [
-              button(
-                ~attrs=[Attr.class_("furl-source-link")],
-                ~label="Unfurl this match to Hazel code",
-                inject(ToggleScope(key(target))),
-                "code",
-              ),
-            ],
-          ),
           Node.div(
             ~attrs=[
               Attr.class_("furl-branches"),
@@ -452,6 +494,7 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
                       FurlCombs.bridge(
                         ~pitch=font_metrics.col_width,
                         ~many=List.length(shown) > 1,
+                        ~joined,
                       ),
                     ],
                   ),
@@ -468,18 +511,32 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
                       Attr.class_("furl-branch"),
                       Attr.create("data-branch", string_of_int(i)),
                     ],
-                    comb(target, branch_lane, branch_rail, "match", slot == 0)
+                    comb(
+                      ~joined,
+                      target,
+                      branch_lane,
+                      branch_rail,
+                      "match",
+                      slot == 0,
+                    )
                     @ [
                       row(
                         ~id=branch_row_id(b.pattern),
                         ~pattern=Some(b.pattern),
                         ~expression=Some(input),
                         ~value=Some(b.pattern),
+                        ~owner,
                         ~allow_fold=false,
                         ~depth=depth + 1,
                         (),
                       ),
-                      projection(branch_lane, branch_rail + 1, b.body),
+                      projection(
+                        owner,
+                        false,
+                        branch_lane,
+                        branch_rail + 1,
+                        b.body,
+                      ),
                     ],
                   );
                 },
@@ -598,6 +655,10 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
             "nav",
             [
               Node.a(~attrs=[Attr.href("../")], [Node.text("Reference")]),
+              Node.a(
+                ~attrs=[Attr.href("navigation.html")],
+                [Node.text("Navigation study")],
+              ),
               Node.a(
                 ~attrs=[
                   Attr.href("https://github.com/disconcision/furl-next"),
@@ -778,7 +839,7 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
                     ++ "ch",
                   ),
                 ],
-                [projection(0, 0, tree)],
+                [projection(None, false, 0, 0, tree)],
               ),
             ],
           ),
@@ -793,7 +854,7 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
             ~attrs=[Attr.class_("furl-help")],
             [
               Node.text(
-                "Click a pattern or expression to edit. ↑ ↓ keep your column between cells; ← → cross cell edges. Click a comb to reveal its code; + brings back the rows. Edits are saved in this browser.",
+                "Click a pattern or expression to edit. ↑ ↓ keep your column between cells; ← → cross cell edges. Click a comb to reveal code; + brings back the rows. Edits are saved in this browser.",
               ),
             ],
           ),
@@ -810,7 +871,7 @@ let view = (~font_metrics, ~inject, ~choose_example, model: FurlDocument.t) => {
             ~attrs=[Attr.class_("furl-help")],
             [
               Node.text(
-                "Match arrows change the branch you are viewing, not the running program. Ctrl + Alt + ← / → switches branches in the focused match. Values show the selected function call; a blank value means that path was not evaluated in that call.",
+                "In one-branch mode, click the match stem to cycle branches (Shift-click goes back); its horizontal fork reveals code. Ctrl+Alt+← → switches the focused match. Select a live value to reveal call arrows; ← → steps through recorded calls, Escape returns to code. Blank values mark paths not evaluated in that call.",
               ),
             ],
           ),

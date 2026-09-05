@@ -24,6 +24,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix='furl-live-') as temp:
         stage = Path(temp)
         shutil.copyfile(WWW / 'furl.html', stage / 'index.html')
+        shutil.copyfile(WWW / 'navigation.html', stage / 'navigation.html')
         shutil.copyfile(REPO / '_build/default/src/web/www/furl.js', stage / 'furl.js')
         shutil.copyfile(WWW / 'furl.css', stage / 'furl.css')
         # The root stylesheet's inherited pin icon path is relative to style/;

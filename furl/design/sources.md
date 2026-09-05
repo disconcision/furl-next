@@ -20,3 +20,5 @@ Layout and comb choices incorporate the subsequent discussion: a text grid, inde
 The deck and old Furl repo remain separate reference sources. This repository contains the working HTML and derived notes; it does not need a second PowerPoint copy to build.
 
 The hazelnut mark is embedded from `src/web/www/img/hazelnut.svg`, recolored for this interface. Inherited attribution is in `licenses/Icons.md`; the MIT notice is in `LICENSE`.
+
+The navigation study at `/live/navigation.html` compares new branch gestures without extra code rows. A fresh inspection of the Big Book's match sequence (37–44) and trace sequence (49–52), including the rendered shared-scrutinee and trace diagrams on 41 and 50, found parallel columns rather than a specified branch-switching gesture. The selected-value arrows follow Hazel's probe affordance (`ProbeProj.re` and `proj-probe.css`); Furl uses its own call-context selection and layout.

@@ -81,6 +81,73 @@ let tests = (
   "FurlDocument",
   [
     test_case(
+      "value inspection preserves code focus and evaluation",
+      `Quick,
+      () => {
+        let m = init(~example=3, parse(snd(examples[3])));
+        let (fn, parameter, _) = Option.get(first_function(project(m)));
+        let focus = parameter_row_id(parameter) ++ ":pat";
+        let m = update(FocusView(parameter, focus), m);
+        let id = parameter_row_id(parameter);
+        let next =
+          m
+          |> update(SelectValue(Some(id)))
+          |> update(CallStep(key(fn), 1));
+        check(
+          string,
+          "selected call arguments",
+          "[4, 6]",
+          value_text(parameter, next),
+        );
+        check(
+          bool,
+          "inspector stays selected",
+          true,
+          next.selected_value == Some(id),
+        );
+        check(
+          bool,
+          "source snapshot unchanged",
+          true,
+          m.document.segment === next.document.segment,
+        );
+        check(
+          bool,
+          "no evaluation or analysis",
+          true,
+          m.samples === next.samples && m.statics === next.statics,
+        );
+        check(int, "no undo entry", 0, List.length(next.undo));
+        check(
+          string,
+          "retains return caret",
+          focus,
+          next.document.active_view,
+        );
+        let returned = update(FocusView(parameter, focus), next);
+        check(
+          bool,
+          "editing dismisses controls",
+          true,
+          returned.selected_value == None,
+        );
+        let hidden =
+          next |> update(Toggle("values")) |> update(Toggle("values"));
+        check(
+          bool,
+          "hidden inspector does not reappear",
+          true,
+          hidden.selected_value == None,
+        );
+        check(
+          string,
+          "view changes preserve call choice",
+          "[4, 6]",
+          value_text(parameter, hidden),
+        );
+      },
+    ),
+    test_case(
       "comb rails pack by structural depth within each column", `Quick, () => {
       List.iter(
         ((i, expected)) => {

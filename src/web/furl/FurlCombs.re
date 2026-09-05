@@ -75,12 +75,12 @@ let vertical = (x, y) =>
     ],
     [],
   );
-let stem = (~pitch, ~kind, ~first=false, ()) => {
+let stem = (~pitch, ~kind, ~first=false, ~joined=false, ()) => {
   let x = pitch /. 2.;
   let curl = pitch *. 0.65;
   let (cap, y) =
     switch (kind) {
-    | "match" when first => ([], -. curl)
+    | "match" when first => ([], joined ? 0. : -. curl)
     | "match" => (
         [
           path(
@@ -110,12 +110,17 @@ let stem = (~pitch, ~kind, ~first=false, ()) => {
 };
 let parameter = pitch =>
   svg([path("parameter", Printf.sprintf("M 0 0 H %g", pitch *. 0.65))]);
-let bridge = (~pitch, ~many) => {
+let bridge = (~pitch, ~many, ~joined) => {
   let curl = pitch *. 0.65;
   let lead =
     path(
       "fork",
-      Printf.sprintf("M 0 %g C 0 0 %g 0 %g 0", -. curl, curl, 2. *. curl),
+      Printf.sprintf(
+        "M 0 %g C 0 0 %g 0 %g 0",
+        joined ? 0. : -. curl,
+        curl,
+        2. *. curl,
+      ),
     );
   svg(
     ~attrs=[Attr.class_("furl-bridge-svg")],

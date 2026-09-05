@@ -210,6 +210,7 @@ type t = {
   branch_choices: list((string, int)),
   call_choices: list((string, int)),
   call_counts: list((string, int)),
+  selected_value: option(string),
 };
 
 type projection =
@@ -697,6 +698,7 @@ let init = (~example=0, segment) =>
     branch_choices: [],
     call_choices: [],
     call_counts: [],
+    selected_value: None,
   });
 let value_text = (target, model) => cell(target, model).value;
 
@@ -813,6 +815,7 @@ type action =
   | MatchMode(bool)
   | BranchStep(string, int)
   | CallStep(string, int)
+  | SelectValue(option(string))
   | Focus(string)
   | Navigate(target, travel)
   | CaretTone(string)
@@ -823,8 +826,24 @@ type action =
   | Redo
   | Reset;
 
-let rec update = (action, model) =>
+let rec update = (action, model) => {
+  /* Inspecting a value is view focus, never part of the source or history.
+     Any editor/projection action returns focus to code. */
+  let model =
+    switch (action) {
+    | SelectValue(_)
+    | CallStep(_) => model
+    | _ when model.selected_value != None => {
+        ...model,
+        selected_value: None,
+      }
+    | _ => model
+    };
   switch (action) {
+  | SelectValue(selected_value) => {
+      ...model,
+      selected_value,
+    }
   | EditView(target, view, action) =>
     update(Edit(target, action), update(FocusView(target, view), model))
   | FocusView(target, view) => {
@@ -1242,3 +1261,4 @@ let rec update = (action, model) =>
     };
     changed ? calculate(next) : next;
   };
+};

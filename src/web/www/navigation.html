@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Furl — navigation without extra rows</title>
+<style>
+:root{color-scheme:light dark;--page:light-dark(#f5f8fa,#182630);--paper:light-dark(#d9e5eb,#202f3a);--ink:light-dark(#243944,#e1edf1);--quiet:light-dark(#607783,#a3b8c4);--line:light-dark(#becfd8,#405662);--pat:light-dark(#155872,#81cae4);--scope:light-dark(#614778,#d2b8f1);--value:light-dark(#386024,#b0d299);--strip:light-dark(#c5d7e1,#2e414e);--mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace}
+*{box-sizing:border-box}body{margin:0;background:var(--page);color:var(--ink);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main,header{max-width:1080px;margin:auto;padding:0 24px}header{display:flex;gap:18px;align-items:center;padding-top:24px;padding-bottom:24px;border-bottom:1px solid var(--line)}a{color:inherit;text-underline-offset:4px;text-decoration-color:var(--line)}header nav{margin-left:auto;display:flex;gap:20px;font-size:12px}.wordmark{color:var(--scope);font-size:34px;line-height:1;letter-spacing:-1px;text-decoration:none}h1{font-size:26px;font-weight:500;letter-spacing:-.5px;margin:36px 0 10px}h2{font-size:17px;font-weight:500;margin:0 0 8px}.intro{max-width:720px}.muted,p.note{color:var(--quiet)}button{font:inherit;color:inherit;background:transparent;border:1px solid var(--line);border-radius:3px;padding:3px 8px;cursor:pointer}button:focus-visible,a:focus-visible{outline:2px solid var(--scope);outline-offset:2px}button[aria-pressed=true]{border-color:var(--scope);color:var(--scope)}.settings{display:flex;gap:10px 20px;flex-wrap:wrap;align-items:center;font-size:12px;margin:24px 0}.settings label{display:flex;gap:6px;align-items:center}.card{display:grid;grid-template-columns:230px minmax(0,1fr);gap:26px;padding:30px 0;border-top:1px solid var(--line)}.copy p{margin:8px 0;font-size:13px}.number{color:var(--quiet);font-size:11px;letter-spacing:.08em;display:block;margin-bottom:7px}.tradeoff{color:var(--quiet)}.preview{min-width:0}.program{font:14px/22px var(--mono);background:var(--paper);padding:24px 20px 24px 5ch;overflow:auto;border:1px solid var(--line);border-radius:3px;position:relative}.canvas{position:relative;width:max-content;min-width:100%;--lane:48ch}.row{display:grid;grid-template-columns:16ch 16ch 12ch;column-gap:2ch;min-height:22px;width:var(--lane);position:relative}.pat{color:var(--pat)}.pat,.exp,.val{white-space:pre}.val{color:var(--value)}.indent .indented{background:linear-gradient(to right,var(--strip) 1ch,transparent 0);padding-left:1ch}.result{color:var(--quiet);font-style:italic}.terminal .pat{color:var(--scope)}.dot{color:var(--scope);font-size:20px}.scope{position:relative}.lanes{position:relative;display:flex;gap:3ch}.branch{position:relative;flex:none}.rails{position:absolute;left:0;top:0;height:100%;width:1px;pointer-events:none;overflow:visible;color:var(--scope)}.rails path,.rails line,.comb svg path,.comb svg line,.fork svg path,.fork svg line{stroke:currentColor;fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:miter;vector-effect:non-scaling-stroke}.program button.comb{position:absolute;left:-1.5ch;top:0;bottom:0;width:1ch;padding:0;border:0;border-radius:0;color:var(--value);z-index:2}.comb svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}.program button.comb:hover{background:color-mix(in srgb,var(--value) 10%,transparent)}.program button.fork{position:absolute;left:-1ch;top:-5px;width:3ch;height:10px;padding:0;border:0;border-radius:0;color:var(--value);z-index:3}.fork svg{position:absolute;inset:0;top:5px;width:calc(100% - .65ch);height:1px;overflow:visible;pointer-events:none}.program button.fork:hover{background:color-mix(in srgb,var(--value) 12%,transparent)}.stem-arrows{position:absolute;left:-1.5ch;top:0;z-index:4;display:grid;background:var(--paper)}.stem-arrows button{border:0;padding:0;width:1ch;height:22px;line-height:22px;color:var(--value);font-size:17px}.stem-arrows button:hover{background:var(--strip)}.chooser{position:absolute;top:0;left:2ch;z-index:8;background:var(--page);padding:5px;border:1px solid var(--value);border-radius:3px;box-shadow:0 4px 10px #0002;min-width:19ch}.chooser button{display:block;text-align:left;font:13px/22px var(--mono);width:100%;border:0;white-space:pre}.chooser button[aria-current=true]{color:var(--value);background:var(--paper)}.chooser button:hover{background:var(--strip)}.readout{font-size:11px;color:var(--quiet);margin:8px 0 0;min-height:17px}.source{margin:0;font:inherit;white-space:pre;color:var(--ink)}.source-toggle{font-size:11px;margin-top:9px}.book-note{border-top:1px solid var(--line);padding:24px 0 40px;max-width:760px;font-size:13px}kbd{font:12px var(--mono)}@media(max-width:760px){header,main{padding-left:16px;padding-right:16px}header nav{gap:12px}.card{grid-template-columns:minmax(0,1fr);gap:15px;padding:24px 0}.copy p{max-width:620px}h1{font-size:23px}.program{padding-right:15px}}@media(prefers-reduced-motion:no-preference){.branch.changing>.row{animation:arrive 130ms ease-out}@keyframes arrive{from{opacity:.5;transform:translateX(.4ch)}to{opacity:1;transform:translateX(0)}}}
+</style>
+<header><a class="wordmark" href="https://andrewblinn.com/furl-next/">furl</a><span class="muted">navigation study</span><nav><a href="https://andrewblinn.com/furl-next/live/">Live editor</a><a href="navigation.html" download="furl-navigation.html">Save HTML</a></nav></header>
+<main>
+<h1>Same code. Three ways to move between branches.</h1>
+<p class="intro">These sketches keep navigation on the comb and leave the text grid intact. Try them with the nested rails visible. Everything here is self-contained; the examples use preset syntax and values.</p>
+<div class="settings" aria-label="Comparison settings">
+<label><input id="nested" type="checkbox" checked> Nested combs</label>
+<label><input id="indent" type="checkbox" checked> Pattern indent</label>
+<button id="columns" aria-pressed="false">Show all columns</button>
+<button id="reset">Reset comparison</button>
+</div>
+<section class="card" data-concept="cycle">
+<div class="copy"><span class="number">01</span><h2>Click the stem</h2><p>Click the vertical match stem to advance. Shift-click goes back. With the stem focused, use <kbd>← →</kbd>.</p><p class="tradeoff">No added marks or packing cost. The gesture is hard to discover, and reaching a distant branch takes repeated clicks. This is the provisional live behavior.</p></div>
+<div class="preview"><div class="program"></div><p class="readout" aria-live="polite"></p><button class="source-toggle">Show source</button></div>
+</section>
+<section class="card" data-concept="arrows">
+<div class="copy"><span class="number">02</span><h2>Arrows in the stem</h2><p>Select the vertical stem to reveal a pair of arrows in its own rail. They temporarily cover two short sections of the line. Escape dismisses them.</p><p class="tradeoff">Direction becomes visible without widening the gutter. The targets remain small, and hiding part of the comb weakens its shape while navigating.</p></div>
+<div class="preview"><div class="program"></div><p class="readout" aria-live="polite"></p><button class="source-toggle">Show source</button></div>
+</section>
+<section class="card" data-concept="chooser">
+<div class="copy"><span class="number">03</span><h2>A chooser from the fork</h2><p>Click the horizontal fork to open the branch patterns. Choose one directly, or use <kbd>↑ ↓</kbd> and Enter. Escape closes the chooser.</p><p class="tradeoff">Works with many branches and avoids extra gutter width. The temporary menu covers code; using the fork for navigation also displaces its source-reveal action.</p></div>
+<div class="preview"><div class="program"></div><p class="readout" aria-live="polite"></p><button class="source-toggle">Show source</button></div>
+</section>
+<div class="book-note"><p>The Big Book’s match sequence (slides 37–44) shows parallel branches with a shared scrutinee and repeated result name. Its trace sequence (49–52) adds value columns for repeated calls. I did not find a branch-switching gesture in those sequences; these three gestures are new proposals.</p><p>Call inspection in the live editor follows Hazel’s probe idea: select a value, then navigate its recorded calls using the arrows that appear beside it. Branch selection is independent of evaluation: a branch can be displayed even when its values are blank for the current call.</p></div>
+</main>
+<script>
+(() => {
+  document.querySelector("a[download]").href = location.href;
+  const branches = [
+    {pattern:'[]', expression:'0', sample:'', result:''},
+    {pattern:'[only]', expression:'only', sample:'', result:''},
+    {pattern:'head :: rest', expression:'head', sample:'[2, 4, 6]', result:'2'}
+  ];
+  const states = [...document.querySelectorAll('.card')].map(card => ({card, kind:card.dataset.concept, index:2, selected:false, source:false}));
+  let all = false;
+  const row = (pattern, expression, value, cls='') => `<div class="row ${cls}"><span class="pat ${cls.includes('parameter') ? 'indented' : ''}">${pattern}</span><span class="exp">${expression}</span><span class="val">${value}</span></div>`;
+  const escape = text => text.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+  const source = `let first = fun xs ->\n  case xs\n  | [] => 0\n  | [only] => only\n  | head :: rest => head\n  end in\nfirst([2, 4, 6])`;
+  function render(state, focus, changed=false) {
+    const {card,kind,index,selected} = state;
+    const nested = document.querySelector('#nested').checked;
+    const program = card.querySelector('.program');
+    program.classList.toggle('indent', document.querySelector('#indent').checked);
+    card.querySelector('.source-toggle').textContent = state.source ? 'Return to projection' : 'Show source';
+    card.querySelector('.readout').textContent = state.source ? 'Source for the same three branches. Preset, not editable.' : all ? 'All three alternatives. Only the last branch executes for this input.' : `Branch ${index+1} of ${branches.length} · ${branches[index].pattern}${index === 2 ? ' · executed for [2, 4, 6]' : ' · not executed for [2, 4, 6]'}`;
+    if (state.source) {program.innerHTML = `<pre class="source">${escape(source)}</pre>`;return;}
+    // Pixel coordinates are derived from this exact font's character width.
+    const measure = document.createElement('span');measure.textContent = '0000000000';measure.style.cssText='position:absolute;visibility:hidden';program.append(measure);const ch = measure.getBoundingClientRect().width/10;measure.remove();
+    const rails = nested ? `<svg class="rails" aria-hidden="true"><path d="M ${-2.5*ch} 0 Q ${-3*ch} 0 ${-3*ch} ${.5*ch}"/><line x1="${-3*ch}" x2="${-3*ch}" y1="${.5*ch}" y2="100%"/></svg>` : '';
+    const fn = nested ? `<svg class="rails" aria-hidden="true"><path d="M ${-1.5*ch} 0 Q ${-2*ch} 0 ${-2*ch} ${.5*ch}"/><line x1="${-2*ch}" x2="${-2*ch}" y1="${.5*ch}" y2="100%"/><path d="M ${-2*ch} 22 h ${.65*ch}"/></svg>` : '';
+    const shown = all ? branches.map((_,i) => i) : [index];
+    const fork = `<button class="fork" data-focus="fork" aria-label="${kind==='chooser'&&!all?'Choose a match branch':'Reveal match source'}" ${kind==='chooser'&&!all?`aria-expanded="${selected}" aria-controls="chooser-${kind}"`:''} title="${kind==='chooser'&&!all?'Choose branch':'Show source'}" style="width:${all?'calc(2 * (48ch + 3ch))':'3ch'}"><svg aria-hidden="true"><path d="M 0 0 H ${1.3*ch}"/>${all?`<line x1="${1.3*ch}" x2="100%" y1="0" y2="0"/>`:''}</svg></button>`;
+    const menu = kind==='chooser' && selected && !all ? `<div class="chooser" id="chooser-${kind}" role="group" aria-label="Match branches">${branches.map((b,i)=>`<button data-pick="${i}" data-focus="pick-${i}" aria-current="${i===index}">${i===index?'· ':'  '}${b.pattern}</button>`).join('')}</div>` : '';
+    const arms = shown.map((i,slot)=> {
+      const b=branches[i];
+      const cap=slot===0?`<line x1="${ch/2}" x2="${ch/2}" y1="0" y2="100%"/>`:`<path d="M ${-.15*ch} 0 Q ${ch/2} 0 ${ch/2} ${.65*ch}"/><line x1="${ch/2}" x2="${ch/2}" y1="${.65*ch}" y2="100%"/>`;
+      const label=all?'Reveal match source':kind==='cycle'?'Next branch (Shift-click for previous)':kind==='arrows'?'Select branch stem':'Choose branch';
+      return `<div class="branch ${changed?'changing':''}" data-branch="${i}"><button class="comb" data-focus="stem-${i}" title="${label}" aria-label="${label}"><svg aria-hidden="true">${cap}</svg></button>${row(b.pattern,'xs',b.sample)}${row('first',b.expression,b.result,'terminal')}${kind==='arrows' && selected && !all?'<div class="stem-arrows"><button data-step="-1" data-focus="previous" aria-label="Previous branch">‹</button><button data-step="1" data-focus="next" aria-label="Next branch">›</button></div>':''}</div>`;
+    }).join('');
+    program.innerHTML=`<div class="canvas">${rails}<div class="scope">${fn}${row('xs','<span class="dot">·</span>','[2, 4, 6]','parameter')}<div class="lanes">${fork}${arms}${menu}</div></div>${row('<span class="result">result</span>','first([2, 4, 6])','2')}</div>`;
+    if (focus) program.querySelector(`[data-focus="${focus}"]`)?.focus({preventScroll:true});
+  }
+  function step(s, delta, focus) {s.index=(s.index+delta+branches.length)%branches.length;render(s,focus==='stem'?`stem-${s.index}`:focus,true);}
+  for (const s of states) {
+    s.card.querySelector('.source-toggle').onclick=()=>{s.source=!s.source;s.selected=false;render(s);};
+    s.card.querySelector('.program').addEventListener('click',e=>{
+      const button=e.target.closest('button');
+      if(!button){if(s.selected){s.selected=false;render(s);}return;}
+      if(button.dataset.step){step(s,Number(button.dataset.step),button.dataset.focus);return;}
+      if(button.dataset.pick){s.index=Number(button.dataset.pick);s.selected=false;render(s,'fork',true);return;}
+      if(all){s.source=true;render(s);return;}
+      if(button.classList.contains('fork')){
+        if(s.kind==='chooser'){s.selected=!s.selected;render(s,s.selected?`pick-${s.index}`:'fork');}
+        else{s.source=true;render(s);}return;
+      }
+      if(s.kind==='cycle')step(s,e.shiftKey?-1:1,'stem');
+      else {s.selected=!s.selected;render(s,s.kind==='chooser'&&s.selected?`pick-${s.index}`:`stem-${s.index}`);}
+    });
+    s.card.querySelector('.program').addEventListener('keydown',e=>{
+      if(e.key==='Escape'){e.preventDefault();s.selected=false;render(s,s.kind==='chooser'?'fork':`stem-${s.index}`);return;}
+      if(s.kind==='chooser'&&s.selected&&['ArrowUp','ArrowDown'].includes(e.key)){
+        e.preventDefault();const options=[...s.card.querySelectorAll('[data-pick]')];const i=options.indexOf(document.activeElement);options[(i+(e.key==='ArrowDown'?1:-1)+options.length)%options.length].focus();return;
+      }
+      if(!all && ['ArrowLeft','ArrowRight'].includes(e.key) && !s.source){e.preventDefault();step(s,e.key==='ArrowRight'?1:-1,s.kind==='chooser'?'fork':'stem');}
+    });
+  }
+  document.querySelector('#columns').onclick=e=>{all=!all;e.currentTarget.setAttribute('aria-pressed',all);e.currentTarget.textContent=all?'Show one branch':'Show all columns';states.forEach(s=>{s.selected=false;render(s);});};
+  for(const id of ['nested','indent']) document.getElementById(id).onchange=()=>states.forEach(s=>render(s));
+  document.querySelector('#reset').onclick=()=>{all=false;document.querySelector('#columns').setAttribute('aria-pressed','false');document.querySelector('#columns').textContent='Show all columns';for(const id of ['nested','indent'])document.getElementById(id).checked=true;states.forEach(s=>{s.index=2;s.source=false;s.selected=false;render(s);});};
+  states.forEach(s=>render(s));
+})();
+</script>
+</html>

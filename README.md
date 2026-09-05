@@ -4,7 +4,7 @@ An environment for working with code, bindings, and the values they produce. Fur
 
 **[Try the live editor](https://andrewblinn.com/furl-next/live/)** · [Interactive reference](https://andrewblinn.com/furl-next/) · [Study switcher](https://andrewblinn.com/furl-next/studies.html)
 
-The live study embeds Hazel's structural expression and pattern editors in Furl's grid. Editing a cell changes one underlying program, rechecks its lexical context, and updates dependent values using Hazel's evaluator and probes. Lets, function literals, and matches can be furled into rows or unfurled into source. Arrow keys move between editors: up/down preserve the intended column through short lines and nested indentation, and left/right cross cell boundaries. Undo/redo, display toggles, reset, and browser persistence work across four examples. Matches offer **All columns** and **One branch** views. In one-branch mode use the local arrows; **Ctrl+Alt+Left/Right** switches branches in the focused match in either mode. Function call arrows select coherent parameter/body values, including the recursive example. Temporary Violet, Coral, and Teal controls let us compare caret colors.
+The live study embeds Hazel's structural expression and pattern editors in Furl's grid. Editing a cell changes one underlying program, rechecks its lexical context, and updates dependent values using Hazel's evaluator and probes. Lets, function literals, and matches can be furled into rows or unfurled into source. Arrow keys move between editors: up/down preserve the intended column through short lines and nested indentation, and left/right cross cell boundaries. Undo/redo, display toggles, reset, and browser persistence work across four examples. Matches offer **All columns** and **One branch** views. In one-branch mode click the vertical match stem to cycle branches (Shift-click reverses); **Ctrl+Alt+Left/Right** switches branches in the focused match in either mode. Select a live value inside a function to reveal its call arrows; ←/→ steps through coherent parameter/body values, and Escape returns to code. These controls use the existing margins without adding rows. A [self-contained navigation study](https://andrewblinn.com/furl-next/live/navigation.html) compares three provisional branch gestures. Temporary Violet, Coral, and Teal controls let us compare caret colors.
 
 The reference contains seven interactive design studies with preset values, including more developed function/match projections and call navigation. Each reference page is a self-contained HTML file that opens offline. The live app is a separate, compiled web application.
 
@@ -56,6 +56,15 @@ Run the shared-program tests with:
 opam exec -- dune build test/haz3ltest.bc.js --profile dev
 IDB_STUB="$PWD/test/idb_stub.js" TEST_JS="$PWD/_build/default/test/haz3ltest.bc.js" bash test/run_node.sh test FurlDocument
 ```
+
+Browser navigation checks use Playwright with Chrome installed (or make Playwright available through `NODE_PATH`):
+
+```sh
+TEST_URL=http://localhost:8000/live/ node furl/live/test-navigation.cjs
+node furl/live/test-navigation-study.cjs
+```
+
+The first checks value inspection, caret restoration, branch gestures, nested call contexts, and control geometry. The second opens the study from `file://` with network requests blocked and exercises all three concepts. Both save light/dark screenshots in a temporary directory.
 
 Before publishing, run `python3 furl/live/build.py --check` to verify the generated live bundle. Commit live sources and `docs/live` together, then push to `furl`. The page uses only local assets; clipboard access depends on the browser's permissions.
 
