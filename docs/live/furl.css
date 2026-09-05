@@ -149,3 +149,14 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 .furl-cursor-details .code-box-container {display:flex;align-items:center;}
 #main.furl-main .furl-cursor-details .code {font:14px/22px var(--code-font);}
 .furl-problem-totals {display:flex;flex-wrap:wrap;justify-content:flex-end;column-gap:10px;flex-shrink:0;max-width:45%;white-space:nowrap;}
+
+/* Native editor commands in Furl's palette, above the scrolling code panel. */
+#furl-app .context-menu.furl-context-menu {position:fixed !important;inset:auto;margin:0;transform:none;animation:none;box-sizing:border-box;min-width:min(224px,calc(100vw - 16px));max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);overflow:auto;overscroll-behavior:contain;padding:4px;border:1px solid var(--furl-line);border-radius:4px;outline:none;background:var(--furl-chrome);color:var(--furl-ink);font:12px/22px var(--ui-font);box-shadow:0 6px 20px light-dark(#24394426,#0005);--menu-item-text:var(--furl-ink);--menu-outline:var(--furl-line);}
+#furl-app .furl-context-menu::backdrop {background:transparent;pointer-events:none;}
+#furl-app .furl-context-menu .named-menu-item {white-space:nowrap;}
+#furl-app .furl-context-menu .group .contents .named-menu-item {padding:2px 8px;}
+#furl-app .furl-context-menu .group .contents .named-menu-item:hover,
+#furl-app .furl-context-menu .group .contents .named-menu-item.selected {background:color-mix(in srgb,var(--furl-scope) 14%,var(--furl-chrome));}
+#furl-app .furl-context-menu .group .contents:hover .named-menu-item.selected:not(:hover),
+#furl-app .furl-context-menu .group .contents .named-menu-item.disabled:hover {background:transparent;}
+#furl-app .furl-context-menu .menu-shortcut {color:var(--furl-quiet);opacity:1;}

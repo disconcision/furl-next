@@ -85,6 +85,11 @@ let component = () => {
           };
         switch (action) {
         | Document(
+            Edit(_, ContextMenu(Open | Toggle)) |
+            EditView(_, _, ContextMenu(Open | Toggle)),
+          ) =>
+          Haz3lcore.ProbePerform.FocusEffect.schedule_cell()
+        | Document(
             CaretTone(_) | BranchStep(_) | MatchMode(_) | ToggleScope(_) |
             FurlAll,
           ) =>

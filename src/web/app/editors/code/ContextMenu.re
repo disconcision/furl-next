@@ -513,6 +513,57 @@ module WithContext = {
  * View
  * ============================================================ */
 
+let listener_owner: ref(option(ref(unit))) = ref(Option.None);
+module ListenerInput = {
+  type t = {
+    on_close: Ui_effect.t(unit),
+    handle_key: string => option(Ui_effect.t(unit)),
+  };
+  let sexp_of_t = _ => Sexplib.Sexp.Atom("context-menu-listener");
+  let combine = (_, next) => next;
+};
+module ListenerHook =
+  Attr.Hooks.Make({
+    module Input = ListenerInput;
+    module State = {
+      type t = ref(unit);
+    };
+    let init = (_, _) => ref();
+    let sync = (input: Input.t, owner) => {
+      listener_owner := Some(owner);
+      ContextMenuListener.sync(
+        ~menu_open=true,
+        ~on_close=input.on_close,
+        ~handle_key=input.handle_key,
+        (),
+      );
+    };
+    let on_mount = (input, owner, _) => sync(input, owner);
+    let update = (~old_input as _, ~new_input, owner, _) =>
+      sync(new_input, owner);
+    let destroy = (_, owner, _) =>
+      if (Option.fold(
+            ~none=false,
+            ~some=current => current === owner,
+            listener_owner^,
+          )) {
+        listener_owner := Option.None;
+        ContextMenuListener.sync(
+          ~menu_open=false,
+          ~on_close=Ui_effect.Ignore,
+          (),
+        );
+      };
+  });
+let listener = (~on_close, ~handle_key) =>
+  Attr.create_hook(
+    "context-menu-listener",
+    ListenerHook.create({
+      on_close,
+      handle_key,
+    }),
+  );
+
 /* Pick a direction by treating the caret as a zero-size anchor at
  * (caret_left, caret_bottom) in viewport coordinates, then routing
  * through the shared `Menu.{space_from, direction_of}` helpers. */
@@ -550,6 +601,7 @@ let get_direction =
 
 let view =
     (
+      ~extra_attrs=(_, _) => [],
       ~inject: command => Ui_effect.t(unit),
       ~inject_menu: Menu.action => Ui_effect.t(unit),
       ~syntax: Haz3lcore.CachedSyntax.t,
@@ -566,7 +618,7 @@ let view =
     Menu.render(
       ~inject_action=inject,
       ~inject_menu,
-      ~item_class="named-menu-item",
+      ~item_class="named-menu-item menu-item",
       ~items,
       model,
     );
@@ -582,6 +634,7 @@ let view =
       ~attrs=[
         Attr.classes(["context-menu", "nut-menu", dir_class]),
         Attr.create("style", style),
+        ...extra_attrs(caret_point, font_metrics),
       ],
       [div_c("group", [div_c("contents", menu_items)])],
     );

@@ -94,6 +94,16 @@ let view =
       Effect.Many([focus(), inject(Navigate(target, direction))]);
     };
     CodeEditable.View.view(
+      ~context_menu_attrs=
+        (point, metrics) =>
+          FurlMenu.attrs(
+            ~close=
+              inject(
+                EditView(target, view, ContextMenu(ContextMenu.Model.Close)),
+              ),
+            point,
+            metrics,
+          ),
       ~globals,
       ~signal=_ => focus(),
       ~edit_mode=

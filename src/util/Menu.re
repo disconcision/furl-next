@@ -363,7 +363,7 @@ let render =
             ),
           )
         | VAction({label, decoration, tooltip, on_hover, enabled, action}) => (
-            sel_idx + 1,
+            sel_idx + (enabled ? 1 : 0),
             row_view(
               ~item_class,
               ~is_selected=enabled && sel_idx == selected_idx,
@@ -373,7 +373,8 @@ let render =
               ~on_pointerdown=
                 () => enabled ? inject_action(action) : Effect.Ignore,
               ~on_hover=
-                on_hover ? Some(inject_menu(SetSelected(sel_idx))) : None,
+                enabled && on_hover
+                  ? Some(inject_menu(SetSelected(sel_idx))) : None,
               label,
             ),
           )

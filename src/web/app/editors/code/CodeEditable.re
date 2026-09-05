@@ -530,6 +530,7 @@ module View = {
         ~signal: event => Ui_effect.t(unit),
         ~edit_mode: EditMode.t(Update.t, unit),
         ~overlays: list(Node.t)=[],
+        ~context_menu_attrs=(_, _) => [],
         ~lines: bool=false,
         ~dynamics: Language.Dynamics.Map.t,
         ~pending_eval_ids: list(Id.t)=[],
@@ -622,25 +623,22 @@ module View = {
         ])
       | Perform(a) => inject(Perform(a))
       };
-    /* Sync document-level listeners (click-outside + keyboard) for the
-     * context menu. Keys are dispatched at capture phase so the editor's
-     * window-level handler doesn't see them while the menu is open. */
-    ContextMenuListener.sync(
-      ~menu_open=selected && Model.context_menu_is_open(model),
-      ~on_close=inject(ContextMenu(ContextMenu.Model.Close)),
-      ~handle_key=
-        key_str =>
-          ContextMenu.WithContext.handle_listener_key(
-            ~info_map=model.statics.info_map,
-            ~elaborated=model.statics.elaborated,
-            ~zipper=model.editor.state.zipper,
-            ~dispatch_menu=a => inject(ContextMenu(a)),
-            ~dispatch_action=perform_from_menu,
-            model.context_menu,
-            key_str,
-          ),
-      (),
-    );
+    /* The visible menu owns listeners. Inactive sub-editors must not clear
+       the active menu's keyboard and click-outside handlers while rendering. */
+    let menu_listener =
+      ContextMenu.listener(
+        ~on_close=inject(ContextMenu(ContextMenu.Model.Close)),
+        ~handle_key=key_str =>
+        ContextMenu.WithContext.handle_listener_key(
+          ~info_map=model.statics.info_map,
+          ~elaborated=model.statics.elaborated,
+          ~zipper=model.editor.state.zipper,
+          ~dispatch_menu=a => inject(ContextMenu(a)),
+          ~dispatch_action=perform_from_menu,
+          model.context_menu,
+          key_str,
+        )
+      );
     let edit_decos =
       selected
         ? deco(
@@ -673,6 +671,9 @@ module View = {
                   [],
                 ),
                 ContextMenu.view(
+                  ~extra_attrs=
+                    (point, metrics) =>
+                      [menu_listener, ...context_menu_attrs(point, metrics)],
                   ~inject=perform_from_menu,
                   ~inject_menu=a => inject(ContextMenu(a)),
                   ~syntax=model.editor.syntax,

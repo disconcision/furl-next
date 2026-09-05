@@ -64,9 +64,10 @@ TEST_URL=http://localhost:8000/live/ node furl/live/test-navigation.cjs
 node furl/live/test-navigation-study.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-inspector.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-values.cjs
+TEST_URL=http://localhost:8000/live/ node furl/live/test-menu.cjs
 ```
 
-The first checks value inspection, caret restoration, branch gestures, nested call contexts, and control geometry. The second opens the study from `file://` with network requests blocked and exercises all three concepts. The inspector check covers caret/type/error information, shared-source error counts, holes, and evaluation feedback. The value check covers responsive structural abbreviation, bounded rows, shared branch widths, and call navigation. All save light/dark screenshots in a temporary directory.
+The first checks value inspection, caret restoration, branch gestures, nested call contexts, and control geometry. The second opens the study from `file://` with network requests blocked and exercises all three concepts. The inspector check covers caret/type/error information, shared-source error counts, holes, and evaluation feedback. The value check covers responsive structural abbreviation, bounded rows, shared branch widths, and call navigation. The menu check covers top-layer hit testing, active-cell positioning, viewport bounds, keyboard and clipboard commands, and dismissal. All save light/dark screenshots in a temporary directory.
 
 Before publishing, run `python3 furl/live/build.py --check` to verify the generated live bundle. Commit live sources and `docs/live` together, then push to `furl`. The page uses only local assets; clipboard access depends on the browser's permissions.
 
