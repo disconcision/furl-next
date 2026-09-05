@@ -90,9 +90,9 @@
   {
     "action": "Delete and recover",
     "origin": "Old Furl",
-    "mouse": "Rows / Connect: drop a row or existing reference outside the code canvas. Preview deletion before release; never remove at pickup.",
+    "mouse": "Rows: drop outside the code canvas. Connect: drop an existing use anywhere without a factor target, inside or outside the canvas. Preview deletion before release; never remove at pickup.",
     "keyboard": "Backspace on a completely empty row; ⌘/Ctrl+Shift+Backspace requests row deletion. Backspace/Delete on a focused use. ⌘/Ctrl+Z restores.",
-    "rule": "Populated rows and uses require Free edit; blank draft cleanup works in every policy. Result stays. Escape, invalid in-canvas drops and policy changes cancel. Old Furl used a trash collection; do not inherit its destructive pickup.",
+    "rule": "Populated rows and uses require Free edit; blank draft cleanup works in every policy. Result stays. Escape, pointer cancellation, blur and policy changes cancel. Reference misses unplug in Free edit; a refused policy preserves the use. Old Furl used a trash collection; do not inherit its destructive pickup.",
     "source": "View.re:108–126; Update.re:115–158",
     "url": "https://github.com/disconcision/furl/blob/4967561c010bdfc65a5100d6c2db266b3fcc0a50/src/web/Update.re#L115",
     "phase": "Next",

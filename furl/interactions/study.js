@@ -1179,19 +1179,29 @@
       holes.forEach((hole, i) =>
         hole.classList.toggle("target", !!picked && aimed === i),
       );
-      const outside = originSlot !== null && outsideCanvas(root, freePoint);
-      root.classList.toggle("delete-preview", outside);
+      const unplug = originSlot !== null && aimed === null;
+      root.classList.toggle("delete-preview", unplug);
       root.classList.toggle(
         "delete-blocked",
-        outside && settings.policy !== "free",
+        unplug && settings.policy !== "free",
       );
-      if (outside)
+      if (unplug)
         status(
           root,
           settings.policy === "free"
-            ? "Release outside the canvas to unplug this use; the binding stays."
-            : "Unplugging requires Free edit. Return to the canvas or press Escape.",
+            ? "Release here to unplug this use; the binding stays. Escape cancels."
+            : "Unplugging requires Free edit. Return to a factor or press Escape.",
           settings.policy !== "free",
+        );
+      else if (originSlot !== null)
+        status(
+          root,
+          aimed === originSlot
+            ? "Release to keep this use in its original factor."
+            : settings.policy === "free"
+              ? "Release to move this use to the highlighted factor."
+              : "Moving a use requires Free edit. Return to its original factor or press Escape.",
+          aimed !== originSlot && settings.policy !== "free",
         );
       updateLink();
     }
@@ -1217,9 +1227,8 @@
       const moved = drag.moved;
       if (moved) {
         aimAt(e);
-        if (originSlot !== null && outsideCanvas(root, freePoint))
-          removeUse(originSlot, freePoint);
-        else if (aimed !== null) place(aimed);
+        if (aimed !== null) place(aimed);
+        else if (originSlot !== null) removeUse(originSlot, freePoint);
         else cancel();
         // A completed drag must not also fire a binder/hole click.
         suppressClick = true;

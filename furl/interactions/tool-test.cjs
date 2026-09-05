@@ -254,14 +254,18 @@ module.exports = async function checkTools(page, output) {
   await page.locator("[data-tool=edit]").focus();
   await page.keyboard.press("Escape");
   await hole(1).click();
-  assert.equal(await hole(1).textContent(), "□", "Escape outside the lab cancels a keyboard pickup");
+  assert.equal(
+    await hole(1).textContent(),
+    "□",
+    "Escape outside the lab cancels a keyboard pickup",
+  );
 
   // A dragged use is a word + cable, while the binder and source slot survive
-  // until release. Escape, in-canvas misses, blur and policy changes all cancel.
+  // until release. Escape, blur and policy changes all cancel.
   const miss = await center(
     refs.locator(".reference-row").first().locator(".ref-value"),
   );
-  for (const how of ["escape", "miss", "blur", "policy"]) {
+  for (const how of ["escape", "blur", "policy"]) {
     await begin(hole(0));
     await page.mouse.move(miss.x, miss.y, { steps: 3 });
     await frames(2);
@@ -286,6 +290,36 @@ module.exports = async function checkTools(page, output) {
     await page.evaluate(() => window.dispatchEvent(new Event("focus")));
     await policy(refs, "free");
   }
+  // A non-target anywhere in the editor previews unplugging. Returning to the
+  // original factor preserves the use; an ordinary click never disconnects it.
+  await hole(0).click();
+  assert.equal(await hole(0).textContent(), "width");
+  await begin(hole(0));
+  await page.mouse.move(miss.x, miss.y, { steps: 3 });
+  assert.ok(await refs.evaluate((n) => n.classList.contains("delete-preview")));
+  const home = await center(hole(0));
+  await page.mouse.move(home.x, home.y, { steps: 3 });
+  assert.ok(
+    !(await refs.evaluate((n) => n.classList.contains("delete-preview"))),
+  );
+  assert.match(
+    await refs.locator(".lab-status").textContent(),
+    /original factor/,
+  );
+  await page.mouse.up();
+  assert.equal(await hole(0).textContent(), "width");
+  for (const limited of ["refactor", "refine"]) {
+    await policy(refs, limited);
+    await begin(hole(0));
+    await page.mouse.move(miss.x, miss.y, { steps: 3 });
+    await page.mouse.up();
+    assert.equal(await hole(0).textContent(), "width");
+    assert.match(
+      await refs.locator(".lab-status").textContent(),
+      /requires Free edit/,
+    );
+  }
+  await policy(refs, "free");
   await begin(hole(0));
   const target = await center(hole(1));
   await page.mouse.move(target.x, target.y, { steps: 4 });
@@ -304,10 +338,9 @@ module.exports = async function checkTools(page, output) {
   assert.equal(await hole(1).textContent(), "width");
   await undo(refs);
 
-  // Off-canvas release retracts a cable with an overshoot, then stops completely.
-  unplug = await outside(refs);
+  // An in-canvas non-target now unplugs and retracts exactly like an outside drop.
   await begin(hole(0));
-  await page.mouse.move(unplug.x, unplug.y, { steps: 4 });
+  await page.mouse.move(miss.x, miss.y, { steps: 4 });
   await frames(2);
   await page.screenshot({
     path: path.join(output, "reference-unplug-preview.png"),
@@ -325,6 +358,14 @@ module.exports = async function checkTools(page, output) {
   await page.screenshot({ path: path.join(output, "reference-retract.png") });
   await frames(78);
   assert.equal(await wire.locator("path").getAttribute("d"), null);
+  await undo(refs);
+  assert.equal(await hole(0).textContent(), "width");
+  // Outside release still unplugs. Undo cancels its unfinished return animation.
+  unplug = await outside(refs);
+  await begin(hole(0));
+  await page.mouse.move(unplug.x, unplug.y, { steps: 4 });
+  await page.mouse.up();
+  assert.equal(await hole(0).textContent(), "□");
   await undo(refs);
   assert.equal(await hole(0).textContent(), "width");
   await hole(0).focus();
