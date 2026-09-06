@@ -42,7 +42,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-row-resistance-"));
       );
     const pick = async (index) => {
       const box = await members().nth(index).boundingBox();
-      const grab = { x: box.x + 250, y: box.y + 11 };
+      const grab = { x: box.x + box.width - 30, y: box.y + 11 };
       await p.mouse.move(grab.x, grab.y);
       await p.mouse.down();
       return { box, grab };
@@ -57,7 +57,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-row-resistance-"));
         await p.getByRole("button", { name: "Undo", exact: true }).isDisabled(),
       );
     };
-    await tool("rows").click();
+    await tool("move").click();
     await p.screenshot({ path: path.join(output, "before.png") });
     for (const mode of ["refactor", "refine"]) {
       await policy(mode).click();

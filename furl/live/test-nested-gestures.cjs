@@ -58,7 +58,7 @@ const { chromium } = require("playwright"),
     }
     await program("let f = fun x -> x + 1 in let a = 2 in f(a)");
     assert.equal(await value(), "3");
-    await tool("rows").click();
+    await tool("move").click();
     // A function definition moves as one subtree, and keeps its visible name focused.
     await rows().first().focus();
     await p.keyboard.press("Space");
@@ -96,7 +96,7 @@ const { chromium } = require("playwright"),
     await undo();
     await undo();
     // Insertion from parameter editing has that same lexical owner.
-    await p.locator(".furl-parameter .code-editor").dblclick();
+    await p.locator(".furl-parameter").dblclick();
     await settle();
     await p.keyboard.press("Meta+Enter");
     await settle();
@@ -133,7 +133,7 @@ const { chromium } = require("playwright"),
     await p
       .getByRole("button", { name: "Show all match branches as columns" })
       .click();
-    await tool("rows").click();
+    await tool("move").click();
     await settle();
     const arm = await p
       .locator(".furl-branch")
@@ -154,7 +154,7 @@ const { chromium } = require("playwright"),
     assert.equal(await value(), "8");
     // Scope and expected type govern targets even in the live pointer UI.
     await program('let text = "hello" in let n = 3 in ¿ + n');
-    await tool("connect").click();
+    await tool("move").click();
     await p.locator(".furl-hit[data-kind=binder][data-name=text]").click();
     await p.locator(".furl-hit[data-kind=hole]").click();
     await settle();

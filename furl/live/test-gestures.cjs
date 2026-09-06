@@ -79,7 +79,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-native-gestures-"));
         ),
       true,
     );
-    await tool("rows").click();
+    await tool("move").click();
     const initial = await p.locator(".furl-row").evaluateAll((ns) =>
       ns.map((n) => ({
         id: n.closest(".furl-binding,.furl-tail").dataset.binding || "tail",
@@ -144,7 +144,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-native-gestures-"));
     await settle();
     assert.equal(await members().count(), 5);
     await undo();
-    await tool("rows").click();
+    await tool("move").click();
     // Pointer primacy across the value column; Slot keeps x fixed, preview is not saved.
     const bonus = members().nth(2),
       original = await bonus.boundingBox(),
@@ -231,7 +231,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-native-gestures-"));
     await undo();
     // Double-click reactivates native text editing, including ordinary selection.
     const expr = members().first().locator(".furl-expression .code-editor");
-    await expr.dblclick();
+    await members().first().locator(".furl-expression").dblclick();
     await settle();
     await p.keyboard.press("Meta+a");
     await p.keyboard.type("7");
@@ -245,7 +245,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-native-gestures-"));
     // Populated deletion and exact recovery; leaving/returning then Escape cancels.
     const doomed = await members().nth(2).boundingBox(),
       canvas = await p.locator(".furl-program").boundingBox();
-    await p.mouse.move(doomed.x + 20, doomed.y + 11);
+    await p.mouse.move(doomed.x + doomed.width - 30, doomed.y + 11);
     await p.mouse.down();
     await p.mouse.move(canvas.x + canvas.width + 25, doomed.y + 11, {
       steps: 7,
@@ -268,7 +268,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-native-gestures-"));
     await p.keyboard.down("Alt");
     assert.equal(
       await p.locator("#furl-app").getAttribute("data-tool"),
-      "rows",
+      "move",
     );
     await p.keyboard.up("Alt");
     assert.equal(
@@ -277,7 +277,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-native-gestures-"));
     );
     // Connections use actual typed holes and evaluation, including click-away cancellation.
     await choose(5);
-    await tool("connect").click();
+    await tool("move").click();
     await policy("refine").click();
     const binder = (name) =>
       p.locator(`.furl-hit[data-kind=binder][data-name="${name}"]`);
@@ -379,7 +379,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-native-gestures-"));
     });
     await p.emulateMedia({ reducedMotion: "reduce" });
     await choose(4);
-    await tool("rows").click();
+    await tool("move").click();
     await members().first().focus();
     await p.keyboard.press("Meta+Enter");
     await settle();

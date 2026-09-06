@@ -21,6 +21,10 @@
     motion: "M2 7h7M2 12h4M2 17h7M14 6l7 6-7 6V6Z",
     zen: "M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5",
   };
+  paths.move =
+    "M12 2v20M2 12h20M8 6l4-4 4 4M8 18l4 4 4-4M6 8l-4 4 4 4M18 8l4 4-4 4";
+  paths.copy = "M8 8h13v13H8zM16 4V2H2v14h2M11 14h7M14.5 10.5v7";
+  paths.theme = "M5 19V5h13M5 12h10M17 14l1 2 3 1-3 1-1 3-1-3-2-1 2-1z";
   window.createFurlGestures = (root) => {
     const program = $(".furl-program", root),
       overlay = $(".furl-gesture-overlay", root);
@@ -28,6 +32,7 @@
       status = $(".furl-gesture-status", root);
     const ac = new AbortController(),
       signal = ac.signal;
+    const appearance = window.createFurlAppearance(root);
     const wire = new FurlReferenceWire($(".furl-wire-layer", root));
     // Native Hazel measurements already identify each word's exact bounds.
     wire.anchor = (node, origin) => {
@@ -48,7 +53,8 @@
       activeCell = null,
       pending = null,
       drag = null,
-      connection = null;
+      connection = null,
+      termDrag = null;
     let data = null,
       query,
       dispatch,
@@ -147,7 +153,7 @@
       );
       // During pickup, keep the reason visible. After release or a refused
       // standalone command, return to the retained native inspector shortly.
-      if (text && !drag && !connection && !pending && !committing)
+      if (text && !drag && !termDrag && !connection && !pending && !committing)
         statusTimer = setTimeout(() => say(""), 2400);
     };
     const marked = () => $$(".furl-hit", root);
@@ -167,11 +173,9 @@
       return candidates[0];
     };
     const effectiveMode = () =>
-      held && inside(rect(program), pointer)
-        ? hitAt(pointer.x, pointer.y)?.dataset.binder
-          ? "connect"
-          : "rows"
-        : mode;
+      held && inside(rect(program), pointer) && mode === "edit" ? "move" : mode;
+    const structureMode = () => effectiveMode() !== "edit";
+    const copyMode = () => mode === "copy";
     const button = (group, value, label, fn) => {
       const b = document.createElement("button");
       b.type = "button";
@@ -183,14 +187,14 @@
       tools.append(b);
       return b;
     };
-    ["edit", "rows", "connect"].forEach((k) =>
+    ["edit", "move", "copy"].forEach((k) =>
       button(
         "tool",
         k,
         {
           edit: "Edit cells",
-          rows: "Rows — drag anywhere; double-click to edit a cell",
-          connect: "Connect — pull references from bindings",
+          move: "Move — drag terms by handles; rows from whitespace; double-click to edit",
+          copy: "Copy — the same row and term targets, leaving the original",
         }[k],
         () => {
           cancel();
@@ -262,6 +266,12 @@
       refreshMode();
     });
     divider();
+    const themeButton = button("view", "theme", "Try old Furl styling", () => {
+      cancel(false);
+      appearance.toggle();
+      themeButton.setAttribute("aria-pressed", appearance.playful);
+    });
+    themeButton.setAttribute("aria-pressed", appearance.playful);
     const zenButton = button("view", "zen", "Enter Zen mode (F9)", () =>
       zen.toggle(),
     );
@@ -287,13 +297,15 @@
       root.dataset.policy = policy;
       root.dataset.gesture = drag
         ? "row"
-        : connection
-          ? "connection"
-          : pending
-            ? "pending"
-            : committing
-              ? "commit"
-              : "";
+        : termDrag
+          ? "term"
+          : connection
+            ? "connection"
+            : pending
+              ? "pending"
+              : committing
+                ? "commit"
+                : "";
       $$("[data-tool]", tools).forEach((b) =>
         b.setAttribute("aria-pressed", b.dataset.tool === mode),
       );
@@ -309,7 +321,7 @@
           b.dataset.option === "links" ? links : motion,
         ),
       );
-      marked().forEach((n) => (n.tabIndex = selected === "connect" ? 0 : -1));
+      marked().forEach((n) => (n.tabIndex = selected !== "edit" ? 0 : -1));
       gapNodes.forEach((n) => {
         // Keyboard pickup may still finish at a clicked boundary. It is a
         // placement target then, never an insertion button or plus hint.
@@ -322,9 +334,10 @@
             : "Insert binding at this boundary",
         );
         n.hidden =
-          selected !== "rows" ||
+          selected === "edit" ||
           !!activeCell ||
           !!connection ||
+          !!termDrag ||
           !!pending ||
           committing ||
           (!!drag && !placing);
@@ -527,6 +540,7 @@
       positions = null;
       syncMarkers();
       syncBoundaries();
+      appearance.paint();
       if (before) {
         // All VDOM changes have finished before any final geometry is measured.
         const nodes = $$(".furl-binding,.furl-tail", program);
@@ -570,7 +584,7 @@
           } else {
             activate(null);
             const member = bindingFor(editor);
-            if (mode === "rows") member?.focus({ preventScroll: true });
+            if (mode !== "edit") member?.focus({ preventScroll: true });
           }
         }
       }
@@ -582,11 +596,11 @@
         const layer = $(".furl-hit-layer", cell),
           markers = map.get(cell.dataset.cell) || [];
         const old = new Map(
-          $$(":scope > .furl-hit", layer).map((n) => [n.dataset.id, n]),
+          $$(":scope > .furl-hit", layer).map((n) => [n.dataset.key, n]),
         );
         for (const m of markers) {
-          let n = old.get(m.id);
-          old.delete(m.id);
+          let n = old.get(m.key);
+          old.delete(m.key);
           if (!n) {
             n = document.createElement("span");
             n.className = "furl-hit";
@@ -594,18 +608,25 @@
             layer.append(n);
           }
           Object.assign(n.dataset, {
+            key: m.key,
             id: m.id,
+            uses: m.uses,
             kind: m.kind,
             binder: m.binder,
             name: m.name,
           });
+          n._code = m.code;
+          n._glyph = m.glyph;
+          n._regions = m.regions;
           n.style.cssText = `left:${m.col * data.pitch}px;top:${m.row * data.lineHeight}px;width:${m.width * data.pitch}px;height:${data.lineHeight}px`;
           n.title =
             m.kind === "binder"
               ? `Connect ${m.name}`
               : m.kind === "hole"
                 ? "Connect here"
-                : `Move ${m.name}; hover to trace binding`;
+                : m.kind === "reference"
+                  ? `Move ${m.name}; hover to trace binding`
+                  : `Move term: ${m.code}. Command/Ctrl+Shift+Enter extracts above this row.`;
           n.setAttribute("aria-label", n.title);
         }
         old.forEach((n) => n.remove());
@@ -674,7 +695,7 @@
       const clip = rect(program);
       for (const n of gapNodes) {
         const r = rect(n._anchor);
-        n.style.cssText = `left:${Math.max(clip.left + 5, r.left - 14)}px;top:${r.top - 4}px;width:${Math.min(r.width + 14, clip.right - r.left + 9)}px`;
+        n.style.cssText = `left:${Math.max(clip.left + 5, r.left)}px;top:${r.top - 4}px;width:${Math.min(r.width, clip.right - r.left - 5)}px`;
         n.style.visibility =
           r.top >= clip.top + 4 && r.top <= clip.bottom - 4
             ? "visible"
@@ -700,9 +721,176 @@
         if (n.dataset.binding === id) return n;
       return null;
     }
+    function rowWhitespace(target) {
+      const row = target.closest?.(".furl-row");
+      if (!row) return false;
+      return !$$(
+        ".token,.comment,.in-unparsed-buffer,.empty-hole,.furl-hit",
+        row,
+      ).some((n) => {
+        const r = rect(n);
+        return (
+          r.width > 0 &&
+          pointer.y >= r.top &&
+          pointer.y <= r.bottom &&
+          pointer.x >= r.left - data.pitch &&
+          pointer.x <= r.right + data.pitch
+        );
+      });
+    }
+    let highlightedTerm = null;
+    function highlightTerm(hit, kind = "hover") {
+      const key = hit
+        ? hit.closest("[data-view]").dataset.view + hit.dataset.id + kind
+        : null;
+      if (highlightedTerm === key) return;
+      highlightedTerm = key;
+      $$(".furl-term-range", root).forEach((n) => n.remove());
+      if (!hit || activeCell || hit.dataset.kind === "binder") return;
+      const layer = hit.parentElement;
+      for (const r of hit._regions || []) {
+        const n = document.createElement("span");
+        n.className = "furl-term-range";
+        n.dataset.kind = kind;
+        n.style.cssText = `left:${r.col * data.pitch}px;top:${r.row * data.lineHeight}px;width:${r.width * data.pitch}px;height:${data.lineHeight}px`;
+        layer.prepend(n);
+      }
+    }
+    function clearTerm() {
+      if (termDrag) {
+        termDrag.ghost.remove();
+        termDrag = null;
+      }
+      gapNodes.forEach((n) => n.classList.remove("furl-extract-boundary"));
+      highlightTerm(null);
+    }
+    function beginTerm(hit, picked = false, grab = pointer) {
+      activate(null);
+      hoverRow();
+      clearLanding();
+      wire.clear();
+      const cell = hit.closest("[data-cell]"),
+        r = rect(cell);
+      const regions = hit._regions;
+      const x = r.left + Math.min(...regions.map((r) => r.col)) * data.pitch;
+      const y =
+        r.top + Math.min(...regions.map((r) => r.row)) * data.lineHeight;
+      const ghost = document.createElement("div");
+      ghost.className = "furl-floating-term";
+      ghost.textContent = hit._code;
+      ghost.setAttribute("aria-hidden", "true");
+      root.append(ghost);
+      termDrag = {
+        hit,
+        source: hit.dataset.id,
+        copy: copyMode(),
+        picked,
+        ghost,
+        offset: { x: grab.x - x, y: grab.y - y },
+        cache: new Map(),
+      };
+      transactionRevision = data.revision;
+      updateTerm();
+      refreshMode();
+    }
+    function extractionGap() {
+      return gapNodes.find((n) => {
+        const r = rect(n._anchor);
+        return (
+          Math.abs(pointer.y - r.top) <= 6 &&
+          pointer.x >= r.left &&
+          pointer.x <= r.right
+        );
+      });
+    }
+    function updateTerm() {
+      const t = termDrag;
+      if (!t) return;
+      t.ghost.style.left = `${pointer.x - t.offset.x}px`;
+      t.ghost.style.top = `${pointer.y - t.offset.y}px`;
+      const hit = hitAt(pointer.x, pointer.y);
+      t.target = hit?.dataset.kind !== "binder" ? hit : null;
+      // Extraction uses existing *row* boundaries, never text whitespace.
+      t.gap = !t.copy && !t.target ? extractionGap() : null;
+      t.off = !inside(rect(program), pointer);
+      t.command = t.gap
+        ? {
+            kind: "extract",
+            scope: t.gap.dataset.scope,
+            before: t.gap.dataset.before,
+            source: t.source,
+          }
+        : {
+            kind: "term",
+            source: t.source,
+            destination: t.target?.dataset.id || "",
+            copy: t.copy,
+          };
+      const hasDestination =
+        !!t.target || !!t.gap || (t.off && !t.copy && !t.picked);
+      const key = JSON.stringify(t.command);
+      if (hasDestination && !t.cache.has(key))
+        t.cache.set(key, request(t.command));
+      const check = hasDestination ? t.cache.get(key) : null;
+      t.valid = !!check?.ok;
+      gapNodes.forEach((n) =>
+        n.classList.toggle("furl-extract-boundary", n === t.gap && t.valid),
+      );
+      highlightTerm(t.target, t.valid ? "target" : "refused");
+      say(
+        check && !check.ok
+          ? check.message
+          : t.gap
+            ? "Release to extract a binding here."
+            : t.off && !t.copy
+              ? "Release to remove this term."
+              : "",
+      );
+    }
+    function dropTerm(clicked = false) {
+      const t = termDrag;
+      if (!t) return;
+      if (!t.valid || (clicked && !t.target && !t.gap)) {
+        const message = status.textContent;
+        clearTerm();
+        refreshMode();
+        say(message);
+        return;
+      }
+      const ghost = t.ghost,
+        target = t.target;
+      // The native transaction supplies the actual replacement; the carried
+      // preview merely settles toward its destination and fades away.
+      termDrag = null;
+      highlightTerm(null);
+      gapNodes.forEach((n) => n.classList.remove("furl-extract-boundary"));
+      const done = doCommit(t.command);
+      if (done && target) {
+        const from = rect(ghost),
+          to = rect(target);
+        const a = animate(ghost, [
+          { opacity: 0.8, transform: "none" },
+          {
+            opacity: 0,
+            transform: `translate(${to.left - from.left}px,${to.top - from.top}px) scale(.95)`,
+          },
+        ]);
+        if (a) {
+          a.onfinish = () => ghost.remove();
+          a.oncancel = () => ghost.remove();
+        } else ghost.remove();
+      } else ghost.remove();
+      refreshMode();
+    }
     function hoverRow(target = null) {
       const next =
-        target && effectiveMode() === "rows" && !drag && !activeCell
+        target &&
+        structureMode() &&
+        !drag &&
+        !termDrag &&
+        !connection &&
+        !activeCell &&
+        rowWhitespace(target)
           ? bindingFor(target)
           : null;
       if (rowHover === next) return;
@@ -790,8 +978,19 @@
       clearTimeout(rowRecoilTimer);
       rowFrame = 0;
       if (!drag) return;
-      for (const member of drag.members) {
-        const old = rect(member);
+      const restore = drag.copyGhost
+        ? new Map(
+            $$(".furl-binding,.furl-tail", program).map((n) => [
+              n,
+              rect(n).toJSON(),
+            ]),
+          )
+        : null;
+      drag.copyGhost?.remove();
+      if (drag.copyScope) drag.copyScope.style.minHeight = drag.oldMinHeight;
+      const membersToClear = drag.copyReal || drag.members;
+      for (const member of membersToClear) {
+        const old = restore?.get(member) || rect(member);
         member.getAnimations().forEach((a) => a.cancel());
         member.style.transform = "";
         if (animateBack && member.dataset.picked)
@@ -808,12 +1007,25 @@
           ]);
         }
       }
+      if (animateBack && restore)
+        for (const [n, old] of restore) {
+          if (membersToClear.includes(n) || drag.copyScope.contains(n))
+            continue;
+          const now = rect(n);
+          if (Math.abs(old.top - now.top) > 0.1)
+            animateRow(n, [
+              { transform: `translateY(${old.top - now.top}px)` },
+              { transform: "none" },
+            ]);
+        }
       program.classList.remove("furl-delete-preview", "furl-preview");
     }
     function cancel(retract = true) {
       clearLanding();
       referenceMotion = null;
       clearReferenceAnimations();
+      clearTerm();
+      highlightTerm(null);
       pending = null;
       hoverRow();
       clearRows();
@@ -853,6 +1065,7 @@
         order: [...members],
         base,
         keyboard,
+        copy: copyMode(),
         index: members.indexOf(member),
         scope: member.dataset.owner,
         offset: { x: grab.x - source.left, y: grab.y - source.top },
@@ -877,6 +1090,61 @@
         keyboardPull: 0,
         cache: new Map(),
       };
+      if (drag.copy) {
+        const ghost = member.cloneNode(true);
+        ghost.classList.remove("furl-binding");
+        ghost.classList.add("furl-row-copy-ghost");
+        ghost.setAttribute("aria-hidden", "true");
+        for (const n of [ghost, ...ghost.querySelectorAll("*")]) {
+          n.removeAttribute("id");
+          n.removeAttribute("tabindex");
+          n.removeAttribute("data-binding");
+          n.removeAttribute("data-view");
+          n.removeAttribute("data-cell");
+          n.classList.remove("furl-binding", "furl-native-cell", "furl-tail");
+        }
+        ghost.querySelectorAll(".furl-hit-layer").forEach((n) => n.remove());
+        ghost.style.cssText = `position:fixed;left:${source.left}px;top:${source.top}px;width:${source.width}px;pointer-events:none;z-index:18`;
+        const computed = getComputedStyle(member);
+        for (const prop of [
+          "--columns",
+          "--lane-width",
+          "--col-width",
+          "--row-height",
+        ])
+          ghost.style.setProperty(prop, computed.getPropertyValue(prop));
+        root.append(ghost);
+        drag.copyGhost = ghost;
+        drag.copyScope = parent;
+        drag.oldMinHeight = parent.style.minHeight;
+        const outerBefore = new Map(
+          $$(".furl-binding,.furl-tail", program)
+            .filter((n) => !parent.contains(n))
+            .map((n) => [n, rect(n).toJSON()]),
+        );
+        drag.copyReal = [...parent.children].filter((n) =>
+          n.matches(".furl-binding,.furl-tail"),
+        );
+        drag.copyOrigins = new Map(
+          drag.copyReal.map((n) => [n, rect(n).toJSON()]),
+        );
+        parent.style.minHeight = `${rect(parent).height + source.height}px`;
+        for (const n of drag.copyReal)
+          if (!drag.motion.has(n))
+            drag.motion.set(n, { x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0 });
+        drag.copyLogical = new Map(
+          drag.copyReal.map((n) => [n, rect(n).toJSON()]),
+        );
+        drag.motion.set(ghost, { x: 0, y: 0, vx: 0, vy: 0, tx: 0, ty: 0 });
+        for (const [n, old] of outerBefore) {
+          const now = rect(n);
+          if (Math.abs(old.top - now.top) > 0.1)
+            animateRow(n, [
+              { transform: `translateY(${old.top - now.top}px)` },
+              { transform: "none" },
+            ]);
+        }
+      }
       transactionRevision = data.revision;
       member.dataset.picked = "true";
       program.classList.add("furl-preview");
@@ -897,7 +1165,7 @@
         const immediate =
           !motion ||
           media.matches ||
-          (n === drag.member &&
+          (n === (drag.copyGhost || drag.member) &&
             style === "float" &&
             !drag.keyboard &&
             !drag.blocked);
@@ -922,10 +1190,13 @@
         }
         n.style.transform = `translate(${s.x}px,${s.y}px)`;
       }
+      if (drag.keyboard) placeGaps();
       if (moving) rowFrame = requestAnimationFrame(paintRows);
     }
     function rowCommand(index, remove = false) {
-      const others = drag.members.filter((n) => n !== drag.member);
+      const others = drag.copy
+        ? drag.members
+        : drag.members.filter((n) => n !== drag.member);
       return remove
         ? {
             kind: "delete",
@@ -934,7 +1205,7 @@
             emptyOnly: false,
           }
         : {
-            kind: "move",
+            kind: drag.copy ? "copy-row" : "move",
             scope: drag.scope,
             id: drag.member.dataset.binding,
             before: others[index]?.dataset.binding || "",
@@ -943,12 +1214,23 @@
     function previewRow(index) {
       if (!drag) return;
       const requestedIndex = index;
-      index = Math.max(0, Math.min(index, drag.members.length - 1));
+      index = Math.max(
+        0,
+        Math.min(index, drag.members.length - (drag.copy ? 0 : 1)),
+      );
       if (drag.keyboard) drag.edge = Math.sign(requestedIndex - index);
       const cmd = rowCommand(index, drag.off),
         key = JSON.stringify(cmd);
       if (!drag.cache.has(key)) drag.cache.set(key, request(cmd));
       const allowed = drag.cache.get(key);
+      if (drag.copy && drag.off) {
+        say("Release outside to cancel this copy.");
+        drag.command = cmd;
+        drag.valid = false;
+        drag.blocked = false;
+        positionRows();
+        return;
+      }
       if (!allowed.ok) {
         say(allowed.message);
       } else {
@@ -1002,11 +1284,52 @@
       // must not be counted as elapsed motion toward a just-selected target.
       cancelAnimationFrame(rowFrame);
       paintRows(performance.now());
+      if (drag.copy) {
+        const index = drag.valid ? drag.index : drag.lastGood;
+        const origin = drag.base.get(drag.member);
+        const top = Math.min(...[...drag.base.values()].map((r) => r.top));
+        const slotY =
+          top +
+          drag.members
+            .slice(0, index)
+            .reduce((h, n) => h + drag.base.get(n).height, 0);
+        for (const [i, n] of drag.copyReal.entries()) {
+          const state = drag.motion.get(n);
+          state.tx = 0;
+          state.ty =
+            drag.copyOrigins.get(n).top +
+            (i >= index ? drag.height : 0) -
+            drag.copyLogical.get(n).top;
+        }
+        const ghost = drag.motion.get(drag.copyGhost);
+        ghost.tx =
+          style === "float" && !drag.keyboard
+            ? pointer.x - drag.offset.x - origin.left
+            : 0;
+        ghost.ty =
+          style === "float" && !drag.keyboard
+            ? pointer.y - drag.offset.y - origin.top
+            : slotY - origin.top;
+        if (drag.blocked && motion && !media.matches)
+          ghost.ty += drag.keyboard
+            ? drag.keyboardPull
+            : resist(pointer.y - drag.offset.y - slotY);
+        cancelAnimationFrame(rowFrame);
+        paintRows(drag.clock);
+        return;
+      }
       let y = Math.min(...[...drag.base.values()].map((r) => r.top));
       for (const n of drag.order) {
         const original = drag.base.get(n);
+        const slotY =
+          drag.copy && n === drag.member
+            ? Math.min(...[...drag.base.values()].map((r) => r.top)) +
+              drag.members
+                .slice(0, drag.valid ? drag.index : drag.lastGood)
+                .reduce((h, n) => h + drag.base.get(n).height, 0)
+            : y;
         let dx = 0,
-          dy = y - original.top;
+          dy = slotY - original.top;
         if (n === drag.member) {
           if (drag.blocked) {
             if (motion && !media.matches) {
@@ -1017,7 +1340,7 @@
                   : resist(pointer.x - drag.offset.x - original.left);
               dy += drag.keyboard
                 ? drag.keyboardPull
-                : resist(pointer.y - drag.offset.y - y);
+                : resist(pointer.y - drag.offset.y - slotY);
             }
           } else if (style === "float" && !drag.keyboard) {
             dx = pointer.x - drag.offset.x - original.left;
@@ -1039,7 +1362,9 @@
       const nested = d.member.parentElement.closest(".furl-binding");
       const outsideScope =
         !d.off && !!nested && !inside(rect(d.member.parentElement), pointer);
-      const others = d.members.filter((n) => n !== d.member);
+      const others = d.copy
+        ? d.members
+        : d.members.filter((n) => n !== d.member);
       const centers = [];
       let y =
         Math.min(...[...d.base.values()].map((r) => r.top)) + d.height / 2;
@@ -1087,7 +1412,7 @@
       drag = null;
       // Pulling against an endpoint (or returning to the original slot) is
       // feedback only, including when the native splice would allocate anew.
-      const moved = d.off || d.index !== d.members.indexOf(d.member);
+      const moved = d.copy || d.off || d.index !== d.members.indexOf(d.member);
       if (d.valid && moved && doCommit(d.command)) {
         positions = before;
       } else {
@@ -1120,13 +1445,14 @@
         binder,
         anchor,
         use,
-        source: use?.dataset.id || "",
+        source: copyMode() ? "" : use?.dataset.id || "",
         picked,
         word: null,
+        cache: new Map(),
       };
       transactionRevision = data.revision;
       if (use) {
-        use.classList.add("furl-unplugging");
+        if (!copyMode()) use.classList.add("furl-unplugging");
         const word = document.createElement("span");
         word.className = "furl-floating-reference";
         word.textContent = hit.dataset.name;
@@ -1146,6 +1472,39 @@
         n.classList.toggle("furl-drop-target", n === target),
       );
       c.target = target;
+      c.gap = c.source && !target ? extractionGap() : null;
+      c.extract = c.gap
+        ? {
+            kind: "extract",
+            scope: c.gap.dataset.scope,
+            before: c.gap.dataset.before,
+            source: c.source,
+          }
+        : null;
+      const command =
+        c.extract ||
+        (target
+          ? {
+              kind: "connect",
+              binder: c.binder,
+              source: c.source,
+              destination: target.dataset.id,
+            }
+          : null);
+      const key = JSON.stringify(command);
+      if (command && !c.cache.has(key)) c.cache.set(key, request(command));
+      const check = command ? c.cache.get(key) : null;
+      gapNodes.forEach((n) =>
+        n.classList.toggle("furl-extract-boundary", n === c.gap && check?.ok),
+      );
+      highlightTerm(target, check?.ok ? "target" : "refused");
+      say(
+        check && !check.ok
+          ? check.message
+          : c.gap
+            ? "Release to extract a binding here."
+            : "",
+      );
       if (c.word) {
         c.word.style.left = `${pointer.x}px`;
         c.word.style.top = `${pointer.y}px`;
@@ -1167,8 +1526,9 @@
     function updateLink() {
       // A native edit may replace the target hole before its new use is measured.
       // Keep the last drag curve until finishLayout hands it to that use.
-      if (drag || connection || referenceMotion || wire.retracting) return;
-      const showLinks = links && effectiveMode() === "connect";
+      if (drag || termDrag || connection || referenceMotion || wire.retracting)
+        return;
+      const showLinks = links && structureMode();
       const hovered =
         showLinks && inside(rect(program), pointer)
           ? hitAt(pointer.x, pointer.y)
@@ -1216,6 +1576,13 @@
     function dropConnection(target, clicked = false) {
       const c = connection;
       if (!c) return;
+      if (c.extract) {
+        const command = c.extract;
+        cancel();
+        doCommit(command);
+        return;
+      }
+      highlightTerm(null);
       if (!target && (clicked || !c.source)) {
         cancel();
         return;
@@ -1258,9 +1625,22 @@
       "pointerdown",
       (e) => {
         if (e.button !== 0) return;
-        if (!drag && !connection && !pending && root.contains(e.target))
+        if (
+          !drag &&
+          !termDrag &&
+          !connection &&
+          !pending &&
+          root.contains(e.target)
+        )
           say("");
         pointer = { x: e.clientX, y: e.clientY };
+        if (termDrag?.picked) {
+          stop(e);
+          blockedClick = true;
+          updateTerm();
+          dropTerm(true);
+          return;
+        }
         if (connection?.picked) {
           stop(e);
           blockedClick = true;
@@ -1278,7 +1658,7 @@
           return;
         const current = effectiveMode();
         const gap = e.target.closest(".furl-gap");
-        if (gap && current === "rows") {
+        if (gap && current !== "edit") {
           stop(e);
           blockedClick = true;
           if (drag?.keyboard) {
@@ -1286,7 +1666,9 @@
               say("Move within the same let scope for now.");
             } else {
               const before = gap.dataset.before;
-              const others = drag.members.filter((n) => n !== drag.member);
+              const others = drag.copy
+                ? drag.members
+                : drag.members.filter((n) => n !== drag.member);
               const index =
                 before === drag.member.dataset.binding
                   ? drag.members.indexOf(drag.member)
@@ -1307,26 +1689,25 @@
         }
         const cell = e.target.closest(".furl-native-cell,.furl-value");
         if (activeCell === cell) return;
-        if (current === "rows") {
+        if (current !== "edit") {
           stop(e);
-          const member = bindingFor(e.target);
-          const row = e.target.closest(".furl-row");
-          if (member) {
-            member.focus({ preventScroll: true });
-            pending = { kind: "row", member, start: pointer };
-            refreshMode();
-          } else if (row) {
-            row.tabIndex = 0;
-            row.focus({ preventScroll: true });
-          }
-        } else if (current === "connect") {
           const hit = hitAt(pointer.x, pointer.y);
-          if (hit?.dataset.binder) {
-            stop(e);
+          if (hit) {
             hit.focus({ preventScroll: true });
-            pending = { kind: "connection", hit, start: pointer };
-            refreshMode();
+            if (hit.dataset.kind !== "hole")
+              pending = {
+                kind: hit.dataset.binder ? "connection" : "term",
+                hit,
+                start: pointer,
+              };
+          } else if (rowWhitespace(e.target)) {
+            const member = bindingFor(e.target);
+            if (member) {
+              member.focus({ preventScroll: true });
+              pending = { kind: "row", member, start: pointer };
+            }
           }
+          refreshMode();
         }
       },
       true,
@@ -1347,16 +1728,23 @@
           pending = null;
           p.kind === "row"
             ? beginRow(p.member, false, p.start)
-            : beginConnection(p.hit);
+            : p.kind === "term"
+              ? beginTerm(p.hit, false, p.start)
+              : beginConnection(p.hit);
         }
         if (drag && !drag.keyboard) {
           stop(e);
           updateRow();
+        } else if (termDrag) {
+          updateTerm();
         } else if (connection) {
           updateConnection();
         } else {
           refreshMode();
           hoverRow(e.target);
+          highlightTerm(
+            structureMode() && !activeCell ? hitAt(pointer.x, pointer.y) : null,
+          );
           updateLink();
         }
       },
@@ -1371,6 +1759,10 @@
           stop(e);
           blockedClick = true;
           dropRow();
+        } else if (termDrag && !termDrag.picked) {
+          stop(e);
+          blockedClick = true;
+          dropTerm();
         } else if (connection && !connection.picked) {
           stop(e);
           blockedClick = true;
@@ -1378,7 +1770,11 @@
         } else if (pending) {
           const p = pending;
           pending = null;
-          if (p.kind === "connection") {
+          if (p.kind === "term") {
+            stop(e);
+            blockedClick = true;
+            beginTerm(p.hit, true, p.start);
+          } else if (p.kind === "connection") {
             stop(e);
             blockedClick = true;
             beginConnection(p.hit, true);
@@ -1403,10 +1799,10 @@
       program,
       "dblclick",
       (e) => {
-        if (effectiveMode() !== "rows") return;
+        if (!structureMode()) return;
         const cell = e.target.closest(".furl-native-cell,.furl-value");
         if (!cell) return;
-        pending = null;
+        cancel();
         activate(cell);
         const editable = $(".code-editor", cell);
         if (editable) {
@@ -1454,6 +1850,18 @@
           pointer = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
           updateConnection();
         }
+        if (
+          structureMode() &&
+          !termDrag &&
+          !connection &&
+          e.target.matches?.(".furl-hit")
+        )
+          highlightTerm(e.target);
+        if (termDrag?.picked && e.target.matches?.(".furl-hit")) {
+          const r = rect(e.target);
+          pointer = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+          updateTerm();
+        }
         if (e.target.matches?.(".furl-hit")) updateLink();
       },
       true,
@@ -1463,7 +1871,13 @@
       "keydown",
       (e) => {
         if (e.isComposing) return;
-        if (!drag && !connection && !pending && root.contains(e.target))
+        if (
+          !drag &&
+          !termDrag &&
+          !connection &&
+          !pending &&
+          root.contains(e.target)
+        )
           say("");
         if (
           e.key === "Alt" &&
@@ -1472,15 +1886,17 @@
           !e.getModifierState("AltGraph")
         ) {
           held = true;
+          if (mode === "edit") activate(null);
           refreshMode();
           return;
         }
         if (
           e.key === "Escape" &&
           (drag ||
+            termDrag ||
             connection ||
             pending ||
-            (activeCell && effectiveMode() === "rows"))
+            (activeCell && structureMode()))
         ) {
           stop(e);
           const cell = activeCell;
@@ -1496,6 +1912,23 @@
           return;
         }
         if (e.target.closest(".context-menu")) return;
+        if (
+          (e.metaKey || e.ctrlKey) &&
+          e.shiftKey &&
+          e.key === "Enter" &&
+          e.target.matches(
+            ".furl-hit:not([data-kind=binder]):not([data-kind=hole])",
+          )
+        ) {
+          const hit = e.target,
+            dest = insertionTarget(hit.closest(".furl-row"), true);
+          if (dest) {
+            stop(e);
+            cancel();
+            doCommit({ kind: "extract", ...dest, source: hit.dataset.id });
+          }
+          return;
+        }
         if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
           const member = e.target.matches(".furl-binding") ? e.target : null;
           const row =
@@ -1544,12 +1977,54 @@
           }
           return;
         }
+        if (
+          structureMode() &&
+          e.target.matches(".furl-hit") &&
+          ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)
+        ) {
+          stop(e);
+          const from = rect(e.target),
+            horizontal = ["ArrowLeft", "ArrowRight"].includes(e.key),
+            sign = ["ArrowLeft", "ArrowUp"].includes(e.key) ? -1 : 1;
+          const candidates = marked()
+            .filter(
+              (n) =>
+                n !== e.target &&
+                (!(termDrag || connection) || n.dataset.kind !== "binder"),
+            )
+            .map((n) => {
+              const r = rect(n),
+                dx = r.left + r.width / 2 - from.left - from.width / 2,
+                dy = r.top + r.height / 2 - from.top - from.height / 2;
+              return {
+                n,
+                forward: (horizontal ? dx : dy) * sign,
+                cross: Math.abs(horizontal ? dy : dx),
+              };
+            })
+            .filter((x) => x.forward > 2)
+            .sort(
+              (a, b) => a.forward + a.cross * 3 - (b.forward + b.cross * 3),
+            );
+          candidates[0]?.n.focus({ preventScroll: true });
+          return;
+        }
+        if (termDrag?.picked && e.key === "Enter") {
+          stop(e);
+          updateTerm();
+          dropTerm(true);
+          return;
+        }
         const hit = e.target.closest(".furl-hit");
-        if (hit && effectiveMode() === "connect") {
+        if (hit && structureMode()) {
           if (["Enter", " "].includes(e.key)) {
             stop(e);
             if (connection) {
               dropConnection(hit.dataset.kind === "binder" ? null : hit, true);
+            } else if (!hit.dataset.binder && hit.dataset.kind !== "hole") {
+              const r = rect(hit);
+              pointer = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+              beginTerm(hit, true);
             } else if (hit.dataset.binder) {
               pointer = {
                 x: rect(hit).left + rect(hit).width / 2,
@@ -1561,15 +2036,16 @@
           }
           if (
             ["Backspace", "Delete"].includes(e.key) &&
-            hit.dataset.kind === "reference"
+            !["binder", "hole"].includes(hit.dataset.kind)
           ) {
             stop(e);
             const anchor = sourceNode(hit.dataset.binder, hit);
             pointer = { x: rect(hit).left, y: rect(hit).top };
             if (
               doCommit({
-                kind: "connect",
-                binder: hit.dataset.binder,
+                ...(hit.dataset.binder
+                  ? { kind: "connect", binder: hit.dataset.binder }
+                  : { kind: "term", copy: false }),
                 source: hit.dataset.id,
                 destination: "",
               }) &&
@@ -1598,6 +2074,15 @@
       (e) => {
         if (e.key === "Alt") {
           held = false;
+          if (
+            mode === "edit" &&
+            !drag &&
+            !termDrag &&
+            !connection &&
+            !pending &&
+            document.activeElement?.matches(".code-editor")
+          )
+            activate(document.activeElement.closest("[data-cell]"));
           refreshMode();
         }
       },
@@ -1626,6 +2111,7 @@
       () => {
         placeGaps();
         if (connection) updateConnection();
+        if (termDrag) updateTerm();
         else if (wire.connection) wire.request();
       },
       true,
@@ -1663,6 +2149,7 @@
       destroy() {
         destroyed = true;
         zen.destroy();
+        clearTerm();
         ac.abort();
         cancelAnimationFrame(layoutFrame);
         cancelAnimationFrame(rowFrame);

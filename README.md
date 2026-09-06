@@ -2,16 +2,20 @@
 
 An environment for working with code, bindings, and the values they produce. Furl owns the interface; Hazel supplies the language and structural editing foundation.
 
-**[Try the live editor](https://andrewblinn.com/furl-next/live/)** · [Interactive reference](https://andrewblinn.com/furl-next/) · [Study switcher](https://andrewblinn.com/furl-next/studies.html) · [Interaction studies](https://andrewblinn.com/furl-next/interactions.html)
+**[Try the live editor](https://andrewblinn.com/furl-next/live/)** · [Interactive reference](https://andrewblinn.com/furl-next/) · [Study switcher](https://andrewblinn.com/furl-next/studies.html) · [Interaction studies](https://andrewblinn.com/furl-next/interactions.html) · [Offside / palette](https://andrewblinn.com/furl-next/offside.html) · [Appearance](https://andrewblinn.com/furl-next/appearance.html)
 
 The live study embeds Hazel's structural expression and pattern editors in Furl's grid. Editing a cell changes one underlying program, rechecks its lexical context, and updates dependent values using Hazel's evaluator and probes. Lets, function literals, and matches can be furled into rows or unfurled into source. Arrow keys move between editors: up/down preserve the intended column through short lines and nested indentation, and left/right cross cell boundaries. Undo/redo, display toggles, reset, and browser persistence work across six examples. Matches offer **All columns** and **One branch** views. In one-branch mode click the vertical match stem to cycle branches (Shift-click reverses); **Ctrl+Alt+Left/Right** switches branches in the focused match in either mode. Select a live value inside a function to reveal its call arrows; ←/→ steps through coherent parameter/body values, and Escape returns to code. These controls use the existing margins without adding rows. A [self-contained navigation study](https://andrewblinn.com/furl-next/live/navigation.html) compares three provisional branch gestures. Temporary Violet, Coral, and Teal controls let us compare caret colors.
 
-The live **Row gestures** and **Connections** examples match the two standalone labs. Hover the new icon-only controls for Edit / Rows / Connect, Refactor / Refine / Free edit, Slot / Float, hover wires, and motion. The palette is provisional: source commands are independent of which button or modifier invokes them.
+The live tools are **Edit / Move / Copy**, independent of **Refactor / Refine / Free**. Hover the icon-only controls for their names. Move and Copy share targeting; the earlier Rows / Connect labs remain design records.
 
-- Rows: drag anywhere on a binding; double-click a cell/value to interact with it. Hover a boundary and click to insert. Slot keeps columns aligned; Float compares pointer-following motion. In Free edit, drop outside the code viewport to delete.
-- Keyboard: Cmd/Ctrl+Enter inserts below (Shift above). A focused row uses Space, arrows, Enter to move; Escape cancels. Backspace removes a two-hole row; Cmd/Ctrl+Shift+Backspace requests populated-row deletion. Native Undo/Redo includes structural commits.
-- Connect: pull or click-pick a wire from a name. Refine fills compatible expression holes. Free edit also moves, replaces or unplugs existing variable uses. A missed drag of a use unplugs; click-away after click/keyboard pickup cancels without deleting. Hover links use word centers and the study’s spring renderer.
-- Hold Option/Alt for Connect over a name or Rows over other row space. Native typing is unrestricted by the structural policy. Moves currently remain within one let scope; Refactor checks binding identities, static errors, simple patterns and a conservative total expression fragment.
+- Pick a whole expression by its operator, delimiter or atomic term. Pick rows in whitespace at least one character away from syntax. Double-click a cell or value to interact with it normally. Option/Alt temporarily enables Move.
+- Refine copies into compatible holes with preserved bindings. Moving a populated term leaves a hole and requires Free; Free can replace a whole destination term. There is no term insertion into token whitespace. Pulling a binding name still creates a reference cable; hover traces appear in Move and Copy.
+- Copying a row gives it fresh identities and a fresh name, including renamed recursive self references. Rows currently stay in their owning let scope. Checked movement/copying uses a conservative total expression fragment and verifies lexical bindings.
+- Cmd/Ctrl+Enter inserts a row (Shift for above) and retains the pattern/expression column. Names are generated without capturing existing identifiers. Backspace cleans up an empty unused definition; Cmd/Ctrl+Shift+Backspace requests populated deletion in Free. Native Undo/Redo includes structural commits.
+- Drop a term on the boundary immediately above its row to extract a binding. On a focused term handle, Cmd/Ctrl+Shift+Enter does the same. An unresolved name creates a definition with a hole. Checked extraction preserves bindings and requires established totality.
+- Keyboard: Space picks up a row or term; arrows or Tab select destinations; Enter places; Escape cancels. Click-away cancels a picked cable. Dragging an existing reference to a miss unplugs it in Free; generic terms currently delete off-canvas and cancel inside-canvas misses.
+
+The **theme icon** beside Zen toggles an old-Furl-inspired appearance with a bundled pixel font, lilac palette, stable mild glyph offsets, shadows and a rebuilt wordmark. The **Studies** menu links all the reference/design sheets. Offside storage, term palettes, emoji aliases and alternate usage styling are working standalone experiments, not native features yet.
 
 **Zen recording view:** press **F9** or the corner-brackets icon to show just the program, anchored near the upper left with margins of about 20 character widths (reduced on small screens). Move the pointer to the top edge to reveal the existing tool icons and exit button; they hide again when you move away. **Shift+F9** reveals and focuses the tools by keyboard, and Escape dismisses that dock. Long programs scroll inside the available space. Zen is presentation state: native editing, selections, values, gestures and Undo remain available.
 
@@ -23,6 +27,7 @@ The reference contains seven interactive design studies with preset values, incl
 | --- | --- |
 | [`furl/reference/`](furl/reference/) | Editable page, shared study renderer, styles, and preset programs |
 | [`furl/interactions/`](furl/interactions/) | Offline row/reference experiments, transformation storyboards, and sourced interaction inventory |
+| [`furl/studies/`](furl/studies/) | Self-contained offside/palette and appearance design records |
 | [`furl/design/`](furl/design/) | Layout model, implementation decisions, and source notes |
 | [`furl/archive/`](furl/archive/) | Preserved conversation study and its original standalone export |
 | [`src/web/furl/`](src/web/furl/) | Live program model, projection, app, and embedded editor views |
@@ -77,6 +82,8 @@ TEST_URL=http://localhost:8000/live/ node furl/live/test-inspector.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-values.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-menu.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-gestures.cjs
+TEST_URL=http://localhost:8000/live/ node furl/live/test-terms.cjs
+STUDY_URL=http://localhost:8000/ node furl/studies/test.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-row-drag.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-row-resistance.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-column-focus.cjs
@@ -112,3 +119,6 @@ node furl/interactions/test.cjs
 ```
 
 Open `docs/interactions.html` directly for the offline page. See [the design decisions](furl/design/interactions.md) and [the port ledger](furl/design/ports.md) before integrating structural editing or Hazel feature branches.
+
+
+Build/check the new standalone sheets with `python3 furl/studies/build.py` and `--check`, after the reference and interactions builds. They embed their script, styles and licensed font, and generate local-editor link variants. The live packager includes the complete linked study collection.

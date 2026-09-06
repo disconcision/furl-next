@@ -81,8 +81,8 @@ const fs = require("node:fs"),
     await p.mouse.move(640, 4);
     await settle();
     assert.equal(await dock.evaluate((n) => n.inert), false);
-    await tool("rows").click();
-    assert.equal(await root.getAttribute("data-tool"), "rows");
+    await tool("move").click();
+    assert.equal(await root.getAttribute("data-tool"), "move");
     const revealed = await program.boundingBox();
     assert.deepEqual(revealed, box);
     await p.screenshot({ path: path.join(output, "zen-tools.png") });
@@ -119,7 +119,7 @@ const fs = require("node:fs"),
     await p.keyboard.type("3");
     await settle();
     await p.keyboard.press("Shift+F9");
-    await tool("rows").click();
+    await tool("move").click();
     await p.mouse.move(1100, 650);
     await p.waitForTimeout(550);
     // Insertion boundaries follow the anchored program and retain native Undo.
@@ -166,7 +166,7 @@ const fs = require("node:fs"),
       .getByRole("button", { name: "Enter Zen mode (F9)", exact: true })
       .click();
     await settle();
-    assert.equal(await root.getAttribute("data-tool"), "rows");
+    assert.equal(await root.getAttribute("data-tool"), "move");
     await p.emulateMedia({ colorScheme: "light" });
     await p.screenshot({ path: path.join(output, "zen-light.png") });
     await p.setViewportSize({ width: 390, height: 844 });

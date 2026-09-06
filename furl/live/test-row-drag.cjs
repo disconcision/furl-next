@@ -55,7 +55,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-row-drag-audit-"));
             ),
           ),
       );
-    await tool("rows").click();
+    await tool("move").click();
     // Area and border are peers. Twice is inside border, not a second selection.
     const original = ["width", "height", "area", "border"];
     for (const mode of ["refactor", "refine"]) {
@@ -82,11 +82,19 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-row-drag-audit-"));
       .filter({ hasText: /^twice$/ });
     const b = await border.boundingBox();
     // Hover the actual named row; the entire two-row binding lights up.
-    await borderName.hover();
+    const hoverBlank = async (name) => {
+      const r = await name
+        .locator(
+          'xpath=ancestor::*[contains(concat(" ",normalize-space(@class)," ")," furl-row ")][1]',
+        )
+        .boundingBox();
+      await p.mouse.move(r.x + 430, r.y + 11);
+    };
+    await hoverBlank(borderName);
     assert.equal(await p.locator("[data-row-hover=true]").count(), 1);
     assert.equal(await p.locator("[data-row-hover=true] .furl-row").count(), 2);
     await p.screenshot({ path: path.join(output, "border-hover.png") });
-    await twiceName.hover();
+    await hoverBlank(twiceName);
     assert.equal(await p.locator("[data-row-hover=true] .furl-row").count(), 1);
     // Grabbing the bottom of a tall definition and moving only horizontally
     // must neither reorder nor jump it (also tests the whole value-row hit area).
@@ -102,9 +110,9 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-row-drag-audit-"));
     await valuesVisible();
     await cancel();
     const twice = await twiceName.boundingBox();
-    await move(twice.x + 12, twice.y + 11);
+    await move(b.x + 430, twice.y + 11);
     await p.mouse.down();
-    await move(twice.x + 12, twice.y - 30);
+    await move(b.x + 430, twice.y - 30);
     assert.match(await status(), /twice belongs to border.*scope-changing/);
     assert.equal(await p.locator("[data-picked=true] .furl-row").count(), 1);
     await p.mouse.up();
@@ -114,7 +122,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-row-drag-audit-"));
 
     await p.getByRole("combobox", { name: "Example" }).selectOption("4");
     await settle();
-    await tool("rows").click();
+    await tool("move").click();
     await policy("free").click();
     // Pause only the drag renderer's clock. Native source updates/WAAPI/layout
     // retain real time; sample actual painted boxes through controlled frames.

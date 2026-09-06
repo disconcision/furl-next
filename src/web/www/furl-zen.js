@@ -25,9 +25,11 @@ window.createFurlZen = (root, button, { beforeChange, onLayout }) => {
     let target = lastFocus?.isConnected
       ? lastFocus
       : root.querySelector("#active-code-editor");
-    if (root.dataset.tool === "rows")
+    if (
+      ["move", "copy"].includes(root.dataset.tool) &&
+      !target?.matches(".furl-hit")
+    )
       target = target?.closest(".furl-binding,.furl-row");
-    if (root.dataset.tool === "connect") target = null;
     if (target) target.focus({ preventScroll: true });
     else {
       program.tabIndex = -1;

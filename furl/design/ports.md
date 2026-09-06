@@ -10,3 +10,6 @@ Snapshot recorded 2026-09-05. This is a manual record, not an automated sync pla
 | Mounted-menu listener lifecycle and disabled-item keyboard indexing | Furl `074470148` | Implemented in shared menu paths plus Furl-specific popover | Candidate backport: native menu lifecycle/indexing fixes and regression checks; keep Furl theme/anchor policy separate. |
 
 For future imports, record the source branch and exact SHA, integration commit, validation, and follow-up fixes. For returns, record the source Furl commit, target Hazel branch, resulting PR and merge SHA. Use `cherry-pick -x` for focused ports when applicable. Reconcile already-equivalent changes on forward merges instead of duplicating them. Do not rebase public integration history.
+
+
+2026-09-05 parity round: `FurlNames.re` combines the old Furl word pool with names read from `refactorings:src/haz3lcore/zipper/action/PlaceholderNames.re` at `7dbd77039d7caccc2d077ce922a8beece97167d6`. `RefactorBase`/`RefactorInline` were inspected for extraction, precedence and naming; the bounded Furl extraction adapter is new code over native `TermData` and stable source slices, not a verbatim port. The full refactoring branch remains unmerged. Native term-range/measurement APIs already present on this base are reused directly. No upstream PR is created by this round.

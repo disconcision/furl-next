@@ -212,3 +212,10 @@ Native differences are explicit:
 - Native wire destinations are expression holes or existing variable occurrences. Creation requires a visible binder; echoed bindings choose the clicked/nearest visible instance. General token/form deletion and copying have not been quietly included.
 
 Keep the `FurlDocument` source commands independent of the palette. The next mode experiment should change target selection and invocation, not duplicate the native transformation or history logic.
+
+
+### Parity round: maintained live contract
+
+As of the 2026-09-05 parity round, Edit / Move / Copy supersede the separate Rows / Connect tools in live Furl. The earlier labs above retain their historical modes. Whole expression terms use native operator/delimiter handles; whitespace with a one-character safety buffer picks rows. Refine copies to compatible holes, Free moves/removes/replaces terms, and row copies use fresh names/IDs. Extraction and unresolved-name definition use the boundary immediately above the source row. See `parity-round.md` and `architecture.md` for exact source/policy limits.
+
+Copy previews retain the original and open a slot with the same spring as movement. Compound terms have a carried source-text preview and native container reflow; the detailed glyph opening/removal animation still specifically covers atomic reference cables. Generic terms and references currently differ on inside-canvas missed drags; the offside study is the place to settle retained-piece semantics before broadening recovery. No animation or preview changes evaluation/history until commit.

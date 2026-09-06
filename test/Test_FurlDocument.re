@@ -81,6 +81,322 @@ let tests = (
   "FurlDocument",
   [
     test_case(
+      "whole-term copy, move and extraction preserve native structure",
+      `Quick,
+      () => {
+        let term_id = (text, m) =>
+          Id.Map.bindings(m.statics.info_map)
+          |> List.find_map(((id, info)) =>
+               switch (
+                 info,
+                 TermData.segment(id, structure_syntax(m).term_data),
+               ) {
+               | (Language.Info.InfoExp(info), Some(seg))
+                   when
+                     Printer.of_segment(
+                       ~indent=" ",
+                       ScratchFocus.core_ws(seg),
+                     )
+                     == text
+                     || text == "¿"
+                     && info.user_term.term == EmptyHole =>
+                 Some(id)
+               | _ => None
+               }
+             )
+          |> (
+            fun
+            | Some(id) => id
+            | None => fail("Missing expression term: " ++ text)
+          );
+        let apply = (policy, command, m) => {
+          switch (prepare_structure(~policy, command, m)) {
+          | Error(message) => fail(message)
+          | Ok(_) =>
+            update(Structure(m.document.segment, policy, command), m)
+          };
+        };
+        let m = start("let a = 2 in let b = 3 in let sum = a + b in ¿ * 4");
+        let copied =
+          apply(
+            "refine",
+            TransferTerm(
+              term_id("a + b", m),
+              Some(term_id("¿", m)),
+              true,
+            ),
+            m,
+          );
+        check(string, "copy preserves precedence", "20", result(copied));
+        check(
+          string,
+          "original remains",
+          "a + b",
+          Printer.of_segment(
+            ~indent=" ",
+            ScratchFocus.core_ws(
+              read(rhs("sum", copied), copied.document.segment),
+            ),
+          ),
+        );
+        let ids = Segment.ids(copied.document.segment);
+        check(
+          int,
+          "all copied piece identities are fresh",
+          List.length(ids),
+          List.length(List.sort_uniq(compare, ids)),
+        );
+        check(
+          string,
+          "copy undo exact",
+          source(m),
+          source(update(Undo, copied)),
+        );
+        let moved =
+          apply(
+            "free",
+            TransferTerm(
+              term_id("a + b", m),
+              Some(term_id("¿", m)),
+              false,
+            ),
+            m,
+          );
+        check(
+          bool,
+          "move leaves source hole",
+          true,
+          blank(read(rhs("sum", moved), moved.document.segment)),
+        );
+        check(
+          bool,
+          "move preserved original plus identity",
+          true,
+          piece_by_id(term_id("a + b", m), moved.document.segment) != None,
+        );
+        check(
+          bool,
+          "refine cannot move populated source",
+          true,
+          Result.is_error(
+            prepare_structure(
+              ~policy="refine",
+              TransferTerm(
+                term_id("a + b", m),
+                Some(term_id("¿", m)),
+                false,
+              ),
+              m,
+            ),
+          ),
+        );
+        check(
+          bool,
+          "overlapping move refused",
+          true,
+          Result.is_error(
+            prepare_structure(
+              ~policy="free",
+              TransferTerm(
+                term_id("a", m),
+                Some(term_id("a + b", m)),
+                false,
+              ),
+              m,
+            ),
+          ),
+        );
+        let shadow =
+          start("let n = 2 in let a = n + 1 in let b = let n = 9 in ¿ in b");
+        check(
+          bool,
+          "refine rejects shadowing a copied use",
+          true,
+          Result.is_error(
+            prepare_structure(
+              ~policy="refine",
+              TransferTerm(
+                term_id("n + 1", shadow),
+                Some(term_id("¿", shadow)),
+                true,
+              ),
+              shadow,
+            ),
+          ),
+        );
+        let extract = start("let a = 2 in let b = 3 + 4 * 2 in a + b");
+        let before =
+          List.nth(fst(let_prefix(extract.document.segment)), 1).id;
+        let extracted =
+          apply(
+            "refactor",
+            ExtractTerm(whole, Some(before), term_id("4 * 2", extract)),
+            extract,
+          );
+        check(
+          string,
+          "extraction preserves result",
+          result(extract),
+          result(extracted),
+        );
+        check(
+          int,
+          "extraction adds one definition",
+          3,
+          List.length(fst(let_prefix(extracted.document.segment))),
+        );
+        check(
+          string,
+          "extract undo exact",
+          source(extract),
+          source(update(Undo, extracted)),
+        );
+        let unresolved = start("let a = missing + 2 in a");
+        let before =
+          List.hd(fst(let_prefix(unresolved.document.segment))).id;
+        let defined =
+          apply(
+            "refine",
+            ExtractTerm(
+              whole,
+              Some(before),
+              term_id("missing", unresolved),
+            ),
+            unresolved,
+          );
+        check(
+          bool,
+          "unresolved name gets an editable definition",
+          true,
+          blank(read(rhs("missing", defined), defined.document.segment)),
+        );
+        let legal = start("let a = 2 in let b = a + 1 in b");
+        let defs = fst(let_prefix(legal.document.segment));
+        let copied =
+          apply(
+            "refactor",
+            CopyBinding(whole, List.nth(defs, 1).id, None),
+            legal,
+          );
+        check(
+          string,
+          "checked row copy keeps result",
+          result(legal),
+          result(copied),
+        );
+        check(
+          bool,
+          "checked copy has fresh name",
+          true,
+          named("b2", copied) != whole,
+        );
+        check(
+          bool,
+          "checked copy cannot precede its dependency",
+          true,
+          Result.is_error(
+            prepare_structure(
+              ~policy="refine",
+              CopyBinding(
+                whole,
+                List.nth(defs, 1).id,
+                Some(List.hd(defs).id),
+              ),
+              legal,
+            ),
+          ),
+        );
+        let recursive = start("let f = fun x -> f(x) in 0");
+        let copied =
+          apply(
+            "refactor",
+            CopyBinding(
+              whole,
+              List.hd(fst(let_prefix(recursive.document.segment))).id,
+              None,
+            ),
+            recursive,
+          );
+        let copied_rhs = read(rhs("f2", copied), copied.document.segment);
+        let copied_binder =
+          List.hd(
+            Segment.tiles(
+              read(named("f2", copied), copied.document.segment),
+            ),
+          ).
+            id;
+        check(
+          bool,
+          "recursive copy renames its internal self reference",
+          true,
+          Id.Map.exists(
+            (id, info) =>
+              ScratchFocus.seg_contains_id(id, copied_rhs)
+              && Language.Info.get_binding_site(info) == Some(copied_binder),
+            copied.statics.info_map,
+          ),
+        );
+        let row_copy =
+          apply("free", CopyBinding(whole, before, None), unresolved);
+        check(
+          bool,
+          "row copy gets a collision-free name",
+          true,
+          named("a2", row_copy) != named("a", row_copy),
+        );
+        check(
+          string,
+          "row copy undo exact",
+          source(unresolved),
+          source(update(Undo, row_copy)),
+        );
+      },
+    ),
+    test_case(
+      "generated names avoid existing free names and draft deletion respects uses",
+      `Quick,
+      () => {
+        let m = start("let a = bro in a");
+        let m =
+          update(
+            Structure(
+              m.document.segment,
+              "refine",
+              InsertBinding(whole, None),
+            ),
+            m,
+          );
+        check(
+          bool,
+          "free bro was not accidentally bound",
+          true,
+          named("greeze", m) != whole,
+        );
+        let draft = List.nth(fst(let_prefix(m.document.segment)), 1);
+        check(
+          bool,
+          "named unused hole is removable",
+          true,
+          removable_binding(draft, m),
+        );
+        let referenced =
+          replace_text(
+            {
+              location: Program,
+              offset: List.length(m.document.segment) - 1,
+            },
+            "greeze",
+            m,
+          );
+        check(
+          bool,
+          "referenced draft is not disposable",
+          false,
+          removable_binding(draft, referenced),
+        );
+      },
+    ),
+    test_case(
       "structural rows are one native edit with stable identities",
       `Quick,
       () => {
@@ -160,7 +476,12 @@ let tests = (
           List.length(fst(let_prefix(inserted.document.segment))),
         );
         let draft = List.nth(fst(let_prefix(inserted.document.segment)), 1);
-        check(bool, "two holes", true, blank_binding(draft));
+        check(
+          bool,
+          "named empty draft",
+          true,
+          removable_binding(draft, inserted),
+        );
         check(
           string,
           "focus new expression",

@@ -45,6 +45,14 @@ let decode = (request, model) => {
     switch (text("kind")) {
     | "insert" => InsertBinding(scope(), optional_id("before"))
     | "move" => MoveBinding(scope(), id("id"), optional_id("before"))
+    | "copy-row" => CopyBinding(scope(), id("id"), optional_id("before"))
+    | "term" =>
+      TransferTerm(
+        id("source"),
+        optional_id("destination"),
+        request |> member("copy") == `Bool(true),
+      )
+    | "extract" => ExtractTerm(scope(), optional_id("before"), id("source"))
     | "delete" =>
       DeleteBinding(
         scope(),
@@ -65,8 +73,9 @@ let decode = (request, model) => {
 let marker_cache = ref((Language.Statics.Map.empty, []));
 let markers_uncached = (target, model) => {
   let c = cell(target, model);
-  let measured =
-    make_editor(~root=c.editor.editor.root, c.source).editor.syntax.measured;
+  let syntax =
+    make_editor(~root=c.editor.editor.root, c.source).editor.syntax;
+  let measured = syntax.measured;
   Id.Map.fold(
     (id, info, acc) => {
       let item =
@@ -77,31 +86,114 @@ let markers_uncached = (target, model) => {
           Some(("reference", name, Language.Info.get_binding_site(info)))
         | InfoExp({user_term: {term: EmptyHole, _}, _}) =>
           Some(("hole", "", None))
+        | InfoExp(_) => Some(("term", "", None))
         | _ => None
         };
-      switch (item, Measured.find_by_id(id, measured)) {
-      | (Some((kind, name, binder)), Some({origin, last}))
-          when origin.row == last.row =>
-        if (piece_by_id(id, c.source) == None) {
-          acc;
-        } else {
-          let item =
-            `Assoc([
-              ("id", `String(Uuidm.to_string(id))),
-              ("kind", `String(kind)),
-              ("name", `String(name)),
-              (
-                "binder",
-                `String(
-                  Option.fold(~none="", ~some=Uuidm.to_string, binder),
+      switch (
+        item,
+        TermData.segment(id, syntax.term_data),
+        TermData.extreme_measures(id, syntax.term_data, measured),
+      ) {
+      | (Some((kind, name, binder)), Some(segment), Some((origin, last))) =>
+        let code = Printer.of_segment(~indent=" ", segment);
+        let regions =
+          List.init(
+            last.row - origin.row + 1,
+            i => {
+              let row = origin.row + i;
+              let shape = Measured.row_shape(row, measured);
+              let col =
+                i == 0
+                  ? origin.col
+                  : Option.fold(
+                      ~none=0,
+                      ~some=s => s.Measured.Rows.indent,
+                      shape,
+                    );
+              let end_col =
+                row == last.row
+                  ? last.col
+                  : Option.fold(
+                      ~none=col + 1,
+                      ~some=s => s.Measured.Rows.max_col,
+                      shape,
+                    );
+              `Assoc([
+                ("row", `Int(row)),
+                ("col", `Int(col)),
+                ("width", `Int(max(1, end_col - col))),
+              ]);
+            },
+          );
+        let handles =
+          switch (Measured.find_shards_by_id(id, measured)) {
+          | Some(shards) => shards
+          | None =>
+            Option.fold(
+              ~none=[],
+              ~some=m => [(0, m)],
+              Measured.find_by_id(id, measured),
+            )
+          };
+        let count =
+          kind == "binder"
+            ? Id.Map.fold(
+                (_, info, n) =>
+                  Language.Info.get_binding_site(info) == Some(id)
+                    ? n + 1 : n,
+                model.statics.info_map,
+                0,
+              )
+            : 0;
+        List.filter_map(
+          ((shard, m: Measured.measurement)) =>
+            m.origin.row != m.last.row
+              ? None
+              : Some(
+                  `Assoc([
+                    (
+                      "key",
+                      `String(
+                        Uuidm.to_string(id) ++ ":" ++ string_of_int(shard),
+                      ),
+                    ),
+                    ("id", `String(Uuidm.to_string(id))),
+                    ("kind", `String(kind)),
+                    ("name", `String(name)),
+                    ("code", `String(code)),
+                    (
+                      "glyph",
+                      `String(
+                        Option.fold(
+                          ~none=name,
+                          ~some=
+                            fun
+                            | Piece.Tile(t) =>
+                              Option.value(
+                                List.nth_opt(t.label, shard),
+                                ~default=name,
+                              )
+                            | _ => name,
+                          piece_by_id(id, c.source),
+                        ),
+                      ),
+                    ),
+                    ("uses", `Int(count)),
+                    ("regions", `List(regions)),
+                    (
+                      "binder",
+                      `String(
+                        Option.fold(~none="", ~some=Uuidm.to_string, binder),
+                      ),
+                    ),
+                    ("col", `Int(m.origin.col)),
+                    ("row", `Int(m.origin.row)),
+                    ("width", `Int(max(1, m.last.col - m.origin.col))),
+                  ]),
                 ),
-              ),
-              ("col", `Int(origin.col)),
-              ("row", `Int(origin.row)),
-              ("width", `Int(max(1, last.col - origin.col))),
-            ]);
-          [item, ...acc];
-        }
+          handles,
+        )
+        @ acc;
       | _ => acc
       };
     },

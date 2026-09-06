@@ -18,7 +18,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-wire-landing-"));
     await page.waitForSelector(".reference-wire", { state: "attached" });
     await require("../interactions/wire-physics-test.cjs")(page);
     await page.getByRole("combobox", { name: "Example" }).selectOption("5");
-    await page.locator("button[data-tool=connect]").click();
+    await page.locator("button[data-tool=move]").click();
     const binder = (name) =>
       page.locator(`.furl-hit[data-kind=binder][data-name=${name}]`);
     const use = (name) =>

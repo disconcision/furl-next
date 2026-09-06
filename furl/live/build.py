@@ -29,6 +29,18 @@ def main():
         shutil.copyfile(WWW / 'furl.css', stage / 'furl.css')
         shutil.copyfile(WWW / 'furl-gestures.js', stage / 'furl-gestures.js')
         shutil.copyfile(WWW / 'furl-zen.js', stage / 'furl-zen.js')
+        for name in ('furl-appearance.js', 'furl-playful.css'):
+            shutil.copyfile(WWW / name, stage / name)
+        shutil.copytree(WWW / 'furl-fonts', stage / 'furl-fonts')
+        for name in ('offside', 'appearance'):
+            (stage / (name+'.html')).write_text((WWW / (name+'.html')).read_text().replace('href="furl.html"', 'href="index.html"'))
+        # Keep every study reachable in a downloaded live package as well.
+        for original, local in [('index.html','reference.html'), ('studies.html','comb-studies.html'), ('interactions.html','interactions.html')]:
+            text = (REPO / 'docs' / original).read_text()
+            for original_href, local_href in [('index.html','reference.html'), ('studies.html','comb-studies.html'), ('live/','index.html')]:
+                for prefix in ['', './']:
+                    text = text.replace(f'href="{prefix}{original_href}"', f'href="{local_href}"')
+            (stage / local).write_text(text)
         shutil.copyfile(REPO / 'furl/interactions/wire.js', stage / 'furl-wire.js')
         # The root stylesheet's inherited pin icon path is relative to style/;
         # here the stylesheet itself lives at the app root.

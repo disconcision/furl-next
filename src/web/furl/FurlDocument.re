@@ -807,8 +807,11 @@ let compatible_paths = (a, b) =>
 type structural_command =
   | InsertBinding(target, option(Id.t))
   | MoveBinding(target, Id.t, option(Id.t))
+  | CopyBinding(target, Id.t, option(Id.t))
   | DeleteBinding(target, Id.t, bool)
-  | ConnectReference(Id.t, option(Id.t), option(Id.t));
+  | ConnectReference(Id.t, option(Id.t), option(Id.t))
+  | TransferTerm(Id.t, option(Id.t), bool)
+  | ExtractTerm(target, option(Id.t), Id.t);
 type prepared = {
   segment: Segment.t,
   focus: option(target),
@@ -924,6 +927,165 @@ let target_for_piece = (id, model) =>
     targets(project(model)),
   );
 
+let used_names = model =>
+  Id.Map.fold(
+    (_, info, names) =>
+      switch (info) {
+      | Language.Info.InfoExp({user_term: {term: Var(n), _}, _})
+      | InfoPat({user_term: {term: Var(n), _}, _}) => [n, ...names]
+      | _ => names
+      },
+    model.statics.info_map,
+    [],
+  )
+  |> List.sort_uniq(String.compare);
+let removable_binding = (tile: Base.tile, model) =>
+  blank_binding(tile)
+  || List.length(tile.children) == 2
+  && blank(List.nth(tile.children, 1))
+  && {
+    let pat = ScratchFocus.core_ws(List.hd(tile.children));
+    switch (pat) {
+    | [Piece.Tile(t)] =>
+      switch (Language.Statics.Map.lookup(t.id, model.statics.info_map)) {
+      | Some(InfoPat({user_term: {term: Var(_), _}, _})) =>
+        !
+          Id.Map.exists(
+            (_, info) => Language.Info.get_binding_site(info) == Some(t.id),
+            model.statics.info_map,
+          )
+      | _ => false
+      }
+    | _ => false
+    };
+  };
+/* Reuse Hazel's native term ranges: an operator root includes its operands,
+   while its individual shards are only the handles drawn by the view. */
+let structure_syntax_cache = ref(None);
+let structure_syntax = model =>
+  switch (structure_syntax_cache^) {
+  | Some((seg, syntax)) when seg === model.document.segment => syntax
+  | _ =>
+    let syntax = make_editor(model.document.segment).editor.syntax;
+    structure_syntax_cache := Some((model.document.segment, syntax));
+    syntax;
+  };
+let expression_info = (id, model) =>
+  switch (Language.Statics.Map.lookup(id, model.statics.info_map)) {
+  | Some(Language.Info.InfoExp(info)) => info
+  | _ =>
+    failwith("Choose an expression's operator, delimiter or atomic term.")
+  };
+let term_segment = (id, model) =>
+  TermData.segment(id, structure_syntax(model).term_data)
+  |> OptUtil.get(_ => failwith("That whole term is not available in source."));
+let replace_term = (id, replacement, model, segment) => {
+  let (left, right) =
+    TermData.extreme_ids(id, structure_syntax(model).term_data) |> Option.get;
+  let rec replace = (seg: Segment.t) => {
+    let rec scan = (prefix, rest) =>
+      switch (rest) {
+      | [p, ..._] when Piece.id(p) == left =>
+        let rec end_at = rest =>
+          switch (rest) {
+          | [p, ...tail] =>
+            Piece.id(p) == right ? Some(tail) : end_at(tail)
+          | [] => None
+          };
+        Option.map(
+          post => List.rev(prefix) @ replacement @ post,
+          end_at(rest),
+        );
+      | [p, ...tail] => scan([p, ...prefix], tail)
+      | [] => None
+      };
+    switch (scan([], seg)) {
+    | Some(next) => next
+    | None =>
+      ScratchFocus.map_sharing(
+        p =>
+          switch (p) {
+          | Piece.Tile(t) =>
+            ScratchFocus.tile_sharing(
+              p,
+              t,
+              ScratchFocus.map_sharing(replace, t.children),
+            )
+          | _ => p
+          },
+        seg,
+      )
+    };
+  };
+  replace(segment);
+};
+let clone_segment = (~renames=Id.Map.empty, segment) => {
+  let ids = ref(Id.Map.empty);
+  let fresh = id =>
+    switch (Id.Map.find_opt(id, ids^)) {
+    | Some(next) => next
+    | None =>
+      let next = Id.mk();
+      ids := Id.Map.add(id, next, ids^);
+      next;
+    };
+  let rec clone = seg =>
+    List.map(
+      p =>
+        switch (p) {
+        | Piece.Tile(t) =>
+          Piece.Tile({
+            ...t,
+            id: fresh(t.id),
+            label:
+              Option.fold(
+                ~none=t.label,
+                ~some=n => [n],
+                Id.Map.find_opt(t.id, renames),
+              ),
+            children: List.map(clone, t.children),
+          })
+        | Grout(g) =>
+          Grout({
+            ...g,
+            id: fresh(g.id),
+          })
+        | Secondary(w) =>
+          Secondary({
+            ...w,
+            id: fresh(w.id),
+          })
+        | Projector(_) =>
+          failwith(
+            "Copying a term with an embedded projector is not supported yet.",
+          )
+        },
+      seg,
+    );
+  let segment = clone(segment);
+  (segment, ids^);
+};
+/* As in refactorings' RefactorBase.needs_parens: protect the destination's
+   parse tree, e.g. replacing x in x * 4 by a + b must keep (a + b) * 4. */
+let protect_term = (exp: Language.Exp.t, segment) =>
+  switch (exp.term) {
+  | Var(_)
+  | Atom(_)
+  | EmptyHole
+  | Parens(_)
+  | ListLit(_) => segment
+  | _ =>
+    switch (ScratchFocus.core_ws(parse("(¿)"))) {
+    | [Piece.Tile(t)] => [
+        Piece.Tile({
+          ...t,
+          children: [segment],
+        }),
+      ]
+    | _ => assert(false)
+    }
+  };
+
 /* A deliberately narrow total fragment, in addition to lexical/type checks.
    Moving calls or incomplete computations is available in Free edit. */
 let rec total_for_move = (exp: Language.Exp.t) =>
@@ -981,6 +1143,7 @@ let prepare_structure = (~policy, command, model): result(prepared, string) => {
       switch (command) {
       | InsertBinding(scope, _)
       | MoveBinding(scope, _, _)
+      | CopyBinding(scope, _, _)
       | DeleteBinding(scope, _, _) =>
         let (chunks, tail) = binding_chunks(scope, model.document.segment);
         /* Row creation/deletion retain the editor attribute the user came
@@ -1007,7 +1170,11 @@ let prepare_structure = (~policy, command, model): result(prepared, string) => {
             if (Option.fold(~none=false, ~some=id => !contains(id), before)) {
               refuse("That binding boundary no longer exists.");
             };
-            let tile = List.hd(fst(let_prefix(parse("let ¿ = ¿ in 0"))));
+            let name = FurlNames.fresh(used_names(model));
+            let tile =
+              List.hd(
+                fst(let_prefix(parse("let " ++ name ++ " = ¿ in 0"))),
+              );
             let chunk = (
               tile,
               [
@@ -1020,6 +1187,132 @@ let prepare_structure = (~policy, command, model): result(prepared, string) => {
               Some(child(tile.id, focus_column)),
               false,
             );
+          | CopyBinding(_, id, before) =>
+            if (!contains(id)
+                || Option.fold(
+                     ~none=false,
+                     ~some=id => !contains(id),
+                     before,
+                   )) {
+              refuse("Copy within the same let scope for now.");
+            };
+            let (tile, pieces) =
+              List.find(((t: Base.tile, _)) => t.id == id, chunks);
+            if (policy != "free" && !removable_binding(tile, model)) {
+              let pattern =
+                MakeTerm.from_zip_for_pat(
+                  Zipper.unzip(
+                    ScratchFocus.core_ws(List.hd(tile.children)),
+                  ),
+                );
+              switch (pattern.term) {
+              | Var(_)
+              | Wild => ()
+              | _ =>
+                refuse(
+                  "Checked copying currently supports simple, irrefutable bindings.",
+                )
+              };
+              let definition = List.nth(tile.children, 1);
+              let term =
+                MakeTerm.from_zip_for_sem(
+                  Zipper.unzip(ScratchFocus.core_ws(definition)),
+                  ~root=Sort.Exp,
+                ).
+                  term;
+              if (!total_for_move(term)) {
+                refuse(
+                  "Copying this computation needs Free edit; totality is not established.",
+                );
+              };
+            };
+            let pat_ids = Segment.ids(List.hd(tile.children));
+            let used = ref(used_names(model));
+            let renames =
+              Id.Map.fold(
+                (id, info, renames) =>
+                  switch (info) {
+                  | Language.Info.InfoPat({
+                      user_term: {term: Var(name), _},
+                      _,
+                    })
+                      when List.mem(id, pat_ids) =>
+                    let next = FurlNames.fresh(~base=name, used^);
+                    used := [next, ...used^];
+                    Id.Map.add(id, next, renames);
+                  | _ => renames
+                  },
+                model.statics.info_map,
+                Id.Map.empty,
+              );
+            let renames =
+              Id.Map.fold(
+                (id, info, result) =>
+                  switch (
+                    Option.bind(Language.Info.get_binding_site(info), binder =>
+                      Id.Map.find_opt(binder, renames)
+                    )
+                  ) {
+                  | Some(name) => Id.Map.add(id, name, result)
+                  | None => result
+                  },
+                model.statics.info_map,
+                renames,
+              );
+            let (copied, copied_ids) = clone_segment(~renames, pieces);
+            let copied_tile = List.hd(Segment.tiles(copied));
+            let changed = insert_at(before, (copied_tile, copied), chunks);
+            if (policy != "free") {
+              let candidate =
+                replace_at(
+                  scope.location,
+                  ScratchFocus.take(
+                    scope.offset,
+                    at(scope.location, model.document.segment),
+                  )
+                  @ List.concat_map(snd, changed)
+                  @ tail,
+                  model.document.segment,
+                );
+              let next = analyse(candidate);
+              if (!same_resolutions(model.statics.info_map, next.info_map)
+                  || List.exists(
+                       id => !List.mem(id, model.statics.error_ids),
+                       next.error_ids,
+                     )) {
+                refuse(
+                  "This copy changes a binding or introduces a static error.",
+                );
+              };
+              Id.Map.iter(
+                (old, fresh) => {
+                  switch (
+                    Language.Statics.Map.lookup(old, model.statics.info_map),
+                    Language.Statics.Map.lookup(fresh, next.info_map),
+                  ) {
+                  | (
+                      Some(InfoExp({user_term: {term: Var(_), _}, _}) as a),
+                      Some(b),
+                    ) =>
+                    let expected =
+                      Option.map(
+                        id =>
+                          Option.value(
+                            Id.Map.find_opt(id, copied_ids),
+                            ~default=id,
+                          ),
+                        Language.Info.get_binding_site(a),
+                      );
+                    if (expected != Language.Info.get_binding_site(b)) {
+                      refuse("This copy would change a reference's binding.");
+                    };
+                  | _ => ()
+                  }
+                },
+                copied_ids,
+              );
+            };
+            (changed, Some(child(copied_tile.id, focus_column)), false);
           | MoveBinding(_, id, before) =>
             if (binding_scope(id, model) != Some(scope)) {
               refuse("Move within the same let scope for now.");
@@ -1109,9 +1402,10 @@ let prepare_structure = (~policy, command, model): result(prepared, string) => {
             };
             let (tile, _) =
               List.find(((t: Base.tile, _)) => t.id == id, chunks);
-            if (!blank_binding(tile) && (empty_only || policy != "free")) {
+            if (!removable_binding(tile, model)
+                && (empty_only || policy != "free")) {
               refuse(
-                "Populated row deletion needs Free edit; Backspace cleans up a two-hole row.",
+                "Populated row deletion needs Free edit; Backspace cleans up an empty, unused definition.",
               );
             };
             let changed =
@@ -1162,6 +1456,247 @@ let prepare_structure = (~policy, command, model): result(prepared, string) => {
           segment,
           focus,
         });
+      | TransferTerm(source, destination, copy) =>
+        let info = expression_info(source, model);
+        let source_segment = term_segment(source, model);
+        if (destination == Some(source)) {
+          Ok({
+            segment: model.document.segment,
+            focus: target_for_piece(source, model),
+          });
+        } else {
+          if (policy == "refactor" || !copy && policy != "free") {
+            refuse(
+              copy
+                ? "Filling a hole needs Refine or Free edit."
+                : "Moving or deleting a term leaves a hole; use Free edit.",
+            );
+          };
+          if (copy && destination == None) {
+            refuse("Choose a term or hole to copy into.");
+          };
+          let destination_info =
+            Option.map(id => expression_info(id, model), destination);
+          Option.iter(
+            (target: Language.Info.exp) =>
+              if (policy == "refine") {
+                if (target.Language.Info.user_term.term != EmptyHole) {
+                  refuse("Refine fills an empty expression hole.");
+                };
+                if (!
+                      Language.Typ.is_consistent(
+                        target.ctx,
+                        info.ty,
+                        target.ana,
+                      )) {
+                  refuse("This term does not fit the hole's expected type.");
+                };
+              },
+            destination_info,
+          );
+          Option.iter(
+            id => {
+              let target_ids = Segment.ids(term_segment(id, model));
+              if (!copy
+                  && List.exists(
+                       id => List.mem(id, target_ids),
+                       Segment.ids(source_segment),
+                     )) {
+                refuse(
+                  "A term cannot move into itself or its containing term.",
+                );
+              };
+            },
+            destination,
+          );
+          let (carried, cloned_ids) =
+            copy
+              ? clone_segment(source_segment)
+              : (source_segment, Id.Map.empty);
+          let segment =
+            copy
+              ? model.document.segment
+              : replace_term(
+                  source,
+                  [empty_piece()],
+                  model,
+                  model.document.segment,
+                );
+          let segment =
+            Option.fold(
+              ~none=segment,
+              ~some=
+                id =>
+                  replace_term(
+                    id,
+                    protect_term(info.user_term, carried),
+                    model,
+                    segment,
+                  ),
+              destination,
+            );
+          if (policy == "refine") {
+            let next = analyse(segment);
+            if (List.exists(
+                  id => !List.mem(id, model.statics.error_ids),
+                  next.error_ids,
+                )) {
+              refuse("This copy introduces a static error.");
+            };
+            Id.Map.iter(
+              (old, fresh) => {
+                switch (
+                  Language.Statics.Map.lookup(old, model.statics.info_map),
+                  Language.Statics.Map.lookup(fresh, next.info_map),
+                ) {
+                | (
+                    Some(InfoExp({user_term: {term: Var(_), _}, _}) as a),
+                    Some(b),
+                  ) =>
+                  let expected =
+                    Option.map(
+                      id =>
+                        Option.value(
+                          Id.Map.find_opt(id, cloned_ids),
+                          ~default=id,
+                        ),
+                      Language.Info.get_binding_site(a),
+                    );
+                  if (expected != Language.Info.get_binding_site(b)) {
+                    refuse("This copy would change a reference's binding.");
+                  };
+                | _ => ()
+                }
+              },
+              cloned_ids,
+            );
+          };
+          Ok({
+            segment,
+            focus:
+              target_for_piece(
+                Option.value(destination, ~default=source),
+                model,
+              ),
+          });
+        };
+      | ExtractTerm(scope, before, source) =>
+        let info = expression_info(source, model);
+        let selected = term_segment(source, model);
+        let (chunks, tail) = binding_chunks(scope, model.document.segment);
+        let host =
+          switch (before) {
+          | Some(id) =>
+            let (tile, _) =
+              List.find(((t: Base.tile, _)) => t.id == id, chunks);
+            List.nth(tile.children, 1);
+          | None => tail
+          };
+        if (!
+              List.for_all(
+                id => List.mem(id, Segment.ids(host)),
+                Segment.ids(selected),
+              )) {
+          refuse(
+            "Extract at the boundary immediately above the term's own row.",
+          );
+        };
+        let unresolved =
+          switch (info.user_term.term) {
+          | Var(name)
+              when Language.Info.get_binding_site(InfoExp(info)) == None =>
+            Some(name)
+          | _ => None
+          };
+        if (unresolved != None && policy == "refactor") {
+          refuse("Defining an unresolved name needs Refine or Free edit.");
+        };
+        if (unresolved == None
+            && policy != "free"
+            && !total_for_move(info.user_term)) {
+          refuse(
+            "Extracting this computation needs Free edit; totality is not established.",
+          );
+        };
+        let name =
+          Option.value(
+            unresolved,
+            ~default=FurlNames.fresh(used_names(model)),
+          );
+        let segment =
+          unresolved != None
+            ? model.document.segment
+            : replace_term(
+                source,
+                ScratchFocus.core_ws(parse(name)),
+                model,
+                model.document.segment,
+              );
+        let tile =
+          List.hd(fst(let_prefix(parse("let " ++ name ++ " = ¿ in 0"))));
+        let tile = {
+          ...tile,
+          children: [
+            List.hd(tile.children),
+            unresolved != None ? [empty_piece()] : selected,
+          ],
+        };
+        let (chunks, tail) = binding_chunks(scope, segment);
+        let fresh_chunk = [
+          Piece.Tile(tile),
+          Piece.Secondary(Secondary.mk_newline(Id.mk())),
+        ];
+        let rec insert = chunks =>
+          switch (chunks) {
+          | [] => fresh_chunk
+          | [(t: Base.tile, pieces), ...rest] =>
+            Some(t.id) == before
+              ? fresh_chunk @ List.concat_map(snd, chunks)
+              : pieces @ insert(rest)
+          };
+        let content = insert(chunks) @ tail;
+        let segment =
+          replace_at(
+            scope.location,
+            ScratchFocus.take(scope.offset, at(scope.location, segment))
+            @ content,
+            segment,
+          );
+        if (policy != "free") {
+          let next = analyse(segment);
+          if (List.exists(
+                id => !List.mem(id, model.statics.error_ids),
+                next.error_ids,
+              )) {
+            refuse("This extraction would introduce a static error.");
+          };
+          if (unresolved == None
+              && !same_resolutions(model.statics.info_map, next.info_map)) {
+            refuse(
+              "The extracted term would lose a binding at this boundary.",
+            );
+          };
+          if (unresolved != None) {
+            Id.Map.iter(
+              (id, old) =>
+                if (Language.Info.get_binding_site(old) != None
+                    && Option.bind(
+                         Language.Statics.Map.lookup(id, next.info_map),
+                         Language.Info.get_binding_site,
+                       )
+                    != Language.Info.get_binding_site(old)) {
+                  refuse(
+                    "This definition would capture an existing reference.",
+                  );
+                },
+              model.statics.info_map,
+            );
+          };
+        };
+        Ok({
+          segment,
+          focus: Some(child(tile.id, 0)),
+        });
       | ConnectReference(binder, source, destination) =>
         let name =
           switch (Language.Statics.Map.lookup(binder, model.statics.info_map)) {
@@ -1211,11 +1746,17 @@ let prepare_structure = (~policy, command, model): result(prepared, string) => {
               if (!is_hole && policy != "free") {
                 refuse("Refine fills an empty expression hole.");
               };
-              if (!is_hole) {
-                switch (info.user_term.term) {
-                | Var(_) => ()
-                | _ => refuse("Choose a hole or variable reference.")
-                };
+              if (Option.fold(
+                    ~none=false,
+                    ~some=
+                      source =>
+                        List.mem(
+                          source,
+                          Segment.ids(term_segment(id, model)),
+                        ),
+                    source,
+                  )) {
+                refuse("A reference cannot move into its containing term.");
               };
               let entry =
                 switch (Language.Ctx.lookup_var(info.ctx, name)) {
@@ -1262,7 +1803,9 @@ let prepare_structure = (~policy, command, model): result(prepared, string) => {
           let segment =
             Option.fold(
               ~none=segment,
-              ~some=((id, copied)) => replace_piece(id, copied, segment),
+              ~some=
+                ((id, copied)) =>
+                  replace_term(id, [copied], model, segment),
               fresh,
             );
           Ok({

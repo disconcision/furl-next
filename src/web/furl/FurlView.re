@@ -507,7 +507,11 @@ let view =
                   Attr.create(
                     "data-blank",
                     string_of_bool(
-                      Option.fold(~none=false, ~some=blank_binding, binding),
+                      Option.fold(
+                        ~none=false,
+                        ~some=t => removable_binding(t, model),
+                        binding,
+                      ),
                     ),
                   ),
                 ],
@@ -769,7 +773,10 @@ let view =
         [
           Node.a(
             ~attrs=[Attr.class_("furl-wordmark"), Attr.href("../")],
-            [Node.text("furl")],
+            List.map(
+              letter => Node.span([Node.text(letter)]),
+              ["f", "u", "r", "l"],
+            ),
           ),
           Node.a(
             ~attrs=[
@@ -788,10 +795,35 @@ let view =
           Node.create(
             "nav",
             [
-              Node.a(~attrs=[Attr.href("../")], [Node.text("Reference")]),
-              Node.a(
-                ~attrs=[Attr.href("navigation.html")],
-                [Node.text("Navigation study")],
+              Node.create(
+                "details",
+                ~attrs=[Attr.class_("furl-studies-menu")],
+                [
+                  Node.create("summary", [Node.text("Studies")]),
+                  Node.div(
+                    List.map(
+                      ((url, title)) =>
+                        Node.a(
+                          ~attrs=[Attr.href(url)],
+                          [Node.text(title)],
+                        ),
+                      [
+                        ("reference.html", "Concept reference"),
+                        ("comb-studies.html", "Comb and layout studies"),
+                        (
+                          "interactions.html",
+                          "Writing and reshaping programs",
+                        ),
+                        ("navigation.html", "Branch navigation"),
+                        ("offside.html", "Offside space and term palette"),
+                        (
+                          "appearance.html",
+                          "Names, symbols and usage styles",
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               Node.a(
                 ~attrs=[
@@ -1005,7 +1037,7 @@ let view =
             ~attrs=[Attr.class_("furl-help")],
             [
               Node.text(
-                "F9 toggles Zen mode; its top edge reveals tools (also Shift+F9). Hover icons for controls. Rows: drag anywhere, double-click to edit; gaps insert. Connect: pull a wire from a name, or click to pick/place. ⌘/Ctrl+Enter inserts a row; Escape cancels; Undo restores. Hold Option/Alt over a name for Connect, elsewhere for Rows. Edits are saved in this browser.",
+                "F9 toggles Zen; its top edge reveals tools (also Shift+F9). Move / Copy: grab a term's operator or delimiter, or grab row whitespace a character away from syntax. Double-click edits. Pull from a binding to create a reference. Hover a boundary to insert; drop a term above its own row to extract a binding. ⌘/Ctrl+Enter inserts; add Shift on a term handle to extract it. Space picks up, Tab/arrows choose a target, Enter places; Escape cancels. Option/Alt temporarily enables Move. Edits are saved in this browser.",
               ),
             ],
           ),

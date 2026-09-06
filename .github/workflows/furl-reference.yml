@@ -2,9 +2,9 @@ name: Furl reference
 on:
   push:
     branches: [furl]
-    paths: ['furl/reference/**', 'furl/interactions/**', 'docs/index.html', 'docs/studies.html', 'docs/interactions.html', '.github/workflows/furl-reference.yml', 'src/web/www/img/hazelnut.svg']
+    paths: ['furl/reference/**', 'furl/interactions/**', 'furl/studies/**', 'docs/offside.html', 'docs/appearance.html', 'src/web/www/furl-fonts/**', 'docs/index.html', 'docs/studies.html', 'docs/interactions.html', '.github/workflows/furl-reference.yml', 'src/web/www/img/hazelnut.svg']
   pull_request:
-    paths: ['furl/reference/**', 'furl/interactions/**', 'docs/index.html', 'docs/studies.html', 'docs/interactions.html', '.github/workflows/furl-reference.yml', 'src/web/www/img/hazelnut.svg']
+    paths: ['furl/reference/**', 'furl/interactions/**', 'furl/studies/**', 'docs/offside.html', 'docs/appearance.html', 'src/web/www/furl-fonts/**', 'docs/index.html', 'docs/studies.html', 'docs/interactions.html', '.github/workflows/furl-reference.yml', 'src/web/www/img/hazelnut.svg']
   workflow_dispatch:
 permissions:
   contents: read
@@ -16,6 +16,9 @@ jobs:
       - uses: actions/checkout@v4
       - run: python3 furl/reference/build.py --check
       - run: python3 furl/interactions/build.py --check
+      - run: python3 furl/studies/build.py --check
+      - run: node --check furl/studies/offside.js
+      - run: node --check furl/studies/appearance.js
       - run: node --check furl/reference/fixtures.js
       - run: node --check furl/reference/study.js
       - run: node --check furl/interactions/stories.js

@@ -42,14 +42,15 @@ const assert = require("node:assert/strict");
           .getAttribute("data-cell"),
         row: await n.getAttribute("data-binding"),
       });
-    for (const mode of ["edit", "rows"]) {
+    for (const mode of ["edit", "move"]) {
       for (const column of ["pattern", "expression"]) {
         await p.getByRole("combobox", { name: "Example" }).selectOption("4");
         await settle();
         await p.locator(`.furl-gesture-tools [data-tool=${mode}]`).click();
         await p.locator(".furl-gesture-tools [data-policy=free]").click();
         const editor = rows().nth(1).locator(`.furl-${column} .code-editor`);
-        if (mode === "rows") await editor.dblclick();
+        if (mode === "move")
+          await rows().nth(1).locator(`.furl-${column}`).dblclick();
         else await editor.click();
         await settle();
         await assertCell(rows().nth(1), column);
@@ -77,7 +78,8 @@ const assert = require("node:assert/strict");
         await undo();
         // Move back to the second row and delete populated content.
         const second = rows().nth(1).locator(`.furl-${column} .code-editor`);
-        if (mode === "rows") await second.dblclick();
+        if (mode === "move")
+          await rows().nth(1).locator(`.furl-${column}`).dblclick();
         else await second.click();
         await p.keyboard.press("Meta+Shift+Backspace");
         await settle();
