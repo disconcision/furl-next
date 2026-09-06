@@ -195,6 +195,14 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 #furl-app .furl-gap:hover {opacity:1;}
 .furl-gap::before {content:'';position:absolute;left:0;right:0;top:3px;height:1px;background:var(--furl-scope);opacity:.6;}
 .furl-gap::after {content:'+';position:absolute;left:-8px;top:-8px;color:var(--furl-scope);font:16px/22px var(--code-font);}
+.furl-gap.furl-place-boundary::after {content:none;}
+#furl-app .furl-gap.furl-place-boundary {cursor:default;}
+/* A gesture owns its input until release. Geometry-based connection targets
+   still work; incidental comb, value and editor hover affordances stay quiet. */
+#furl-app:is([data-gesture=row],[data-gesture=connection],[data-gesture=commit]) .furl-program-content,
+#furl-app:is([data-gesture=row],[data-gesture=connection],[data-gesture=commit]) .furl-program-content * {pointer-events:none !important;}
+#furl-app[data-gesture=connection] .furl-hit {pointer-events:auto !important;}
+#furl-app[data-gesture=connection] .furl-hit:hover:not(.furl-drop-target) {background:transparent;box-shadow:none;}
 .furl-gesture-status {font:12px/20px var(--ui-font);color:var(--furl-scope);padding:0 12px;min-height:0;}
 .furl-gesture-status:empty {display:none;}
 .furl-floating-reference {position:fixed;transform:translate(-50%,-50%);pointer-events:none;color:var(--furl-binding);font:14px/22px var(--code-font);}

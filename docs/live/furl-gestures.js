@@ -267,6 +267,15 @@
       const selected = effectiveMode();
       root.dataset.tool = selected;
       root.dataset.policy = policy;
+      root.dataset.gesture = drag
+        ? "row"
+        : connection
+          ? "connection"
+          : pending
+            ? "pending"
+            : committing
+              ? "commit"
+              : "";
       $$("[data-tool]", tools).forEach((b) =>
         b.setAttribute("aria-pressed", b.dataset.tool === mode),
       );
@@ -283,9 +292,25 @@
         ),
       );
       marked().forEach((n) => (n.tabIndex = selected === "connect" ? 0 : -1));
-      gapNodes.forEach(
-        (n) => (n.hidden = selected !== "rows" || !!activeCell || !!connection),
-      );
+      gapNodes.forEach((n) => {
+        // Keyboard pickup may still finish at a clicked boundary. It is a
+        // placement target then, never an insertion button or plus hint.
+        const placing = !!drag?.keyboard;
+        n.classList.toggle("furl-place-boundary", placing);
+        n.setAttribute(
+          "aria-label",
+          placing
+            ? "Place picked binding at this boundary"
+            : "Insert binding at this boundary",
+        );
+        n.hidden =
+          selected !== "rows" ||
+          !!activeCell ||
+          !!connection ||
+          !!pending ||
+          committing ||
+          (!!drag && !placing);
+      });
     }
     function request(command, commit = false) {
       try {
@@ -515,7 +540,11 @@
         committing = false;
         const editor = $("#active-code-editor", root);
         if (editor) {
-          if (commitKind === "insert" || mode === "edit") {
+          if (
+            commitKind === "insert" ||
+            commitKind === "delete" ||
+            mode === "edit"
+          ) {
             activate(editor.closest("[data-cell]"));
             editor.focus({ preventScroll: true });
           } else {
@@ -723,11 +752,13 @@
       committing = true;
       commitKind = command.kind;
       transactionRevision = data.revision;
+      refreshMode();
       const result = request(command, true);
       if (!result.ok) {
         positions = null;
         referenceMotion = null;
         committing = false;
+        refreshMode();
         say(result.message);
         return false;
       }
@@ -827,6 +858,7 @@
       program.classList.add("furl-preview");
       member.focus({ preventScroll: true });
       previewRow(drag.index);
+      refreshMode();
     }
     // A critically damped spring retains velocity across new candidate slots.
     // Unlike restarting an ease-out on each pointer event, reversals and Float
@@ -853,7 +885,7 @@
             s[axis] = target;
             s[velocity] = 0;
           } else {
-            const omega = 18,
+            const omega = 22,
               decay = Math.exp(-omega * dt);
             const c = s[velocity] + omega * delta;
             s[axis] = target + (delta + c * dt) * decay;
@@ -1203,6 +1235,7 @@
           if (member) {
             member.focus({ preventScroll: true });
             pending = { kind: "row", member, start: pointer };
+            refreshMode();
           } else if (row) {
             row.tabIndex = 0;
             row.focus({ preventScroll: true });
@@ -1213,6 +1246,7 @@
             stop(e);
             hit.focus({ preventScroll: true });
             pending = { kind: "connection", hit, start: pointer };
+            refreshMode();
           }
         }
       },
@@ -1270,6 +1304,7 @@
             blockedClick = true;
             beginConnection(p.hit, true);
           }
+          refreshMode();
         }
       },
       true,

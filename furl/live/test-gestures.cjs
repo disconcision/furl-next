@@ -30,6 +30,25 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-native-gestures-"));
       );
     const value = () =>
       p.locator(".furl-row").last().locator(".furl-value").innerText();
+    const caretOn = async (name) => {
+      assert.equal(
+        await p.evaluate(() => {
+          const editor = document.activeElement;
+          const caret = editor.querySelector("#caret");
+          return editor.id === "active-code-editor" &&
+            editor.closest("[data-cell]")?.dataset.cellActive === "true" &&
+            caret &&
+            getComputedStyle(caret).visibility === "visible"
+            ? editor
+                .closest(".furl-row")
+                .querySelector(".furl-pattern .code")
+                ?.textContent.trim() || "result"
+            : null;
+        }),
+        name,
+        "deletion restores an editable, visible caret",
+      );
+    };
     const choose = async (id) => {
       await p
         .getByRole("combobox", { name: "Example" })
@@ -113,6 +132,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-native-gestures-"));
     await p.keyboard.press("Backspace");
     await settle();
     assert.deepEqual(await order(), ["n", "twice", "bonus", "total"]);
+    await caretOn("n");
     await undo();
     assert.equal(await members().count(), 5);
     await undo();
@@ -135,6 +155,16 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-native-gestures-"));
     await p.mouse.move(original.x + original.width - 25, original.y + 11);
     await p.mouse.down();
     await p.mouse.move(n.x + 250, n.y + 2, { steps: 8 });
+    assert.equal(
+      await p.locator(".furl-gap:visible").count(),
+      0,
+      "insertion targets are suppressed during pointer dragging",
+    );
+    assert.equal(
+      await p.locator(".furl-program-content :hover").count(),
+      0,
+      "unrelated hover affordances are suppressed during dragging",
+    );
     await settle();
     const moved = await bonus.boundingBox();
     assert.ok(Math.abs(moved.x - original.x) < 1);
@@ -152,6 +182,18 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-native-gestures-"));
     // Keyboard pickup can finish at a clicked boundary, without inserting a row.
     await members().nth(2).focus();
     await p.keyboard.press("Space");
+    assert.equal(
+      await p.locator(".furl-gap").first().getAttribute("aria-label"),
+      "Place picked binding at this boundary",
+    );
+    assert.equal(
+      await p
+        .locator(".furl-gap")
+        .first()
+        .evaluate((n) => getComputedStyle(n, "::after").content),
+      "none",
+      "keyboard placement does not show an insertion plus",
+    );
     await p.locator(".furl-gap").first().click();
     await settle();
     assert.deepEqual(await order(), ["bonus", "n", "twice", "total"]);
@@ -211,6 +253,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-native-gestures-"));
     await p.mouse.up();
     await settle();
     assert.equal(await members().count(), 3);
+    await caretOn("twice");
     await undo();
     assert.equal(await members().count(), 4);
     await members().nth(2).focus();

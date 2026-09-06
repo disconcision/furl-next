@@ -1114,7 +1114,7 @@ let prepare_structure = (~policy, command, model): result(prepared, string) => {
                 List.find_index(((t: Base.tile, _)) => t.id == id, chunks),
               );
             let focus =
-              switch (List.nth_opt(changed, i)) {
+              switch (List.nth_opt(changed, max(0, i - 1))) {
               | Some((t, _)) => child(t.id, 1)
               | None => {
                   ...scope,
@@ -1362,13 +1362,38 @@ let rec update = (action, model) => {
             switch (List.find_opt(c => c.target == target, cells)) {
             | Some(_) as cell => cell
             | None =>
-              /* A moved definition may be projected into a function or match;
-                 its RHS then has no single editor. Retain focus on its name. */
-              switch (target.location) {
-              | Child(id, 1) =>
-                List.find_opt(c => c.target.location == Child(id, 0), cells)
-              | _ => None
-              }
+              let nested =
+                switch (command) {
+                | DeleteBinding(_) =>
+                  /* The preceding binding may end in a projected function or
+                     match, with no editor for its whole RHS. Use its last
+                     visible child editor so deletion always leaves a caret. */
+                  let content = read(target, next.document.segment);
+                  List.find_opt(
+                    c =>
+                      List.exists(
+                        p =>
+                          ScratchFocus.seg_contains_id(Piece.id(p), content),
+                        read(c.target, next.document.segment),
+                      ),
+                    List.rev(cells),
+                  );
+                | _ => None
+                };
+              switch (nested) {
+              | Some(_) => nested
+              | None =>
+                /* A moved definition may be projected into a function or match;
+                   its RHS then has no single editor. Retain focus on its name. */
+                switch (target.location) {
+                | Child(id, 1) =>
+                  List.find_opt(
+                    c => c.target.location == Child(id, 0),
+                    cells,
+                  )
+                | _ => None
+                }
+              };
             };
           Option.fold(
             ~none=next,

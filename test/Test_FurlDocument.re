@@ -305,6 +305,74 @@ let tests = (
       },
     ),
     test_case(
+      "row deletion restores a visible preceding editor",
+      `Quick,
+      () => {
+        let remove = (name, model) => {
+          let id =
+            switch (named(name, model).location) {
+            | Child(id, _) => id
+            | _ => assert(false)
+            };
+          update(
+            Structure(
+              model.document.segment,
+              "free",
+              DeleteBinding(whole, id, false),
+            ),
+            model,
+          );
+        };
+        let m = start("let a = 12 in let b = 3 in let c = 4 in a + c");
+        let m = at_col(rhs("a", m), 1, m);
+        let next = remove("b", m);
+        check(
+          string,
+          "preceding expression focused",
+          key(rhs("a", next)),
+          next.document.active,
+        );
+        check(
+          int,
+          "preceding caret retained",
+          1,
+          caret(rhs("a", next), next).col,
+        );
+        let first = remove("a", m);
+        check(
+          string,
+          "first deletion uses following expression",
+          key(rhs("b", first)),
+          first.document.active,
+        );
+        List.iter(
+          ((program, expected)) => {
+            let m = remove("doomed", start(program));
+            let c = Option.get(active_cell(m));
+            check(bool, "visible expression focus", true, c.root == Sort.Exp);
+            check(
+              string,
+              "projected child or final result focused",
+              expected,
+              Printer.of_segment(
+                ~indent=" ",
+                ScratchFocus.core_ws(read(c.target, m.document.segment)),
+              ),
+            );
+          },
+          [
+            ("let f = fun x -> x + 1 in let doomed = 0 in f(3)", "x + 1"),
+            (
+              "let m = case [] | [] => 0 | x :: xs => 1 end in let doomed = 0 in m",
+              "1",
+            ),
+            ("let doomed = 0 in 42", "42"),
+            ("let doomed = 0 in fun x -> x + 1", "x + 1"),
+          ],
+        );
+      },
+    ),
+    test_case(
       "native connections respect lexical identity, holes, types and undo",
       `Quick,
       () => {
