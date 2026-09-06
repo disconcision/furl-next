@@ -879,10 +879,21 @@ let view =
                 inject(Toggle("comb")),
                 "∫",
               ),
+              button(
+                ~attrs=[
+                  Attr.class_("furl-toggle indentation"),
+                  Attr.create(
+                    "aria-pressed",
+                    string_of_bool(model.indentation),
+                  ),
+                ],
+                ~label="Pattern indent",
+                inject(Toggle("indentation")),
+                "",
+              ),
               toggle("bindings", "Bindings", model.bindings),
               toggle("expressions", "Expressions", model.expressions),
               toggle("values", "Values", model.values),
-              toggle("indentation", "Pattern indent", model.indentation),
               Node.div(
                 ~attrs=[
                   Attr.class_("furl-caret-options"),

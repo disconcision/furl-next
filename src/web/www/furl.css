@@ -56,7 +56,9 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 #furl-app .furl-toggle.comb {font:24px/1 Georgia,serif;color:var(--furl-scope);width:20px;}
 #furl-app .furl-toggle.bindings {color:var(--furl-binding);}
 #furl-app .furl-toggle.values {color:var(--furl-value);}
-#furl-app .furl-toggle.indentation {margin-left:auto;}
+#furl-app .furl-toggle.indentation {display:grid;place-items:center;width:20px;height:24px;}
+#furl-app .furl-toggle.indentation::before {content:'';width:12px;height:12px;background:var(--furl-indent);}
+#furl-app .furl-toggle.indentation[aria-pressed=false]::before {opacity:.35;}
 .furl-program {position:relative;padding:28px 18px 28px var(--comb-gutter,5ch);font:14px/22px var(--code-font);background:var(--furl-paper);border:1px solid var(--furl-line);border-top:0;overflow-x:auto;}
 .furl-row {position:relative;display:grid;grid-template-columns:var(--columns);column-gap:2ch;min-height:22px;align-items:start;}
 .furl-scope {position:relative;}
@@ -81,7 +83,7 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 #furl-app :is(.errors .errors-piece,.warnings .warnings-piece) svg.shard > path,
 #furl-app :is(.errors .errors-piece,.warnings .warnings-piece) svg .child-line,
 #furl-app .projector.error:not(.selected) > svg path {stroke:none;stroke-dasharray:none;}
-.furl-caret-options {display:flex;align-items:center;gap:6px;color:var(--furl-quiet);}
+.furl-caret-options {display:flex;align-items:center;gap:6px;color:var(--furl-quiet);margin-left:auto;}
 #furl-app .caret-option {padding:1px 5px;font-size:11px;border-color:transparent;}
 #furl-app .caret-option[aria-pressed=true] {border-color:currentColor;}
 #furl-app .caret-option.violet {color:var(--furl-violet);}
