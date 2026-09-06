@@ -1,0 +1,62 @@
+[
+  {
+    "action": "Fill or replace a reference",
+    "status": "Animated",
+    "current": "The new word opens from the prior slot width; following text, SVG holes, hit regions and the cable endpoint move together.",
+    "next": "Keep this as the entrance baseline."
+  },
+  {
+    "action": "Remove or move a reference",
+    "status": "Animated",
+    "current": "A retired word shrinks and fades as its space closes. Moves animate both source and destination, including within one expression. Drag-away also retires the pointer word while the cable retracts.",
+    "next": "Port the source-closing transition back to the standalone reference lab, where removal still snaps."
+  },
+  {
+    "action": "Cable pickup, attachment and cancellation",
+    "status": "Animated",
+    "current": "Shared spring curve, continuous attachment into hover, and damped retraction. A refused or canceled gesture leaves source intact.",
+    "next": "Preserve cable continuity when expanding to other binding-related gestures."
+  },
+  {
+    "action": "Insert or move a binding row",
+    "status": "Animated",
+    "current": "New rows fade in while existing rows move. Slot/Float previews and cancellation use the same row reflow.",
+    "next": "Reuse the behavior for future copy and cross-scope operations."
+  },
+  {
+    "action": "Delete a binding row",
+    "status": "Partial",
+    "current": "Surviving rows close the gap, but the removed row itself disappears without a matched exit transition.",
+    "next": "Add a departing-row transition, including nested definition subtrees."
+  },
+  {
+    "action": "Undo and Redo",
+    "status": "Partial",
+    "current": "History restores source correctly and cancels temporary visuals. It does not replay inverse reference entrances/exits; row container reflow is separate.",
+    "next": "Recommended next: retain transition descriptions with structural history so mouse and keyboard Undo/Redo can reverse the same motion."
+  },
+  {
+    "action": "Furl/unfurl; code ↔ rows",
+    "status": "To explore",
+    "current": "The projections work, but there is no coordinated correspondence animation between inline syntax, cells and combs.",
+    "next": "Design and test a shared-identity transition for lets, functions and matches."
+  },
+  {
+    "action": "Switch match branches or layouts",
+    "status": "Partial",
+    "current": "A single branch has a short fade/slide entrance. The departing branch, all-columns transition and comb geometry do not interpolate together.",
+    "next": "Combine branch exit/entry with disciplined comb and lane motion."
+  },
+  {
+    "action": "Typing, text deletion and live values",
+    "status": "Immediate by design",
+    "current": "Ordinary native edits and evaluated values update directly. The structural word entrance is not replayed for every keystroke or call sample.",
+    "next": "Keep direct text entry responsive; consider an explicit transition only for a discrete structural command."
+  },
+  {
+    "action": "View toggles, Zen and motion controls",
+    "status": "Partial",
+    "current": "Zen's toolbar fades/slides; program placement and column toggles change directly. The toolbar motion switch covers structural gestures; system reduced-motion also covers branch and dock transitions.",
+    "next": "Unify the motion switch's scope. Any future layout tween must keep the editing origin stable."
+  }
+]

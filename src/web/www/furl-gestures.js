@@ -57,7 +57,7 @@
       positions = null,
       committing = false,
       commitKind = "",
-      opening = null,
+      referenceMotion = null,
       landing = null,
       landingTimer = 0;
     let blockedClick = false,
@@ -78,6 +78,43 @@
             easing: "cubic-bezier(.2,0,0,1)",
             ...options,
           });
+    const referenceAnimations = new Set(),
+      referenceGhosts = new Set();
+    function clearReferenceAnimations() {
+      referenceAnimations.forEach((a) => a.cancel());
+      referenceAnimations.clear();
+      referenceGhosts.forEach((n) => n.remove());
+      referenceGhosts.clear();
+    }
+    function animateReference(n, frames, ghost = false) {
+      const a = animate(n, frames);
+      if (!a) {
+        if (ghost) n.remove();
+        return;
+      }
+      referenceAnimations.add(a);
+      if (ghost) referenceGhosts.add(n);
+      const done = () => {
+        referenceAnimations.delete(a);
+        if (ghost) {
+          n.remove();
+          referenceGhosts.delete(n);
+        }
+      };
+      a.addEventListener("finish", done, { once: true });
+      a.addEventListener("cancel", done, { once: true });
+    }
+    function retireFloatingWord(n) {
+      if (n)
+        animateReference(
+          n,
+          [
+            { opacity: 1, transform: "translate(-50%,-50%) scale(1)" },
+            { opacity: 0, transform: "translate(-50%,-50%) scale(.2)" },
+          ],
+          true,
+        );
+    }
     const on = (n, type, fn, capture = false) =>
       n.addEventListener(type, fn, { capture, signal });
     const stop = (e) => {
@@ -188,6 +225,7 @@
     button("option", "motion", "Animate row movement and wires", () => {
       motion = !motion;
       if (!motion) {
+        clearReferenceAnimations();
         wire.points = null;
         wire.request();
       }
@@ -264,6 +302,166 @@
           : n.dataset.view)
       );
     }
+    const nativeSlot = (n) => ({
+      x: parseFloat(n.style.left),
+      y: parseFloat(n.style.top),
+      width: parseFloat(n.style.width),
+    });
+    function captureReferenceMotion(command) {
+      const markers = marked();
+      return {
+        command,
+        previous: new Set(markers.map((n) => n.dataset.id)),
+        changes: markers
+          .filter(
+            (n) =>
+              n.dataset.id === command.source ||
+              n.dataset.id === command.destination,
+          )
+          .map((n) => {
+            const cell = n.closest("[data-cell]");
+            return {
+              role: n.dataset.id === command.source ? "source" : "destination",
+              view: cell.dataset.view,
+              cell: cell.dataset.cell,
+              ...nativeSlot(n),
+              name: n.dataset.name,
+              kind: n.dataset.kind,
+              opacity: n.classList.contains("furl-unplugging") ? 0.3 : 1,
+              box: rect(n),
+              parent: rect(cell),
+            };
+          }),
+      };
+    }
+    function finishReferenceMotion() {
+      const snapshot = referenceMotion;
+      referenceMotion = null;
+      const { command, previous, changes } = snapshot;
+      const cells = $$(".furl-native-cell", program);
+      // One native connection replaces at most two single-line pieces. Match
+      // the destination by occurrence identity, then locate the new source hole
+      // at its native grid position, accounting for a replacement before it.
+      for (const c of changes) {
+        c.node = cells.find(
+          (n) => n.dataset.view === c.view && n.dataset.cell === c.cell,
+        );
+        if (!c.node || c.role !== "destination") continue;
+        c.target = $$(".furl-hit", c.node).find(
+          (n) =>
+            n.dataset.kind === "reference" &&
+            n.dataset.binder === command.binder &&
+            (command.source
+              ? n.dataset.id === command.source
+              : !previous.has(n.dataset.id)),
+        );
+        if (c.target) c.next = nativeSlot(c.target);
+      }
+      for (const c of changes) {
+        if (!c.node || c.role !== "source") continue;
+        const shift = changes
+          .filter(
+            (d) =>
+              d.view === c.view &&
+              d.role === "destination" &&
+              d.next &&
+              d.y === c.y &&
+              d.x < c.x,
+          )
+          .reduce((dx, d) => dx + d.next.width - d.width, 0);
+        c.target = $$(".furl-hit[data-kind=hole]", c.node).find((n) => {
+          const p = nativeSlot(n);
+          return Math.abs(p.x - c.x - shift) < 0.5 && Math.abs(p.y - c.y) < 0.5;
+        });
+        if (c.target) c.next = nativeSlot(c.target);
+      }
+      for (const node of new Set(changes.map((c) => c.node).filter(Boolean))) {
+        const edits = changes.filter((c) => c.node === node);
+        // A stale or unexpected projection gets the correct final source, with
+        // no guessed motion. Ordinary typing never enters this path.
+        if (edits.some((c) => !c.next)) continue;
+        const parent = rect(node),
+          oldParent = edits[0].parent;
+        const leaves = $$(
+          ".code-text .token,.code-text .comment,.code-text .in-unparsed-buffer,.code-text .empty-hole,.furl-hit,.code-deco .indication svg,.code-deco .selects svg",
+          node,
+        ).map((n) => ({ n, b: rect(n) }));
+        // Read all geometry before any leaf gets a transform.
+        for (const { n, b } of leaves) {
+          const x = b.left - parent.left,
+            y = (b.top + b.bottom) / 2 - parent.top;
+          const row = edits.filter(
+            (c) =>
+              Math.abs(y - c.next.y - data.lineHeight / 2) <
+              data.lineHeight / 2,
+          );
+          if (!row.length) continue;
+          const slot = row.find(
+            (c) => x >= c.next.x - 0.5 && x < c.next.x + c.next.width - 0.5,
+          );
+          if (
+            slot &&
+            b.right - parent.left > slot.next.x + slot.next.width + 0.5
+          )
+            continue;
+          const dx =
+            oldParent.left -
+            parent.left +
+            (slot
+              ? slot.x - slot.next.x
+              : -row
+                  .filter((c) => c.next.x + c.next.width <= x + 0.5)
+                  .reduce((s, c) => s + c.next.width - c.width, 0));
+          const dy = oldParent.top - parent.top;
+          const scale =
+            slot?.role === "destination" ? slot.width / slot.next.width : 1;
+          if (slot || Math.abs(dx) + Math.abs(dy) > 0.1)
+            animateReference(n, [
+              {
+                opacity: slot ? 0 : 1,
+                transform: `translate(${dx}px,${dy}px) scaleX(${scale})`,
+                transformOrigin: "left center",
+              },
+              { opacity: 1, transform: "none", transformOrigin: "left center" },
+            ]);
+        }
+        for (const c of edits) {
+          if (c.kind !== "reference" || !motion || media.matches) continue;
+          // Hazel has already committed. Retain only a pointer-inert visual of
+          // the retired word while its space closes; never delay source/history.
+          const ghost = document.createElement("span");
+          ghost.className = "furl-exiting-reference";
+          ghost.setAttribute("aria-hidden", "true");
+          ghost.textContent = c.name;
+          ghost.style.cssText = `left:${c.next.x}px;top:${c.next.y}px;width:${c.width}px`;
+          $(".furl-hit-layer", node).append(ghost);
+          const dx = c.box.left - parent.left - c.next.x,
+            dy = c.box.top - parent.top - c.next.y;
+          animateReference(
+            ghost,
+            [
+              {
+                opacity: c.opacity,
+                transform: `translate(${dx}px,${dy}px) scaleX(1)`,
+              },
+              { opacity: 0, transform: `scaleX(${c.next.width / c.width})` },
+            ],
+            true,
+          );
+        }
+      }
+      const destinations = changes.filter(
+        (c) => c.role === "destination" && c.target,
+      );
+      if (destinations.length) {
+        destinations.sort(
+          (a, b) =>
+            Math.hypot(a.box.left - pointer.x, a.box.top - pointer.y) -
+            Math.hypot(b.box.left - pointer.x, b.box.top - pointer.y),
+        );
+        landConnection(destinations[0].target);
+      } else if (command.destination) wire.clear();
+    }
     function finishLayout() {
       if (destroyed) return;
       layoutFrame = 0;
@@ -298,70 +496,7 @@
           } else animate(n, [{ opacity: 0 }, { opacity: 1 }]);
         }
       }
-      if (opening) {
-        const candidates = marked().filter(
-          (n) =>
-            n.dataset.kind === "reference" &&
-            n.dataset.binder === opening.binder &&
-            n.closest("[data-cell]")?.dataset.cell === opening.cell,
-        );
-        const target = opening.source
-          ? candidates.find((n) => n.dataset.id === opening.source)
-          : candidates.filter(
-              (n) => !opening.previous.includes(n.dataset.id),
-            )[0];
-        if (target) {
-          // CodeFlip's real-leaf approach, scoped to the affected native cell.
-          // Include SVG grout, comments, hit regions and the word's backing;
-          // whitespace has no painted leaf. Measure before starting any tween.
-          const cell = target.closest("[data-cell]"),
-            r = rect(target),
-            delta = r.width - opening.width;
-          const leaves = $$(
-            ".code-text .token,.code-text .comment,.code-text .in-unparsed-buffer,.code-text .empty-hole,.furl-hit,.code-deco .indication svg,.code-deco .selects svg",
-            cell,
-          )
-            .map((n) => ({ n, b: rect(n) }))
-            .filter(
-              ({ b }) =>
-                b.left >= r.left - 0.5 &&
-                Math.abs((b.top + b.bottom - r.top - r.bottom) / 2) <
-                  data.lineHeight / 2,
-            );
-          leaves.forEach(({ n, b }) => {
-            const grows = b.left < r.right - 0.5;
-            // A decoration spanning beyond the replaced word cannot be scaled
-            // as though it were just that word.
-            if (grows && b.right > r.right + 0.5) return;
-            animate(
-              n,
-              grows
-                ? [
-                    {
-                      opacity: 0,
-                      transform: `scaleX(${opening.width / r.width})`,
-                      transformOrigin: "left center",
-                    },
-                    {
-                      opacity: 1,
-                      transform: "none",
-                      transformOrigin: "left center",
-                    },
-                  ]
-                : [
-                    {
-                      transform: `translateX(${-delta}px)`,
-                    },
-                    { transform: "none" },
-                  ],
-            );
-          });
-          landConnection(target);
-        } else {
-          wire.clear();
-        }
-        opening = null;
-      }
+      if (referenceMotion) finishReferenceMotion();
       if (committing) {
         committing = false;
         const editor = $("#active-code-editor", root);
@@ -383,7 +518,9 @@
       $$(".furl-native-cell", root).forEach((cell) => {
         const layer = $(".furl-hit-layer", cell),
           markers = map.get(cell.dataset.cell) || [];
-        const old = new Map([...layer.children].map((n) => [n.dataset.id, n]));
+        const old = new Map(
+          $$(":scope > .furl-hit", layer).map((n) => [n.dataset.id, n]),
+        );
         for (const m of markers) {
           let n = old.get(m.id);
           old.delete(m.id);
@@ -530,6 +667,10 @@
         say("");
         return false;
       }
+      clearReferenceAnimations();
+      clearLanding();
+      referenceMotion =
+        command.kind === "connect" ? captureReferenceMotion(command) : null;
       positions = capture();
       committing = true;
       commitKind = command.kind;
@@ -537,6 +678,7 @@
       const result = request(command, true);
       if (!result.ok) {
         positions = null;
+        referenceMotion = null;
         committing = false;
         say(result.message);
         return false;
@@ -565,7 +707,8 @@
     }
     function cancel(retract = true) {
       clearLanding();
-      opening = null;
+      referenceMotion = null;
+      clearReferenceAnimations();
       pending = null;
       clearRows();
       drag = null;
@@ -793,7 +936,7 @@
     function updateLink() {
       // A native edit may replace the target hole before its new use is measured.
       // Keep the last drag curve until finishLayout hands it to that use.
-      if (connection || opening || wire.retracting) return;
+      if (connection || referenceMotion || wire.retracting) return;
       const hovered =
         links && inside(rect(program), pointer)
           ? hitAt(pointer.x, pointer.y)
@@ -867,24 +1010,15 @@
         refreshMode();
         return;
       }
-      if (target)
-        opening = {
-          binder: c.binder,
-          source: c.source,
-          previous: marked().map((n) => n.dataset.id),
-          cell: target.closest("[data-cell]").dataset.cell,
-          width: rect(target).width,
-        };
       connection = null;
-      c.use?.classList.remove("furl-unplugging");
-      c.word?.remove();
       if (!target) wire.retract(c.anchor, pointer);
       marked().forEach((n) => n.classList.remove("furl-drop-target"));
       program.classList.remove("furl-preview");
-      if (!doCommit(command)) {
-        opening = null;
-        if (target) wire.retract(c.anchor, pointer);
-      }
+      const committed = doCommit(command);
+      c.use?.classList.remove("furl-unplugging");
+      if (committed && !target) retireFloatingWord(c.word);
+      else c.word?.remove();
+      if (!committed && target) wire.retract(c.anchor, pointer);
       refreshMode();
     }
     on(
@@ -1221,6 +1355,9 @@
       },
       true,
     );
+    on(media, "change", () => {
+      if (media.matches) clearReferenceAnimations();
+    });
     on(window, "blur", () => {
       held = false;
       cancel();
@@ -1280,6 +1417,7 @@
         ac.abort();
         cancelAnimationFrame(layoutFrame);
         clearLanding();
+        clearReferenceAnimations();
         wire.clear();
         gapNodes.forEach((n) => n.remove());
         tools.replaceChildren();

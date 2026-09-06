@@ -53,8 +53,11 @@ def document():
         links.append('<a href="#inventory-' + stage['id'] + '" data-stage-link="' + stage['id'] + '">' + escape(stage['title'].split(' · ')[0]) + ' <span>' + str(len(items)) + '</span></a>')
         options.append('<option value="' + stage['id'] + '">' + escape(stage['title']) + '</option>')
     styles = (REPO / 'furl/reference/book.css').read_text() + '\n' + (HERE / 'style.css').read_text()
+    motion = json.loads((HERE / 'motion.json').read_text())
+    motion_rows = ''.join('<tr><th scope="row">' + escape(item['action']) + '</th><td><b>' + escape(item['status']) + '</b><p>' + escape(item['current']) + '</p></td><td>' + escape(item['next']) + '</td></tr>' for item in motion)
     scripts = '\n'.join((HERE / name).read_text() for name in ('stories.js', 'wire.js', 'study.js'))
     result = (HERE / 'page.html').read_text().replace('{{styles}}', styles).replace('{{scripts}}', scripts).replace('{{inventory}}', '\n'.join(groups)).replace('{{stage_links}}', ''.join(links)).replace('{{stage_options}}', ''.join(options))
+    result = result.replace('{{motion_inventory}}', motion_rows)
     assert '{{' not in result, 'Unresolved template'
     return result
 

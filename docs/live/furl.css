@@ -176,6 +176,7 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 #furl-app[data-tool=connect] .furl-hit {pointer-events:auto;cursor:grab;}
 #furl-app[data-tool=connect] .furl-hit:hover,.furl-hit:focus-visible,.furl-drop-target {background:color-mix(in srgb,var(--furl-scope) 12%,transparent);box-shadow:0 1px var(--furl-scope);}
 .furl-unplugging {background:color-mix(in srgb,var(--furl-paper) 70%,transparent);}
+.furl-exiting-reference {position:absolute;display:block;pointer-events:none;user-select:none;color:var(--furl-ink);font:14px/22px var(--code-font);white-space:pre;transform-origin:left center;}
 #furl-app[data-tool=rows] .furl-row {cursor:grab;}
 #furl-app[data-tool=rows] .furl-row:hover {background:color-mix(in srgb,var(--furl-scope) 5%,transparent);}
 #furl-app[data-tool=rows] .furl-binding:focus {outline:none;background:color-mix(in srgb,var(--furl-scope) 7%,transparent);}

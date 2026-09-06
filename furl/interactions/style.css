@@ -906,6 +906,38 @@ footer {
   text-decoration: none;
   font: 11px var(--mono);
 }
+.motion-audit {
+  margin: 24px 0;
+  padding: 16px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  scroll-margin-top: 20px;
+}
+.motion-audit > summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+.motion-audit > p {
+  font-size: 12px;
+  color: var(--muted-text);
+}
+#inventory .motion-table {
+  min-width: 650px;
+}
+#inventory .motion-table th[scope="row"] {
+  width: 22%;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+  vertical-align: top;
+}
+#inventory .motion-table td {
+  width: 39%;
+  font-size: 12px;
+}
+#inventory .motion-table td p {
+  margin: 6px 0 0;
+}
 .target-kind {
   display: block;
   color: var(--muted-text);

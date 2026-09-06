@@ -117,7 +117,7 @@
       "study": "working",
       "study_detail": "The word and wire move together. Another factor moves the use; any non-target release unplugs it.",
       "hazel": "working",
-      "hazel_detail": "Free edit moves a variable occurrence to a hole/use or unplugs on a non-target drag release. Source IDs survive movement and Undo.",
+      "hazel_detail": "Free edit moves a variable occurrence to a hole/use or unplugs on a non-target drag release. Source IDs survive movement and Undo. Removal closes the source slot; moves animate both ends, with native text, SVGs and hit regions moving together.",
       "next": "Generalize from variable uses to tokens/forms in C4/C5; do not assume every form has a wire.",
       "demo": "references"
     },
@@ -247,7 +247,7 @@
       "study": "working",
       "study_detail": "Continuous insertion/reordering, slot reversals, word opening, wire momentum/retraction and reduced motion.",
       "hazel": "working",
-      "hazel_detail": "Native identified rows use the study’s 180ms reflow and Slot/Float behavior; cables reuse its spring renderer. Word opening, retraction and reduced motion are ported.",
+      "hazel_detail": "Native rows use 180ms reflow and Slot/Float motion. Reference creation, replacement, removal and movement animate slot changes; cables share the study renderer. See the separate motion audit for row exits, Undo/Redo and projection gaps.",
       "next": "Animated furling and arbitrary-form movement remain V3/C4; compare new projection cases as they are introduced.",
       "demo": "rows"
     },
