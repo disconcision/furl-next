@@ -373,6 +373,116 @@ let tests = (
       },
     ),
     test_case(
+      "row insertion and deletion preserve the active attribute column",
+      `Quick,
+      () => {
+      List.iter(
+        column => {
+          let m = start("let a = 12 in let b = 34 in let c = 56 in a + c");
+          let defs = fst(let_prefix(m.document.segment));
+          let a = List.nth(defs, 0).id;
+          let b = List.nth(defs, 1).id;
+          let c = List.nth(defs, 2).id;
+          let m = at_col(child(b, column), 1, m);
+          let inserted =
+            update(
+              Structure(
+                m.document.segment,
+                "refine",
+                InsertBinding(whole, Some(c)),
+              ),
+              m,
+            );
+          let draft =
+            List.nth(fst(let_prefix(inserted.document.segment)), 2);
+          check(
+            string,
+            "insertion retains pattern/expression",
+            key(child(draft.id, column)),
+            inserted.document.active,
+          );
+          let cleaned =
+            update(
+              Structure(
+                inserted.document.segment,
+                "refine",
+                DeleteBinding(whole, draft.id, true),
+              ),
+              inserted,
+            );
+          check(
+            string,
+            "blank deletion returns to same column",
+            key(child(b, column)),
+            cleaned.document.active,
+          );
+          let deleted =
+            update(
+              Structure(
+                m.document.segment,
+                "free",
+                DeleteBinding(whole, b, false),
+              ),
+              m,
+            );
+          check(
+            string,
+            "populated deletion retains column",
+            key(child(a, column)),
+            deleted.document.active,
+          );
+          let first = at_col(child(a, column), 1, m);
+          let first =
+            update(
+              Structure(
+                first.document.segment,
+                "free",
+                DeleteBinding(whole, a, false),
+              ),
+              first,
+            );
+          check(
+            string,
+            "first-row fallback retains column",
+            key(child(b, column)),
+            first.document.active,
+          );
+          let undone = update(Undo, inserted);
+          check(
+            string,
+            "undo returns to originating column",
+            key(child(b, column)),
+            undone.document.active,
+          );
+          check(
+            string,
+            "redo restores inserted column",
+            inserted.document.active,
+            update(Redo, undone).document.active,
+          );
+          let only = start("let only = 1 in 42");
+          let id = List.hd(fst(let_prefix(only.document.segment))).id;
+          let only = at_col(child(id, column), 0, only);
+          let final =
+            update(
+              Structure(
+                only.document.segment,
+                "free",
+                DeleteBinding(whole, id, false),
+              ),
+              only,
+            );
+          check(
+            bool,
+            "result has an expression-only fallback",
+            true,
+            Option.get(active_cell(final)).root == Sort.Exp,
+          );
+        },
+        [0, 1],
+      )
+    }),
+    test_case(
       "native connections respect lexical identity, holes, types and undo",
       `Quick,
       () => {

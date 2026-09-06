@@ -78,6 +78,7 @@ TEST_URL=http://localhost:8000/live/ node furl/live/test-values.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-menu.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-gestures.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-row-drag.cjs
+TEST_URL=http://localhost:8000/live/ node furl/live/test-column-focus.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-wires.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-opening.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-removal.cjs

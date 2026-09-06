@@ -983,6 +983,13 @@ let prepare_structure = (~policy, command, model): result(prepared, string) => {
       | MoveBinding(scope, _, _)
       | DeleteBinding(scope, _, _) =>
         let (chunks, tail) = binding_chunks(scope, model.document.segment);
+        /* Row creation/deletion retain the editor attribute the user came
+           from. A boundary or row-only focus defaults to the active attribute. */
+        let focus_column =
+          switch (active_cell(model)) {
+          | Some({root: Pat, _}) => 0
+          | _ => 1
+          };
         let contains = id =>
           List.exists(((t: Base.tile, _)) => t.id == id, chunks);
         let insert_at = (before, chunk, chunks) => {
@@ -1010,7 +1017,7 @@ let prepare_structure = (~policy, command, model): result(prepared, string) => {
             );
             (
               insert_at(before, chunk, chunks),
-              Some(child(tile.id, 1)),
+              Some(child(tile.id, focus_column)),
               false,
             );
           | MoveBinding(_, id, before) =>
@@ -1115,7 +1122,7 @@ let prepare_structure = (~policy, command, model): result(prepared, string) => {
               );
             let focus =
               switch (List.nth_opt(changed, max(0, i - 1))) {
-              | Some((t, _)) => child(t.id, 1)
+              | Some((t, _)) => child(t.id, focus_column)
               | None => {
                   ...scope,
                   offset:
@@ -1358,6 +1365,15 @@ let rec update = (action, model) => {
         switch (focus) {
         | Some(target) =>
           let cells = nav_cells(next);
+          /* A projected/hidden declaration may have no visible pattern cell.
+             Only then fall back to that binding's expression. The final result
+             is already an expression target because it has no binding name. */
+          let target =
+            switch (target.location) {
+            | Child(id, 0) when !List.exists(c => c.target == target, cells) =>
+              child(id, 1)
+            | _ => target
+            };
           let dest =
             switch (List.find_opt(c => c.target == target, cells)) {
             | Some(_) as cell => cell
