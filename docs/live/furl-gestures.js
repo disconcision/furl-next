@@ -57,7 +57,9 @@
       positions = null,
       committing = false,
       commitKind = "",
-      opening = null;
+      opening = null,
+      landing = null,
+      landingTimer = 0;
     let blockedClick = false,
       transactionRevision = null,
       lastLayout = "",
@@ -180,7 +182,7 @@
     );
     button("option", "links", "Show binding wires on hover", () => {
       links = !links;
-      wire.clear();
+      updateLink();
       refreshMode();
     });
     button("option", "motion", "Animate row movement and wires", () => {
@@ -339,6 +341,9 @@
               { duration: 210 },
             );
           });
+          landConnection(target);
+        } else {
+          wire.clear();
         }
         opening = null;
       }
@@ -544,6 +549,8 @@
       program.classList.remove("furl-delete-preview", "furl-preview");
     }
     function cancel(retract = true) {
+      clearLanding();
+      opening = null;
       pending = null;
       clearRows();
       drag = null;
@@ -562,6 +569,7 @@
     }
     function beginRow(member, keyboard = false, grab = pointer) {
       activate(null);
+      clearLanding();
       wire.clear();
       const parent = member.parentElement,
         members = [...parent.children].filter((n) =>
@@ -716,6 +724,7 @@
         return;
       }
       activate(null);
+      clearLanding();
       wire.clear();
       const use = hit.dataset.kind === "reference" ? hit : null;
       connection = {
@@ -761,6 +770,59 @@
         anchor: "center",
       });
     }
+    function clearLanding() {
+      clearTimeout(landingTimer);
+      landingTimer = 0;
+      landing = null;
+    }
+    function updateLink() {
+      // A native edit may replace the target hole before its new use is measured.
+      // Keep the last drag curve until finishLayout hands it to that use.
+      if (connection || opening || wire.retracting) return;
+      const hovered =
+        links && inside(rect(program), pointer)
+          ? hitAt(pointer.x, pointer.y)
+          : null;
+      const focused = links
+        ? $(".furl-hit[data-kind=reference]:focus-visible", program)
+        : null;
+      const target =
+        landing || (hovered?.dataset.kind === "reference" ? hovered : focused);
+      const anchor = target?.isConnected
+        ? sourceNode(target.dataset.binder, target)
+        : null;
+      if (anchor)
+        wire.set({
+          source: anchor,
+          target,
+          style: "wire",
+          anchor: "center",
+          kind: landing ? "landing" : "hover",
+        });
+      else wire.clear();
+    }
+    function landConnection(target) {
+      clearLanding();
+      landing = target;
+      // Called after native geometry is synchronized, without resetting masses.
+      const anchor = sourceNode(target.dataset.binder, target);
+      if (anchor)
+        wire.set({
+          source: anchor,
+          target,
+          kind: "landing",
+          style: "wire",
+          anchor: "center",
+        });
+      else wire.clear();
+      landingTimer = setTimeout(
+        () => {
+          clearLanding();
+          updateLink();
+        },
+        !motion || media.matches ? 0 : 220,
+      );
+    }
     function dropConnection(target, clicked = false) {
       const c = connection;
       if (!c) return;
@@ -781,7 +843,13 @@
         return;
       }
       if (target?.dataset.id === c.source) {
-        cancel(false);
+        connection = null;
+        c.use?.classList.remove("furl-unplugging");
+        c.word?.remove();
+        marked().forEach((n) => n.classList.remove("furl-drop-target"));
+        program.classList.remove("furl-preview");
+        landConnection(target);
+        refreshMode();
         return;
       }
       if (target)
@@ -795,10 +863,12 @@
       c.use?.classList.remove("furl-unplugging");
       c.word?.remove();
       if (!target) wire.retract(c.anchor, pointer);
-      else wire.clear();
       marked().forEach((n) => n.classList.remove("furl-drop-target"));
       program.classList.remove("furl-preview");
-      doCommit(command);
+      if (!doCommit(command)) {
+        opening = null;
+        if (target) wire.retract(c.anchor, pointer);
+      }
       refreshMode();
     }
     on(
@@ -892,23 +962,7 @@
           updateConnection();
         } else {
           refreshMode();
-          const hit =
-            links && inside(rect(program), pointer)
-              ? hitAt(pointer.x, pointer.y)
-              : null;
-          const anchor =
-            hit?.dataset.kind === "reference"
-              ? sourceNode(hit.dataset.binder, hit)
-              : null;
-          if (anchor)
-            wire.set({
-              source: anchor,
-              target: hit,
-              style: "wire",
-              anchor: "center",
-              kind: "hover",
-            });
-          else if (!wire.retracting) wire.clear();
+          updateLink();
         }
       },
       true,
@@ -1004,17 +1058,7 @@
           pointer = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
           updateConnection();
         }
-        if (links && e.target.matches?.(".furl-hit[data-kind=reference]")) {
-          const anchor = sourceNode(e.target.dataset.binder, e.target);
-          if (anchor && !connection)
-            wire.set({
-              source: anchor,
-              target: e.target,
-              kind: "hover",
-              style: "wire",
-              anchor: "center",
-            });
-        }
+        if (e.target.matches?.(".furl-hit")) updateLink();
       },
       true,
     );
@@ -1219,6 +1263,7 @@
         zen.destroy();
         ac.abort();
         cancelAnimationFrame(layoutFrame);
+        clearLanding();
         wire.clear();
         gapNodes.forEach((n) => n.remove());
         tools.replaceChildren();

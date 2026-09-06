@@ -200,6 +200,7 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 .furl-wire-layer .reference-wire[data-kind=drag],.furl-wire-layer .reference-wire[data-kind=retract] {position:fixed;width:100vw;height:100vh;}
 .furl-wire-layer .reference-wire path {fill:none;stroke:currentColor;stroke-width:1.15px;stroke-linecap:round;stroke-opacity:.72;}
 .furl-wire-layer .reference-wire[data-kind=hover] path {stroke-opacity:.38;}
+.furl-wire-layer .reference-wire[data-kind=landing] path {stroke-opacity:.5;}
 .furl-wire-layer .reference-wire circle {fill:currentColor;fill-opacity:.75;stroke:none;}
 #furl-app [hidden] {display:none !important;}
 .furl-view-options .furl-gesture-tools {margin-left:auto;border:0;padding:0;background:transparent;}

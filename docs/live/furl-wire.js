@@ -1,4 +1,4 @@
-// A connection renderer for the standalone reference study. Endpoints are
+// Shared connection renderer for the interaction study and native Furl. Endpoints are
 // measured from text, never from the width of a button or editor cell.
 class FurlReferenceWire {
   constructor(program) {
@@ -41,6 +41,7 @@ class FurlReferenceWire {
     cancelAnimationFrame(this.frame);
     this.frame = 0;
     this.lastTime = null;
+    this.origin = null;
     this.svg.style.display = "none";
     this.path.removeAttribute("d");
   }
@@ -88,6 +89,16 @@ class FurlReferenceWire {
     const origin = fixed
       ? { left: 0, top: 0 }
       : this.program.getBoundingClientRect();
+    // Drag/retraction use viewport coordinates; landing/hover use local ones.
+    // Retain the painted curve and its velocity when changing coordinate space.
+    // Otherwise the program's page offset is mistaken for spring displacement.
+    if (this.points && this.origin) {
+      for (const p of this.points) {
+        p.x += this.origin.left - origin.left;
+        p.y += this.origin.top - origin.top;
+      }
+    }
+    this.origin = { left: origin.left, top: origin.top };
     const a = this.anchor(c.source, origin, c.anchor === "first");
     let b = c.target?.isConnected
       ? this.anchor(c.target, origin, c.anchor === "first")
