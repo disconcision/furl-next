@@ -130,3 +130,27 @@ Row copies remain within their owning let scope. They refresh all IDs and rename
 Extraction uses a native source splice above the selected term's own row, replaces the term with a fresh reference, and focuses the new pattern. Checked extraction additionally requires the conservative total fragment and retained bindings. An unresolved variable at the same boundary creates a matching definition with a hole (Refine or Free); existing bound references cannot be captured in checked mode. These adaptations were informed by Hazel's refactoring branch but do not merge that branch or claim its full extraction placement capabilities.
 
 The optional old-Furl presentation bundles Press Start 2P and its OFL license locally. FontSpecimen measures the actual font pitch. Small deterministic glyph offsets/rotations use individual CSS translate/rotate properties, leaving motion's transform channel independent; matching hit markers receive the same offsets. Appearance preference is local browser view state, outside source/history. The Studies menu links the complete local/package collection. New offside and appearance sheets are self-contained standalone sketches, not Hazel evaluators.
+
+
+## Review revision: rail, usage and match layout
+
+The review revision in `parity-round.md` supersedes the initial offside/appearance
+choices. Live usage is native lexical count: unused muted, once normal, repeated
+underlined. Hazel currently exposes only UnusedVar warnings; their backing is
+hidden in Furl while diagnostic totals remain. Native expression roles identify
+operator and callee colors; no lexical-text heuristics or syntax modifications
+are used. The old-Furl palette adds hover, token tiles and fluorescent selection;
+atomic selection shards follow token rotation, while wide selections and holes
+retain their grid envelope. Cosmetic transforms do not own the animation channel.
+
+`furl-match-motion.js` previews actual native branches, using the selected branch
+at the gathered position. The icon and horizontal comb gestures switch the global
+column mode. Pull a nonprimary stem inward to gather columns, or a single fork
+outward to spread them. Escape restores the initial view. Branch views may be
+mounted for preview, but neither source nor Undo changes. Ordinary stem/fork
+clicks retain branch cycling/source toggling. Program example changes reset
+cross-program motion; they do not animate from the former program's tail.
+
+The offside rail remains a separate template-tree sketch with nested hole/term
+targets. Cards are inert syntax, not captured environments; Move and Copy apply
+equally to starter cards and parked pieces. Emoji aliases remain deferred.

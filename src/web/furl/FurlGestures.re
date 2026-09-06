@@ -76,6 +76,17 @@ let markers_uncached = (target, model) => {
   let syntax =
     make_editor(~root=c.editor.editor.root, c.source).editor.syntax;
   let measured = syntax.measured;
+  let callees =
+    Id.Map.fold(
+      (_, info, ids) =>
+        switch (info) {
+        | Language.Info.InfoExp({user_term: {term: Ap(_, fn, _), _}, _}) =>
+          Id.Set.add(Language.Exp.rep_id(fn), ids)
+        | _ => ids
+        },
+      model.statics.info_map,
+      Id.Set.empty,
+    );
   Id.Map.fold(
     (id, info, acc) => {
       let item =
@@ -179,6 +190,29 @@ let markers_uncached = (target, model) => {
                       ),
                     ),
                     ("uses", `Int(count)),
+                    (
+                      "role",
+                      `String(
+                        Id.Set.mem(id, callees)
+                          ? "callee"
+                          : (
+                            switch (info) {
+                            | Language.Info.InfoExp({
+                                user_term:
+                                  {
+                                    term:
+                                      BinOp(_) | UnOp(_) | Cons(_) |
+                                      ListConcat(_),
+                                    _,
+                                  },
+                                _,
+                              }) => "operator"
+                            | InfoExp({user_term: {term: Ap(_), _}, _}) => "application"
+                            | _ => ""
+                            }
+                          ),
+                      ),
+                    ),
                     ("regions", `List(regions)),
                     (
                       "binder",
@@ -216,6 +250,7 @@ let markers = (target, model) => {
 let metadata = (model, metrics, revision) =>
   `Assoc([
     ("revision", `Int(revision)),
+    ("example", `Int(model.example)),
     (
       "view",
       `List([

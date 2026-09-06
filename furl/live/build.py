@@ -29,7 +29,7 @@ def main():
         shutil.copyfile(WWW / 'furl.css', stage / 'furl.css')
         shutil.copyfile(WWW / 'furl-gestures.js', stage / 'furl-gestures.js')
         shutil.copyfile(WWW / 'furl-zen.js', stage / 'furl-zen.js')
-        for name in ('furl-appearance.js', 'furl-playful.css'):
+        for name in ('furl-appearance.js', 'furl-playful.css', 'furl-match-motion.js'):
             shutil.copyfile(WWW / name, stage / name)
         shutil.copytree(WWW / 'furl-fonts', stage / 'furl-fonts')
         for name in ('offside', 'appearance'):

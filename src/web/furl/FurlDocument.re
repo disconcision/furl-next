@@ -1608,6 +1608,13 @@ let prepare_structure = (~policy, command, model): result(prepared, string) => {
             Some(name)
           | _ => None
           };
+        switch (info.user_term.term) {
+        | Var(_) when unresolved == None =>
+          refuse(
+            "This is already a bound name; extracting it would only create an alias.",
+          )
+        | _ => ()
+        };
         if (unresolved != None && policy == "refactor") {
           refuse("Defining an unresolved name needs Refine or Free edit.");
         };

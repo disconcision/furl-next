@@ -6,7 +6,7 @@ const {chromium}=require('playwright');
 const b=await chromium.launch({channel:'chrome',headless:true});
 const p=await b.newPage({viewport:{width:1280,height:900},colorScheme:'dark'});
 const errors=[];p.on('pageerror',e=>errors.push(e.message));
-const settle=()=>p.waitForTimeout(200);
+const settle=()=>p.waitForTimeout(300);
 await p.goto(process.env.TEST_URL||'http://127.0.0.1:8766/furl.html');await p.waitForTimeout(500);
 await p.getByRole('combobox',{name:'Example'}).selectOption('3');await p.waitForSelector('.furl-match');await settle();
 assert.equal(await p.locator('.furl-context').count(),0);
@@ -48,19 +48,19 @@ await p.getByRole('button',{name:'Values',exact:true}).click();await settle();aw
 // Removing the call/branch rows places the match directly below parameters.
 const junction=await p.locator('.furl-function').evaluate(e=>({bottom:e.querySelector('.furl-parameters').getBoundingClientRect().bottom,top:e.querySelector('.furl-match').getBoundingClientRect().top,fork:e.querySelector('[data-part=fork]').getBoundingClientRect().top,stem:e.querySelector('.furl-case-comb [data-part=stem]').getBoundingClientRect().top}));
 assert.ok(Math.abs(junction.bottom-junction.top)<.1);assert.ok(Math.abs(junction.fork-junction.top)<.1);assert.ok(Math.abs(junction.stem-junction.top)<.1);
-await p.getByRole('button',{name:'Show one match branch at a time'}).click();await settle();
+await p.getByRole('button',{name:'Collapse matches to one branch'}).click();await settle();
 let branch=await p.locator('.furl-branch').getAttribute('data-branch');
 const stem=()=>p.getByRole('button',{name:'Next match branch (Shift-click for previous)',exact:true});
 await stem().click();await settle();assert.notEqual(await p.locator('.furl-branch').getAttribute('data-branch'),branch);
 await stem().click({modifiers:['Shift']});await settle();assert.equal(await p.locator('.furl-branch').getAttribute('data-branch'),branch);
 await p.locator('.furl-branch > [data-row^="branch-"] .furl-expression .code-editor').click();await settle();await p.keyboard.press('Control+Alt+ArrowRight');await settle();assert.notEqual(await p.locator('.furl-branch').getAttribute('data-branch'),branch);
-await p.getByRole('button',{name:'Unfurl match comb to Hazel code',exact:true}).click();await settle();assert.equal(await p.locator('.furl-match').count(),0);
+await p.getByRole('button',{name:'Click to unfurl match to Hazel code; pull right to expand columns',exact:true}).click();await settle();assert.equal(await p.locator('.furl-match').count(),0);
 await p.getByRole('button',{name:'Furl all lets, functions, and matches'}).click();await settle();assert.equal(await p.locator('.furl-match').count(),1);
 // Small screen: inspectors scroll with the grid and add no document overflow.
 await p.setViewportSize({width:390,height:844});await paramValue.click();await settle();assert.equal(await p.locator('.furl-call-arrow').count(),2);
 assert.ok(await p.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
 await p.setViewportSize({width:1280,height:900});
-await p.getByRole('button',{name:'Show all match branches as columns'}).click();await settle();
+await p.getByRole('button',{name:'Expand matches to all columns'}).click();await settle();
 // Long samples leave room for both arrows before the neighboring comb stack.
 const finalExpression=p.locator('.furl-row').last().locator('.code-editor');
 async function paste(editor,text){await editor.click();await settle();await p.keyboard.press('Meta+a');await settle();await p.evaluate(text=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{readText:()=>Promise.resolve(text)}}),text);await p.keyboard.press('Meta+v');await settle();}

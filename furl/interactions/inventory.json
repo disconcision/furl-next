@@ -347,7 +347,7 @@
       "origin": "Current Furl",
       "mouse": "Current baseline: comb toggles the view. Proposal: compare selecting the form then expanding, with no additional code row.",
       "keyboard": "Focusable view action with the same transition; preserve source selection and caret through expansion.",
-      "rule": "The existing live view switch is complete as a baseline. This new animation/affordance experiment is not. Furl/unfurl preserves source/history; explode/implode is E5.",
+      "rule": "Match columns/single-branch motion is live, including cancellation and reduced motion. Source/projection furling animation remains incomplete. Explode/implode is E5.",
       "source": "furl/design/architecture.md",
       "url": "",
       "id": "V3",
@@ -356,9 +356,9 @@
       "semantic": "View only",
       "study": "todo",
       "study_detail": "No interaction implemented in this document.",
-      "hazel": "todo",
-      "hazel_detail": "Not wired into Hazel-backed Furl.",
-      "next": "Compare comb click with one alternative trigger and continuous expansion on a let, function and match."
+      "hazel": "partial",
+      "hazel_detail": "Match column layout has a live icon and a horizontal comb drag: pull a secondary stem inward or the single fork outward. Native branches gather/spread continuously; Escape restores the view. Source/history stay unchanged. Let/function furling motion remains open.",
+      "next": "Evaluate the match layout gesture; then explore continuous source-to-projection furling for lets, functions and matches."
     },
     {
       "action": "Extract an expression term into a binding",
@@ -375,7 +375,7 @@
       "study": "storyboard",
       "study_detail": "Preset before/after arithmetic extraction only; the drag and general transformation are not implemented.",
       "hazel": "working",
-      "hazel_detail": "Native term extraction, including literals and compound expressions. Scoped source splice adapted to the shared document; no full refactorings-branch merge.",
+      "hazel_detail": "Native term extraction for literals and compound expressions; extracting an already-bound name is refused because it only creates an alias. Unresolved-name definition remains available. Scoped source splice; no full refactorings-branch merge.",
       "next": "Broaden placement and totality reasoning; source transformation is distinct from furling existing code.",
       "story": "extract"
     },
@@ -633,10 +633,10 @@
       "target": "Previously removed source",
       "semantic": "Recover",
       "study": "todo",
-      "study_detail": "The Offside study has rail, shelf and patch arrangements; park/restore rows or terms, join row cards, reorder cards and copy from a palette. It has no native lexical context.",
+      "study_detail": "The revised Offside rail parks/restores rows and whole terms, fills nested holes, replaces subterms, reorders cards, scrolls and collapses. Move/Copy share the same starter and parked cards; interiors are inert syntax.",
       "hazel": "todo",
       "hazel_detail": "Not wired into Hazel-backed Furl.",
-      "next": "Choose retained binding metadata, policy checks and card persistence before integrating it with Hazel."
+      "next": "Integrate syntax-only cards with native source transactions and destination policy checks; decide persistence. Lexical binding metadata is deferred."
     },
     {
       "action": "Add types, environments and trace columns",

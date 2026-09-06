@@ -251,6 +251,29 @@ let tests = (
           source(extract),
           source(update(Undo, extracted)),
         );
+        let alias_model = start("let a = 2 in let b = a + 1 in b");
+        let alias_before =
+          List.nth(fst(let_prefix(alias_model.document.segment)), 1).id;
+        List.iter(
+          policy =>
+            check(
+              bool,
+              "bound-variable extraction is refused in every policy",
+              true,
+              Result.is_error(
+                prepare_structure(
+                  ~policy,
+                  ExtractTerm(
+                    whole,
+                    Some(alias_before),
+                    term_id("a", alias_model),
+                  ),
+                  alias_model,
+                ),
+              ),
+            ),
+          ["refactor", "refine", "free"],
+        );
         let unresolved = start("let a = missing + 2 in a");
         let before =
           List.hd(fst(let_prefix(unresolved.document.segment))).id;

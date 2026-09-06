@@ -48,6 +48,7 @@
       style = "slot",
       links = true,
       motion = true;
+    const matchMotion = window.createFurlMatchMotion(root, () => motion);
     let held = false,
       pointer = { x: 0, y: 0 },
       activeCell = null,
@@ -540,7 +541,8 @@
       positions = null;
       syncMarkers();
       syncBoundaries();
-      appearance.paint();
+      appearance.paint(data);
+      matchMotion.layout();
       if (before) {
         // All VDOM changes have finished before any final geometry is measured.
         const nodes = $$(".furl-binding,.furl-tail", program);
@@ -611,6 +613,7 @@
             key: m.key,
             id: m.id,
             uses: m.uses,
+            role: m.role,
             kind: m.kind,
             binder: m.binder,
             name: m.name,
@@ -2124,9 +2127,13 @@
       update(raw, nextQuery, nextDispatch) {
         query = nextQuery;
         dispatch = nextDispatch;
-        if (raw === lastRaw) return;
+        if (raw === lastRaw) {
+          appearance.paint(data);
+          return;
+        }
         lastRaw = raw;
         const next = JSON.parse(raw);
+        const changedExample = data && next.example !== data.example;
         const layout =
           JSON.stringify(next.view) + next.cells.map((c) => c.target).join("|");
         if (
@@ -2135,7 +2142,12 @@
         ) {
           if (!committing) {
             cancel(false);
-            positions = capture();
+            positions = changedExample || matchMotion.active ? null : capture();
+            if (changedExample) matchMotion.reset();
+            if (changedExample)
+              program
+                .getAnimations({ subtree: true })
+                .forEach((a) => a.cancel());
           } else {
             clearRows(false);
             drag = null;
@@ -2143,12 +2155,15 @@
           }
         }
         data = next;
+        if (matchMotion.active) matchMotion.layout();
         lastLayout = layout;
         if (!layoutFrame) layoutFrame = requestAnimationFrame(finishLayout);
       },
       destroy() {
         destroyed = true;
         zen.destroy();
+        appearance.destroy();
+        matchMotion.destroy();
         clearTerm();
         ac.abort();
         cancelAnimationFrame(layoutFrame);

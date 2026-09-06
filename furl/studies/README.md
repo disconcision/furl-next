@@ -1,5 +1,13 @@
-# Design records
+# Furl design sheets
 
-`offside.html` explores retaining rows/terms outside the program and copying term templates. `appearance.html` explores aliases and usage styling, alongside the live optional theme. Both are standalone DOM sketches, not Hazel editors. Preserve them as process records rather than promising perpetual parity with the live implementation.
+`offside.html` / `offside.js`: a standalone syntax-tree rail sketch. Move/Copy,
+ordered parking, nested hole/term drops, scroll/collapse and Undo. Cards are inert;
+no Hazel evaluator, typechecking or arbitrary text editor. Earlier shelf/patch
+arrangements remain in Git history.
 
-Run `python3 furl/studies/build.py` and `--check`. It embeds the CSS, JS and licensed font into `docs/offside.html` and `docs/appearance.html`, and generates versions with local editor links under `src/web/www/`.
+`appearance.html` / `appearance.js`: deferred emoji aliases with circle swatches,
+usage comparisons (simple scheme chosen), theme preview and top-level notes.
+
+Run `python3 furl/studies/build.py` after reference and interaction builders, then
+`--check`. It embeds the pixel font/license and generates root/local copies.
+`node furl/studies/test.cjs` verifies the standalone interaction contracts.

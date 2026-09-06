@@ -13,3 +13,24 @@
 :root[data-furl-theme=playful] .furl-wordmark span:nth-child(4){color:#b7792a;background:#d6ebd5;border-radius:0 3px 12px 0;translate:0 1px;text-shadow:2px 0 #9dbdeb}
 :root[data-furl-theme=playful] #furl-app .furl-powered img{filter:brightness(.6)}
 :root[data-furl-theme=playful] #furl-app[data-zen=true] .furl-program{box-shadow:none}
+/* Closer to the original palette and its intentionally exuberant highlights. */
+:root[data-furl-theme=playful]{--furl-paper:#e8e2ff;--furl-ink:#194b57;--furl-binding:#f56197;--furl-value:#2cd2c4;--furl-selection:#e4ff00;--furl-quiet:#77739c;--shard-caret-pat:#e1d8fd;--empty-hole-fill:#443e54;--empty-hole-stroke:#a9a1cd;--shadow-selected:#9799f6}
+:root[data-furl-theme=playful] #furl-app .furl-value,:root[data-furl-theme=playful] #furl-app .furl-value *{color:var(--furl-value)}
+:root[data-furl-theme=playful] #furl-app .code-text .token[data-furl-uses="0"]{color:#b0b2e3;text-shadow:4px 2px #f3f3f3}
+:root[data-furl-theme=playful] #furl-app .token[data-furl-role=operator],:root[data-furl-theme=playful] #furl-app .token[data-furl-role=callee],:root[data-furl-theme=playful] #furl-app .token[data-furl-role=application]{color:#83b8c9;background:#efe9fe;box-shadow:2px 2px #d5cfe3;outline:2px solid #efe9fe;border-radius:4px 4px 4px 0}
+:root[data-furl-theme=playful] #furl-app .code-text .token:is(:hover,.furl-hot){color:#00fbf1;text-shadow:1px 2px #1ecdbb;scale:1.13}
+:root[data-furl-theme=playful] #furl-app .code-deco svg.shard{translate:var(--furl-jx,0px) var(--furl-jy,0px);rotate:var(--furl-jr,0deg);transform-box:fill-box;transform-origin:center}
+:root[data-furl-theme=playful] #furl-app svg.shard:is(.selected,.selected-expanded){filter:drop-shadow(6px 3px 0 #9799f6);rotate:calc(var(--furl-jr,0deg) - 2deg)}
+:root[data-furl-theme=playful] #furl-app svg.shard:is(.selected,.selected-expanded)>path{fill:#e4ff00;stroke:#e4ff00;stroke-width:1.4px}
+:root[data-furl-theme=playful] #furl-app .code-text .token[data-furl-selected=true]{color:#443e54;text-shadow:none;rotate:calc(var(--furl-jr,0deg) - 2deg)}
+:root[data-furl-theme=playful] #furl-app .empty-hole path{stroke-width:2px}
+:root[data-furl-theme=playful] #furl-app .code-text .explicit-hole{rotate:none;translate:none}
+:root[data-furl-theme=playful] .furl-wordmark span:nth-child(1){color:#9699f6;background:#e1d8fd;text-shadow:3px 0 #7d346b}
+:root[data-furl-theme=playful] .furl-wordmark span:nth-child(2){color:#f56197;text-shadow:3px 0 #00ffee}
+:root[data-furl-theme=playful] .furl-wordmark span:nth-child(3){color:#2cd2c4;text-shadow:3px 0 #00ffee}
+:root[data-furl-theme=playful] .furl-wordmark span:hover{text-shadow:3px 0 #fe00be;box-shadow:6px 0 #edff00;scale:1.13}
+@media(prefers-reduced-motion:reduce){:root[data-furl-theme=playful] #furl-app .code-text .token:is(:hover,.furl-hot){scale:1}}
+
+:root[data-furl-theme=playful] #furl-app .code-deco svg.shard[data-furl-upright=true]{rotate:none;translate:none}
+:root[data-furl-theme=playful] #furl-app .code-text .token[data-furl-selected=true]{background:transparent;outline:none;box-shadow:none}
+:root[data-furl-theme=playful] #furl-app .furl-selected-hole>path{fill:#443e54;stroke:#e4ff00;stroke-width:2px}

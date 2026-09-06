@@ -64,6 +64,25 @@
     }
     return text;
   };
+  function emoji(text) {
+    const span = document.createElement("span");
+    span.className = "emoji-group";
+    for (const part of new Intl.Segmenter(undefined, {
+      granularity: "grapheme",
+    }).segment(text)) {
+      const badge = document.createElement("span");
+      badge.className = "emoji-badge";
+      badge.textContent = part.segment;
+      span.append(badge);
+    }
+    return span;
+  }
+  document.body.dataset.emojiCircles = "true";
+  document.body.dataset.emojiColor = "lilac";
+  $("#emoji-circles").onchange = (e) =>
+    (document.body.dataset.emojiCircles = String(e.target.checked));
+  $("#emoji-color").onchange = (e) =>
+    (document.body.dataset.emojiColor = e.target.value);
   function render() {
     $("#alias-program").replaceChildren(
       ...names.map((name, i) => {
@@ -72,7 +91,8 @@
         const binding = document.createElement("span");
         binding.className = "alias";
         binding.title = `${name} · ${alias(i)}`;
-        binding.textContent = mode === "words" ? name : alias(i);
+        if (mode === "words") binding.textContent = name;
+        else binding.append(emoji(alias(i)));
         if (mode === "both") {
           const word = document.createElement("small");
           word.textContent = name;
@@ -80,14 +100,11 @@
         }
         const exp = document.createElement("span");
         exp.className = "syntax";
-        exp.textContent =
-          i === 0
-            ? "6"
-            : i === 1
-              ? "4"
-              : i === 2
-                ? `${mode === "words" ? "width" : alias(0)} * ${mode === "words" ? "height" : alias(1)}`
-                : "□";
+        if (i === 2 && mode !== "words")
+          exp.append(emoji(alias(0)), " * ", emoji(alias(1)));
+        else
+          exp.textContent =
+            i === 0 ? "6" : i === 1 ? "4" : i === 2 ? "width * height" : "□";
         const value = document.createElement("span");
         value.className = "value";
         value.textContent = ["6", "4", "24"][i] || "□";
@@ -99,7 +116,7 @@
   $("#symbols").replaceChildren(
     ...symbols.map((s) => {
       const n = document.createElement("span");
-      n.textContent = s;
+      n.append(emoji(s));
       return n;
     }),
   );
@@ -135,11 +152,12 @@
     $("#name-feedback").textContent = "Starting names restored.";
   };
   const legends = {
+    simple:
+      "Chosen: unused is muted, used once is normal, used more than once is underlined. The underline indicates reuse, not an exact count.",
     ink: "Unused: quiet ink. Once: binding blue. Several: scope purple. No additional marks, but color alone carries the distinction.",
     underline:
       "Unused: quiet ink. Once: faint underline. Several: stronger underline. A small addition to the existing text, with no column-width change.",
     dot: "Unused: hollow dot. Once: one dot. Several: two dots. More explicit, though it adds texture beside short names.",
-    tick: "Unused: faint left tick. Once: blue tick. Several: thicker purple tick. Readable at a glance, but it competes with indentation and comb marks.",
   };
   choices("#usage-controls", "usage", (u) => {
     $("#usage-lab").dataset.usage = u;
@@ -150,6 +168,6 @@
     "look",
     (look) => ($("#appearance-preview").dataset.look = look),
   );
-  $("#usage-legend").textContent = legends.ink;
+  $("#usage-legend").textContent = legends.simple;
   render();
 })();

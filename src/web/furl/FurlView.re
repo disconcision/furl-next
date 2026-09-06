@@ -431,7 +431,7 @@ let view =
             ),
             Attr.title(
               kind == "match" && !model.match_columns
-                ? "Click stem: next branch. Shift-click: previous. Click horizontal fork: Hazel code."
+                ? "Click stem: next branch. Shift-click: previous. Pull fork right: all columns. Click fork: Hazel code."
                 : Haz3lcore.Printer.of_segment(
                     ~indent=" ",
                     read(target, model.document.segment),
@@ -603,6 +603,10 @@ let view =
           ),
           Attr.create("data-match", key(target)),
           Attr.create(
+            "data-selected-branch",
+            string_of_int(selected_branch(target, branches, model)),
+          ),
+          Attr.create(
             "data-mode",
             model.match_columns ? "columns" : "single",
           ),
@@ -651,7 +655,7 @@ let view =
                       ),
                       Attr.create(
                         "aria-label",
-                        "Unfurl match comb to Hazel code",
+                        "Click to unfurl match to Hazel code; pull right to expand columns",
                       ),
                       Attr.on_click(_ => inject(ToggleScope(key(target)))),
                     ],
@@ -959,28 +963,52 @@ let view =
           Node.div(
             ~attrs=[Attr.class_("furl-view-options")],
             [
-              Node.text("Matches "),
-              button(
+              Node.button(
                 ~attrs=[
+                  Attr.type_("button"),
+                  Attr.class_("furl-match-layout-toggle"),
                   Attr.create(
                     "aria-pressed",
                     string_of_bool(model.match_columns),
                   ),
-                ],
-                ~label="Show all match branches as columns",
-                inject(MatchMode(true)),
-                "All columns",
-              ),
-              button(
-                ~attrs=[
+                  Attr.title(
+                    model.match_columns
+                      ? "Collapse matches to one branch"
+                      : "Expand matches to all columns",
+                  ),
                   Attr.create(
-                    "aria-pressed",
-                    string_of_bool(!model.match_columns),
+                    "aria-label",
+                    model.match_columns
+                      ? "Collapse matches to one branch"
+                      : "Expand matches to all columns",
+                  ),
+                  Attr.on_click(_ =>
+                    inject(MatchMode(!model.match_columns))
                   ),
                 ],
-                ~label="Show one match branch at a time",
-                inject(MatchMode(false)),
-                "One branch",
+                [
+                  Node.create_svg(
+                    "svg",
+                    ~attrs=[
+                      Attr.create("viewBox", "0 0 24 24"),
+                      Attr.create("aria-hidden", "true"),
+                    ],
+                    [
+                      Node.create_svg(
+                        "path",
+                        ~attrs=[
+                          Attr.create(
+                            "d",
+                            model.match_columns
+                              ? "M3 5h5v14H3zM10 5h5v14h-5zM17 5h4v14h-4z"
+                              : "M3 5h7v14H3zM14 8l4 4-4 4M12 12h9",
+                          ),
+                        ],
+                        [],
+                      ),
+                    ],
+                  ),
+                ],
               ),
               Node.div(~attrs=[Attr.class_("furl-gesture-tools")], []),
             ],
@@ -1054,7 +1082,7 @@ let view =
             ~attrs=[Attr.class_("furl-help")],
             [
               Node.text(
-                "In one-branch mode, click the match stem to cycle branches (Shift-click goes back); its horizontal fork reveals code. Ctrl+Alt+← → switches the focused match. Select a live value to reveal call arrows; ← → steps through recorded calls, Escape returns to code. Blank values mark paths not evaluated in that call.",
+                "Pull a secondary match stem left to gather columns; pull the single fork right to spread them. Escape cancels. Click a single stem to cycle branches (Shift-click goes back); click the fork for code. Ctrl+Alt+← → switches the focused match. Select a live value to reveal call arrows; ← → steps through recorded calls, Escape returns to code. Blank values mark paths not evaluated in that call.",
               ),
             ],
           ),
