@@ -311,34 +311,49 @@
               (n) => !opening.previous.includes(n.dataset.id),
             )[0];
         if (target) {
-          // The native source supplies the new word; reveal it and shift following tokens.
+          // CodeFlip's real-leaf approach, scoped to the affected native cell.
+          // Include SVG grout, comments, hit regions and the word's backing;
+          // whitespace has no painted leaf. Measure before starting any tween.
           const cell = target.closest("[data-cell]"),
-            r = rect(target);
-          const tokens = $$(".token", cell).filter(
-            (n) =>
-              rect(n).left >= r.left - 0.5 &&
-              Math.abs(rect(n).top - r.top) < data.lineHeight / 2,
-          );
-          tokens.forEach((n) => {
-            const b = rect(n);
+            r = rect(target),
+            delta = r.width - opening.width;
+          const leaves = $$(
+            ".code-text .token,.code-text .comment,.code-text .in-unparsed-buffer,.code-text .empty-hole,.furl-hit,.code-deco .indication svg,.code-deco .selects svg",
+            cell,
+          )
+            .map((n) => ({ n, b: rect(n) }))
+            .filter(
+              ({ b }) =>
+                b.left >= r.left - 0.5 &&
+                Math.abs((b.top + b.bottom - r.top - r.bottom) / 2) <
+                  data.lineHeight / 2,
+            );
+          leaves.forEach(({ n, b }) => {
+            const grows = b.left < r.right - 0.5;
+            // A decoration spanning beyond the replaced word cannot be scaled
+            // as though it were just that word.
+            if (grows && b.right > r.right + 0.5) return;
             animate(
               n,
-              b.left < r.right
+              grows
                 ? [
                     {
                       opacity: 0,
-                      transform: "scaleX(.15)",
-                      transformOrigin: "left",
+                      transform: `scaleX(${opening.width / r.width})`,
+                      transformOrigin: "left center",
                     },
-                    { opacity: 1, transform: "none" },
+                    {
+                      opacity: 1,
+                      transform: "none",
+                      transformOrigin: "left center",
+                    },
                   ]
                 : [
                     {
-                      transform: `translateX(${-Math.max(0, r.width - data.pitch)}px)`,
+                      transform: `translateX(${-delta}px)`,
                     },
                     { transform: "none" },
                   ],
-              { duration: 210 },
             );
           });
           landConnection(target);
@@ -858,6 +873,7 @@
           source: c.source,
           previous: marked().map((n) => n.dataset.id),
           cell: target.closest("[data-cell]").dataset.cell,
+          width: rect(target).width,
         };
       connection = null;
       c.use?.classList.remove("furl-unplugging");

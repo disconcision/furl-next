@@ -69,6 +69,9 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 #main.furl-main .code-editor {padding:0;min-height:22px;display:block;min-width:0;width:max-content;max-width:none;outline:none;-webkit-user-select:none;user-select:none;}
 #main.furl-main .code-container {padding:0;min-height:22px;}
 #main.furl-main .code {font:14px/22px var(--code-font);}
+/* Ported from refactorings' CodeFlip support (7dbd77039d): animate real
+   single-line code leaves. Transforms have no painted effect on inline spans. */
+#main.furl-main .code .token,#main.furl-main .code .comment,#main.furl-main .code .in-unparsed-buffer {display:inline-block;}
 #main.furl-main .token.keyword,#main.furl-main .token.poly {font-weight:400;}
 #main.furl-main .token.keyword {color:var(--furl-scope);}
 #furl-app #caret.blink {animation:none;scroll-margin:1ch;}
