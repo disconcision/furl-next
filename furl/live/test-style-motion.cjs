@@ -140,6 +140,8 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-style-motion-"));
       .getByRole("button", { name: "Furl all lets, functions, and matches" })
       .click();
     await settle();
+    await p.locator(".furl-row").last().locator(".code-editor").click();
+    await settle();
     const unused = p
       .locator('.token[data-furl-uses="0"]')
       .filter({ hasText: "unused" });
@@ -163,6 +165,14 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-style-motion-"));
     );
     await p.locator(".furl-row").last().locator(".code-editor").click();
     await settle();
+    assert.equal(
+      await p
+        .locator("#active-code-editor .code-deco .shard.indicated path")
+        .first()
+        .evaluate((n) => getComputedStyle(n).fill),
+      "rgb(228, 255, 0)",
+      "caret indication also uses the fluorescent shard",
+    );
     await p.keyboard.press("Meta+a");
     await settle();
     await p.screenshot({ path: path.join(output, "playful-selection.png") });

@@ -61,7 +61,10 @@ window.createFurlAppearance = (root) => {
             Math.abs(parseFloat(n.style.left) - x) < data.pitch / 2 &&
             Math.abs(parseFloat(n.style.top) - y) < data.lineHeight / 2,
         );
-        const selected = tile.matches(".selected,.selected-expanded");
+        const selected =
+          tile.matches(".selected,.selected-expanded") ||
+          (tile.classList.contains("indicated") &&
+            tile.closest(".code-editor")?.id === "active-code-editor");
         const upright =
           !m ||
           m.dataset.kind === "hole" ||
