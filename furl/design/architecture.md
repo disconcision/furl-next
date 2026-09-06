@@ -80,6 +80,33 @@ Insertion and deletion retain the active attribute column: pattern to pattern, e
 
 Row selection is singular, not an arbitrary multi-selection. Picking `border` carries the entire defining subtree, including `twice`; picking `twice` carries only its binding. Hover highlights precisely that subtree and accessible names include its display-row count. Targets resolve within their own rendered ancestry, so a match echo cannot pick an unrelated instance. Moving a nested binding beyond its owner reports the missing scope-changing operation instead of silently clamping to its current slot. `test-row-drag.cjs` samples painted positions at controlled drag frames, reversal velocity, mid-flight release, tall-definition pickup, nested policy checks, retained values and scope feedback.
 
+## Startup appearance and preferences
+
+`furl-preferences.js` runs synchronously before the page styles and native bundle.
+It validates a small `furl.preferences.v1` localStorage record and migrates the
+older `furl.appearance` choice. The loading page can therefore use the selected
+appearance and animation preference immediately, without waiting for Hazel or
+an asynchronous database. Plain Furl follows the system light/dark choice; the
+optional OG presentation retains its light palette. Blocked or malformed storage
+falls back to usable in-memory preferences.
+
+The loader and playful header share `furl-logo.css`, based on old Furl's four
+independent title tiles, colors, offsets and hover skew/scale/shadows. The loader
+keeps the tall original silhouette and rotates once per 1.6 seconds while the
+hover states cycle F–U–R–L–R–U at 180ms per letter. Its dark variant uses muted
+tile backgrounds with the same bright lettering. Reduced motion or the saved
+animation-off setting leaves a static wordmark. Native mounting replaces the
+placeholder; there is no minimum wait or artificial loading delay.
+
+Display toggles, caret tone and match-column mode persist through FurlApp; the
+input adapter persists the selected tool, policy, row-motion variant, hover wires
+and animation choice. Both merge through the same preference store. These are
+presentation settings, separate from the per-example structured programs and
+their Undo history. Temporary modifier modes, selection, previews and Zen do not
+persist. `furl/live/test-loading.cjs` checks the pre-native loader, simulated and
+real letter hover, both color schemes, small screens, reduced motion, native
+control restoration and unavailable/corrupt storage.
+
 ## Zen recording view
 
 `furl-zen.js` owns transient presentation state alongside the gesture adapter. F9 or the corner-brackets tool switches to a borderless program anchored near the upper left with fixed 20ch top and left margins, reduced on small screens. Header, example/view controls, inspector and help are hidden. The existing gesture toolbar becomes a fixed top dock: the top 24px reveals it, and leaving the dock hides it after 350ms. Shift+F9 reveals/focuses the dock for keyboard access; Escape dismisses it without leaving Zen. Hidden controls are inert and excluded from accessibility navigation. Tool changes restore row/code focus according to the chosen primacy.

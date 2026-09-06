@@ -1,16 +1,9 @@
-@font-face{font-family:Furl Pixel;src:url(furl-fonts/PressStart2P-Regular.ttf) format('truetype');font-weight:400;font-style:normal;font-display:swap}
 :root[data-furl-theme=playful]{color-scheme:light;--code-font:'Furl Pixel',monospace;--furl-page:#e8e2ff;--furl-paper:#eee8fd;--furl-chrome:#e1d8f5;--furl-ink:#304455;--furl-quiet:#666180;--furl-line:#c3b9dc;--furl-binding:#af356d;--furl-scope:#7961a7;--furl-value:#147a76;--furl-strip:#dbd1ed;--furl-selection:#d2c5e5;--furl-violet:#7644bb;--furl-coral:#b63763;--furl-teal:#087b78;--warning-hole-fill:#e0d6e9;--warning-hole-stroke:#84709b;--error-hole-fill:#efd0e0;--error-hole-stroke:#b63763;--shard-caret-pat:#e0d7ec;--furl-indent:#e2d9f2}
 :root[data-furl-theme=playful] body{background-image:radial-gradient(#b887c355 .65px,transparent .8px);background-size:22px 22px}
 :root[data-furl-theme=playful] .furl-program{box-shadow:3px 4px 0 #b7a8d13b}
 :root[data-furl-theme=playful] .code-text .token,:root[data-furl-theme=playful] .furl-value .token,:root[data-furl-theme=playful] .furl-hit{translate:var(--furl-jx,0px) var(--furl-jy,0px);rotate:var(--furl-jr,0deg)}
 :root[data-furl-theme=playful] .code-text .token{ text-shadow:1px 1px #fff9}
 :root[data-furl-theme=playful] .furl-value .token{text-shadow:1px 1px #c9f5e8}
-:root[data-furl-theme=playful] .furl-wordmark{display:flex;font:25px/1.15 'Furl Pixel',monospace;transform:skew(-8deg,-2deg);letter-spacing:-2px;padding:6px 0}
-:root[data-furl-theme=playful] .furl-wordmark span{padding:4px 1px;box-shadow:2px 3px #bfb0e2}
-:root[data-furl-theme=playful] .furl-wordmark span:nth-child(1){color:#807cdb;background:#ded4fb;border-radius:10px 0 0 4px;text-shadow:2px 0 #df9bc9}
-:root[data-furl-theme=playful] .furl-wordmark span:nth-child(2){color:#d04c8b;background:#d3dcff;translate:0 3px;rotate:3deg;text-shadow:2px 0 #9be7e1}
-:root[data-furl-theme=playful] .furl-wordmark span:nth-child(3){color:#249e99;background:#f3d6f1;translate:0 -2px;rotate:-4deg;text-shadow:2px 0 #92e3e3}
-:root[data-furl-theme=playful] .furl-wordmark span:nth-child(4){color:#b7792a;background:#d6ebd5;border-radius:0 3px 12px 0;translate:0 1px;text-shadow:2px 0 #9dbdeb}
 :root[data-furl-theme=playful] #furl-app .furl-powered img{filter:brightness(.6)}
 :root[data-furl-theme=playful] #furl-app[data-zen=true] .furl-program{box-shadow:none}
 /* Closer to the original palette and its intentionally exuberant highlights. */
@@ -25,10 +18,6 @@
 :root[data-furl-theme=playful] #furl-app .code-text .token[data-furl-selected=true]{color:#443e54;text-shadow:none;rotate:calc(var(--furl-jr,0deg) - 2deg)}
 :root[data-furl-theme=playful] #furl-app .empty-hole path{stroke-width:2px}
 :root[data-furl-theme=playful] #furl-app .code-text .explicit-hole{rotate:none;translate:none}
-:root[data-furl-theme=playful] .furl-wordmark span:nth-child(1){color:#9699f6;background:#e1d8fd;text-shadow:3px 0 #7d346b}
-:root[data-furl-theme=playful] .furl-wordmark span:nth-child(2){color:#f56197;text-shadow:3px 0 #00ffee}
-:root[data-furl-theme=playful] .furl-wordmark span:nth-child(3){color:#2cd2c4;text-shadow:3px 0 #00ffee}
-:root[data-furl-theme=playful] .furl-wordmark span:hover{text-shadow:3px 0 #fe00be;box-shadow:6px 0 #edff00;scale:1.13}
 @media(prefers-reduced-motion:reduce){:root[data-furl-theme=playful] #furl-app .code-text .token:is(:hover,.furl-hot){scale:1}}
 
 :root[data-furl-theme=playful] #furl-app .code-deco svg.shard[data-furl-upright=true]{rotate:none!important;translate:none!important}

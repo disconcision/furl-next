@@ -98,7 +98,6 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 .furl-help {color:var(--furl-quiet);font-size:12px;margin:14px 0;max-width:760px;}
 .furl-powered {display:flex;align-items:center;gap:5px;text-decoration:none;font-size:12px;color:var(--furl-quiet);}
 .furl-powered img {width:18px;height:18px;filter:brightness(.5);}
-.furl-loading {padding:40px;}
 #font-specimen {position:absolute;left:0;top:0;visibility:hidden;pointer-events:none;font:14px/22px var(--code-font);}
 @media(prefers-color-scheme:dark){.furl-powered img{filter:brightness(.8);}}
 @media(max-width:650px){#furl-app{padding:0 10px;}.furl-header{flex-wrap:wrap;gap:10px;margin-bottom:22px;}.furl-header nav{gap:12px;}.furl-toolbar,.furl-legend{padding:9px 12px;}.furl-actions{margin-left:0;flex-wrap:wrap;}.furl-program{padding-right:12px;}.furl-row{min-width:590px;}}

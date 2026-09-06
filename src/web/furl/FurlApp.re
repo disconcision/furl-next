@@ -3,6 +3,66 @@ open Js_of_ocaml;
 open Bonsai.Let_syntax;
 
 let storage_key = i => "furl.live.v1." ++ string_of_int(i);
+/* View preferences are independent of saved programs and Undo. The same tiny
+   bootstrap restores appearance before the native runtime has loaded. */
+let load_preferences = (model: FurlDocument.t) =>
+  try({
+    let json: Js.t(Js.js_string) =
+      Js.Unsafe.meth_call(
+        Js.Unsafe.get(Dom_html.window, "FurlPreferences"),
+        "readJSON",
+        [||],
+      );
+    let prefs = Yojson.Safe.from_string(Js.to_string(json));
+    let bool = (key, fallback) =>
+      switch (Yojson.Safe.Util.member(key, prefs)) {
+      | `Bool(value) => value
+      | _ => fallback
+      };
+    let caret_tone =
+      switch (Yojson.Safe.Util.member("caret_tone", prefs)) {
+      | `String(value) when List.mem(value, ["violet", "coral", "teal"]) => value
+      | _ => model.caret_tone
+      };
+    {
+      ...model,
+      caret_tone,
+      comb: bool("comb", model.comb),
+      bindings: bool("bindings", model.bindings),
+      expressions: bool("expressions", model.expressions),
+      values: bool("values", model.values),
+      indentation: bool("indentation", model.indentation),
+      match_columns: bool("match_columns", model.match_columns),
+    };
+  }) {
+  | _ => model
+  };
+let preferences = (model: FurlDocument.t) =>
+  `Assoc([
+    ("caret_tone", `String(model.caret_tone)),
+    ("comb", `Bool(model.comb)),
+    ("bindings", `Bool(model.bindings)),
+    ("expressions", `Bool(model.expressions)),
+    ("values", `Bool(model.values)),
+    ("indentation", `Bool(model.indentation)),
+    ("match_columns", `Bool(model.match_columns)),
+  ]);
+let save_preferences = (before, after) => {
+  let next = preferences(after);
+  if (preferences(before) != next) {
+    try(
+      ignore(
+        Js.Unsafe.meth_call(
+          Js.Unsafe.get(Dom_html.window, "FurlPreferences"),
+          "updateJSON",
+          [|Js.Unsafe.inject(Js.string(Yojson.Safe.to_string(next)))|],
+        ),
+      )
+    ) {
+    | _ => ()
+    };
+  };
+};
 /* Upgrade the old untouched fixture without replacing anyone's edited code. */
 let legacy_function_source = {js|let offset = 1 in
 let scale = fun factor -> fun x -> factor * x + offset in
@@ -34,7 +94,7 @@ let load = i => {
     && String.trim(Haz3lcore.Printer.of_segment(~indent=" ", segment))
     == legacy_function_source
       ? initial() : segment;
-  FurlDocument.init(~example=i, segment);
+  FurlDocument.init(~example=i, segment) |> load_preferences;
 };
 let save = (model: FurlDocument.t) => {
   let storage =
@@ -83,6 +143,7 @@ let component = () => {
               match_columns: model.match_columns,
             }
           };
+        save_preferences(model, next);
         switch (action) {
         | Document(
             Edit(_, ContextMenu(Open | Toggle)) |

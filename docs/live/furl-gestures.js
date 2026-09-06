@@ -43,11 +43,9 @@
       };
     };
     const media = matchMedia("(prefers-reduced-motion: reduce)");
-    let mode = "edit",
-      policy = "refine",
-      style = "slot",
-      links = true,
-      motion = true;
+    let { mode, policy, style, links, motion } = window.FurlPreferences.read();
+    const savePreferences = () =>
+      window.FurlPreferences.update({ mode, policy, style, links, motion });
     const matchMotion = window.createFurlMatchMotion(root, () => motion);
     let held = false,
       pointer = { x: 0, y: 0 },
@@ -200,6 +198,7 @@
         () => {
           cancel();
           mode = k;
+          savePreferences();
           refreshMode();
         },
       ),
@@ -222,6 +221,7 @@
         () => {
           cancel();
           policy = k;
+          savePreferences();
           refreshMode();
         },
       ),
@@ -234,6 +234,7 @@
       () => {
         cancel();
         style = "slot";
+        savePreferences();
         refreshMode();
       },
     );
@@ -244,21 +245,24 @@
       () => {
         cancel();
         style = "float";
+        savePreferences();
         refreshMode();
       },
     );
     button(
       "option",
       "links",
-      "Show binding wires on hover in Connect mode",
+      "Show binding wires on hover in Move and Copy",
       () => {
         links = !links;
+        savePreferences();
         updateLink();
         refreshMode();
       },
     );
     button("option", "motion", "Animate row movement and wires", () => {
       motion = !motion;
+      savePreferences();
       if (!motion) {
         clearReferenceAnimations();
         wire.points = null;

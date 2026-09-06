@@ -1,10 +1,7 @@
 /* Cosmetic roles/usage come from native term markers, never token spelling. */
 window.createFurlAppearance = (root) => {
-  let playful = false,
+  let playful = window.FurlPreferences.read().appearance === "playful",
     data = null;
-  try {
-    playful = localStorage.getItem("furl.appearance") === "playful";
-  } catch {}
   const seed = (text) =>
     Array.from(text).reduce(
       (n, c) => Math.imul(n ^ c.codePointAt(0), 16777619) >>> 0,
@@ -132,9 +129,9 @@ window.createFurlAppearance = (root) => {
     },
     toggle() {
       playful = !playful;
-      try {
-        localStorage.setItem("furl.appearance", playful ? "playful" : "plain");
-      } catch {}
+      window.FurlPreferences.update({
+        appearance: playful ? "playful" : "plain",
+      });
       paint();
       document.fonts.ready.then(() =>
         window.dispatchEvent(new Event("resize")),
