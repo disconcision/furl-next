@@ -61,6 +61,8 @@
       landing = null,
       landingTimer = 0,
       rowFrame = 0,
+      rowRecoilTimer = 0,
+      statusTimer = 0,
       rowHover = null;
     let blockedClick = false,
       transactionRevision = null,
@@ -135,8 +137,18 @@
       e.stopImmediatePropagation();
     };
     const say = (text) => {
-      status.textContent = text;
+      clearTimeout(statusTimer);
+      if (status.textContent !== text) status.textContent = text;
       status.hidden = !text;
+      root.dataset.gestureMessage = String(!!text);
+      $(".furl-cursor-details", root).setAttribute(
+        "aria-hidden",
+        String(!!text),
+      );
+      // During pickup, keep the reason visible. After release or a refused
+      // standalone command, return to the retained native inspector shortly.
+      if (text && !drag && !connection && !pending && !committing)
+        statusTimer = setTimeout(() => say(""), 2400);
     };
     const marked = () => $$(".furl-hit", root);
     const hitAt = (x, y) => marked().find((n) => inside(rect(n), { x, y }));
@@ -775,6 +787,7 @@
     }
     function clearRows(animateBack = true) {
       cancelAnimationFrame(rowFrame);
+      clearTimeout(rowRecoilTimer);
       rowFrame = 0;
       if (!drag) return;
       for (const member of drag.members) {
@@ -784,6 +797,7 @@
         if (animateBack && member.dataset.picked)
           member.dataset.rowSettling = "true";
         member.removeAttribute("data-picked");
+        member.removeAttribute("data-row-blocked");
         if (animateBack) {
           const next = rect(member);
           animateRow(member, [
@@ -859,6 +873,8 @@
         clock: performance.now(),
         lastGood: members.indexOf(member),
         off: false,
+        edge: 0,
+        keyboardPull: 0,
         cache: new Map(),
       };
       transactionRevision = data.revision;
@@ -881,7 +897,10 @@
         const immediate =
           !motion ||
           media.matches ||
-          (n === drag.member && style === "float" && !drag.keyboard);
+          (n === drag.member &&
+            style === "float" &&
+            !drag.keyboard &&
+            !drag.blocked);
         for (const axis of ["x", "y"]) {
           const target = s["t" + axis],
             velocity = "v" + axis;
@@ -923,7 +942,9 @@
     }
     function previewRow(index) {
       if (!drag) return;
+      const requestedIndex = index;
       index = Math.max(0, Math.min(index, drag.members.length - 1));
+      if (drag.keyboard) drag.edge = Math.sign(requestedIndex - index);
       const cmd = rowCommand(index, drag.off),
         key = JSON.stringify(cmd);
       if (!drag.cache.has(key)) drag.cache.set(key, request(cmd));
@@ -932,40 +953,82 @@
         say(allowed.message);
       } else {
         say(
-          drag.off
-            ? "Release to delete this binding."
-            : drag.outsideScope
-              ? scopeMessage(drag)
-              : "",
+          drag.outsideScope
+            ? scopeMessage(drag)
+            : drag.off
+              ? "Release to delete this binding."
+              : drag.edge < 0
+                ? "Start of this let block."
+                : drag.edge > 0
+                  ? "End of this let block."
+                  : "",
         );
-        drag.lastGood = index;
+        if (!drag.outsideScope) drag.lastGood = index;
       }
       drag.command = cmd;
       drag.valid = allowed.ok && !drag.outsideScope;
+      drag.blocked = !drag.valid || (!drag.off && drag.edge !== 0);
+      drag.member.toggleAttribute("data-row-blocked", drag.blocked);
       const others = drag.members.filter((n) => n !== drag.member);
       const order = [...others];
-      order.splice(allowed.ok ? index : drag.lastGood, 0, drag.member);
+      order.splice(drag.valid ? index : drag.lastGood, 0, drag.member);
+      drag.order = order;
+      drag.index = index;
+      clearTimeout(rowRecoilTimer);
+      drag.keyboardPull =
+        drag.keyboard && drag.blocked
+          ? 6 * Math.sign(index - drag.lastGood || drag.edge)
+          : 0;
+      positionRows();
+      if (drag.keyboardPull) {
+        const d = drag;
+        rowRecoilTimer = setTimeout(() => {
+          if (drag !== d) return;
+          d.keyboardPull = 0;
+          positionRows();
+        }, 110);
+      }
+      program.classList.toggle("furl-delete-preview", drag.off);
+    }
+    function positionRows() {
+      // Resistance is paint-only: never propose fractional or illegal source
+      // positions. A longer pull approaches a bounded offset asymptotically.
+      const limit = data.lineHeight * 0.4;
+      const resist = (distance) =>
+        Math.sign(distance) *
+        limit *
+        (1 - Math.exp((-Math.abs(distance) * 0.32) / limit));
       // Advance toward the old targets first. Time spent resting in a slot
       // must not be counted as elapsed motion toward a just-selected target.
       cancelAnimationFrame(rowFrame);
       paintRows(performance.now());
       let y = Math.min(...[...drag.base.values()].map((r) => r.top));
-      for (const n of order) {
+      for (const n of drag.order) {
         const original = drag.base.get(n);
         let dx = 0,
           dy = y - original.top;
-        if (n === drag.member && style === "float" && !drag.keyboard) {
-          dx = pointer.x - drag.offset.x - original.left;
-          dy = pointer.y - drag.offset.y - original.top;
+        if (n === drag.member) {
+          if (drag.blocked) {
+            if (motion && !media.matches) {
+              dx =
+                drag.keyboard ||
+                (style === "slot" && !drag.off && !drag.outsideScope)
+                  ? 0
+                  : resist(pointer.x - drag.offset.x - original.left);
+              dy += drag.keyboard
+                ? drag.keyboardPull
+                : resist(pointer.y - drag.offset.y - y);
+            }
+          } else if (style === "float" && !drag.keyboard) {
+            dx = pointer.x - drag.offset.x - original.left;
+            dy = pointer.y - drag.offset.y - original.top;
+          }
         }
         const s = drag.motion.get(n);
         s.tx = dx;
         s.ty = dy;
         y += original.height;
       }
-      drag.order = order;
-      drag.index = index;
-      program.classList.toggle("furl-delete-preview", drag.off);
       cancelAnimationFrame(rowFrame);
       paintRows(drag.clock);
     }
@@ -1001,29 +1064,34 @@
         center < (centers[index - 1] + centers[index]) / 2 - hysteresis
       )
         index--;
-      if (
-        index !== d.index ||
-        d.wasOff !== d.off ||
-        outsideScope !== d.outsideScope ||
-        style === "float"
-      ) {
-        d.wasOff = d.off;
-        d.outsideScope = outsideScope;
-        previewRow(index);
-      }
+      d.edge =
+        center < centers[0] - hysteresis
+          ? -1
+          : center > centers.at(-1) + hysteresis
+            ? 1
+            : 0;
+      d.outsideScope = outsideScope;
+      // Eligibility is cached per native candidate. Update paint targets even
+      // within a refused slot, so resistance follows the distance being pulled.
+      previewRow(index);
     }
     function dropRow() {
       const d = drag;
       if (!d) return;
+      const explanation = status.textContent;
       const before = capture();
       clearRows(false);
       // Keep the moving row above its neighbors until it settles. Otherwise
       // dropping mid-flight superimposes their glyphs during the final reflow.
       d.member.dataset.rowSettling = "true";
       drag = null;
-      if (d.valid && doCommit(d.command)) {
+      // Pulling against an endpoint (or returning to the original slot) is
+      // feedback only, including when the native splice would allocate anew.
+      const moved = d.off || d.index !== d.members.indexOf(d.member);
+      if (d.valid && moved && doCommit(d.command)) {
         positions = before;
       } else {
+        say(status.textContent || explanation);
         for (const n of d.members) {
           const old = before.get(identity(n)),
             now = rect(n);
@@ -1190,6 +1258,8 @@
       "pointerdown",
       (e) => {
         if (e.button !== 0) return;
+        if (!drag && !connection && !pending && root.contains(e.target))
+          say("");
         pointer = { x: e.clientX, y: e.clientY };
         if (connection?.picked) {
           stop(e);
@@ -1393,6 +1463,8 @@
       "keydown",
       (e) => {
         if (e.isComposing) return;
+        if (!drag && !connection && !pending && root.contains(e.target))
+          say("");
         if (
           e.key === "Alt" &&
           !e.ctrlKey &&
@@ -1533,6 +1605,7 @@
     );
     on(media, "change", () => {
       if (media.matches) clearReferenceAnimations();
+      if (drag) positionRows();
     });
     on(window, "blur", () => {
       held = false;
@@ -1592,6 +1665,9 @@
         zen.destroy();
         ac.abort();
         cancelAnimationFrame(layoutFrame);
+        cancelAnimationFrame(rowFrame);
+        clearTimeout(rowRecoilTimer);
+        clearTimeout(statusTimer);
         clearLanding();
         clearReferenceAnimations();
         wire.clear();

@@ -24,6 +24,12 @@
     "next": "Reuse the behavior for future copy and cross-scope operations."
   },
   {
+    "action": "Pull against a blocked row move",
+    "status": "Animated",
+    "current": "Live Furl gives a bounded elastic pull at semantic refusals and block endpoints, then returns on release. Keyboard refusals nudge once; reduced motion retains just the explanation. Gesture messages temporarily replace cursor details without shifting the footer.",
+    "next": "Compare the resistance strength in use; the standalone row lab does not yet reproduce it."
+  },
+  {
     "action": "Delete a binding row",
     "status": "Partial",
     "current": "Surviving rows close the gap, but the removed row itself disappears without a matched exit transition.",

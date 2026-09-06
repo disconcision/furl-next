@@ -166,7 +166,22 @@ let view = (~globals, model: FurlDocument.t) => {
       Attr.create("aria-label", "Cursor inspector"),
     ],
     [
-      Node.div(~attrs=[Attr.class_("furl-cursor-details")], content),
+      Node.div(
+        ~attrs=[Attr.class_("furl-inspector-detail")],
+        [
+          Node.div(~attrs=[Attr.class_("furl-cursor-details")], content),
+          /* Gesture-owned text overlays retained cursor content. Neither a
+             refusal nor its dismissal changes the footer's geometry. */
+          Node.div(
+            ~attrs=[
+              Attr.class_("furl-gesture-status"),
+              Attr.create("role", "status"),
+              Attr.create("aria-live", "polite"),
+            ],
+            [],
+          ),
+        ],
+      ),
       Node.div(
         ~attrs=[
           Attr.class_("furl-problem-totals"),

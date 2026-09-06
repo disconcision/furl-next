@@ -1000,14 +1000,6 @@ let view =
             ],
             [],
           ),
-          Node.div(
-            ~attrs=[
-              Attr.class_("furl-gesture-status"),
-              Attr.create("role", "status"),
-              Attr.create("aria-live", "polite"),
-            ],
-            [],
-          ),
           FurlInspector.view(~globals, model),
           Node.p(
             ~attrs=[Attr.class_("furl-help")],

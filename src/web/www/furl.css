@@ -144,6 +144,8 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 
 /* One footer: native cursor information plus the whole-program problem count. */
 .furl-inspector {display:flex;align-items:center;gap:16px;min-height:31px;padding:4px 12px;border:1px solid var(--furl-line);border-top:0;border-radius:0 0 4px 4px;font:12px/22px var(--ui-font);color:var(--furl-quiet);}
+.furl-inspector-detail {position:relative;flex:1;min-width:0;}
+#furl-app[data-gesture-message=true] .furl-cursor-details {visibility:hidden;pointer-events:none;}
 .furl-cursor-details {display:flex;align-items:center;gap:10px;flex:1;min-width:0;overflow-x:auto;white-space:nowrap;scrollbar-width:thin;}
 .furl-cursor-details > * {flex-shrink:0;}
 .furl-cursor-form,.furl-cursor-details .status {display:flex;align-items:center;gap:5px;}
@@ -205,7 +207,7 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 #furl-app:is([data-gesture=row],[data-gesture=connection],[data-gesture=commit]) .furl-program-content * {pointer-events:none !important;}
 #furl-app[data-gesture=connection] .furl-hit {pointer-events:auto !important;}
 #furl-app[data-gesture=connection] .furl-hit:hover:not(.furl-drop-target) {background:transparent;box-shadow:none;}
-.furl-gesture-status {font:12px/20px var(--ui-font);color:var(--furl-scope);padding:0 12px;min-height:0;}
+.furl-gesture-status {position:absolute;inset:0;display:flex;align-items:center;overflow-x:auto;white-space:nowrap;scrollbar-width:thin;font:12px/22px var(--ui-font);color:var(--furl-scope);}
 .furl-gesture-status:empty {display:none;}
 .furl-floating-reference {position:fixed;transform:translate(-50%,-50%);pointer-events:none;color:var(--furl-binding);font:14px/22px var(--code-font);}
 .furl-wire-layer {position:absolute;inset:0;pointer-events:none;z-index:1;}
@@ -233,7 +235,9 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 #furl-app[data-zen=true] .furl-view-options > button {display:none;}
 #furl-app[data-zen=true] .furl-gesture-tools {margin:0;font-size:12px;justify-content:center;}
 #furl-app[data-zen=true][data-zen-tools=true] .furl-view-options {opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,0);}
-#furl-app[data-zen=true] .furl-gesture-status {position:fixed;bottom:16px;left:50%;transform:translateX(-50%);max-width:calc(100vw - 48px);padding:4px 10px;border-radius:3px;background:var(--furl-chrome);z-index:20;text-align:center;}
+#furl-app[data-zen=true][data-gesture-message=true] .furl-inspector {display:block;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);max-width:calc(100vw - 48px);min-height:0;box-sizing:border-box;padding:4px 10px;border:1px solid var(--furl-line);border-radius:3px;background:var(--furl-chrome);z-index:20;}
+#furl-app[data-zen=true] .furl-inspector :is(.furl-cursor-details,.furl-problem-totals) {display:none;}
+#furl-app[data-zen=true] .furl-gesture-status {position:static;}
 @media (prefers-reduced-motion:reduce) {#furl-app[data-zen=true] .furl-view-options {transition:none;}}
 
 #furl-app[data-zen=true] .furl-program:focus {outline:none;}
