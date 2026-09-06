@@ -15,7 +15,7 @@
  --T3:var(--furl-paper);--T4:var(--furl-strip);--BR1:var(--furl-strip);--BR2:var(--furl-binding);
  --BR3:var(--furl-scope);--BR4:var(--furl-quiet);--PAT:var(--furl-binding);
  --token-exp:var(--furl-ink);--token-pat:var(--furl-binding);--token-string-lit:var(--furl-value);
- --token-buffer:var(--furl-scope);--caret-color:var(--furl-scope);
+ --token-buffer:light-dark(#7a8085,#a0a8ad);--caret-color:var(--furl-scope);
  --ui-bkg:var(--furl-page);--cell-active:var(--furl-paper);--cell-bkg:var(--furl-paper);
  --selection-fill:var(--furl-strip);--shard-lines-exp:var(--furl-line);
  --shard-caret-pat:light-dark(#c8dce5,#2c4556);--shard-pat:var(--shard-caret-pat);
@@ -83,8 +83,10 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 #main.furl-main .token.keyword,#main.furl-main .token.poly {font-weight:400;}
 #main.furl-main .token.keyword {color:var(--furl-scope);}
 #furl-app #caret.blink {animation:none;scroll-margin:1ch;}
-#furl-app svg.shard.selected,#furl-app svg.shard.selected-expanded {filter:none;}
-#furl-app svg.shard.selected > path,#furl-app svg.shard.selected-expanded > path {stroke:var(--furl-scope);stroke-width:.8px;}
+/* Hazel's ghost completion also carries `selected`; keep its native invisible
+   buffer backing separate from actual selections. */
+#furl-app svg.shard:is(.selected,.selected-expanded):not(.buffer-unparsed) {filter:none;}
+#furl-app svg.shard:is(.selected,.selected-expanded):not(.buffer-unparsed) > path {stroke:var(--furl-scope);stroke-width:.8px;}
 /* Diagnostic color is a solid backing; Hazel still draws the selection. */
 #furl-app :is(.errors .errors-piece,.warnings .warnings-piece) svg.shard > path,
 #furl-app :is(.errors .errors-piece,.warnings .warnings-piece) svg .child-line,

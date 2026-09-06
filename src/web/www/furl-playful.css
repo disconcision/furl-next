@@ -13,8 +13,8 @@
 :root[data-furl-theme=playful] #furl-app .token[data-furl-role=operator],:root[data-furl-theme=playful] #furl-app .token[data-furl-role=callee],:root[data-furl-theme=playful] #furl-app .token[data-furl-role=application]{color:#83b8c9;background:#efe9fe;box-shadow:2px 2px #d5cfe3;outline:2px solid #efe9fe;border-radius:4px 4px 4px 0}
 :root[data-furl-theme=playful] #furl-app .code-text .token:is(:hover,.furl-hot){color:#00fbf1;text-shadow:1px 2px #1ecdbb;scale:1.13}
 :root[data-furl-theme=playful] #furl-app .code-deco svg.shard{translate:var(--furl-jx,0px) var(--furl-jy,0px);rotate:var(--furl-jr,0deg);transform-box:fill-box;transform-origin:center}
-:root[data-furl-theme=playful] #furl-app :is(svg.shard.selected,svg.shard.selected-expanded,#active-code-editor svg.shard.indicated){filter:drop-shadow(6px 3px 0 #9799f6);rotate:calc(var(--furl-jr,0deg) - 2deg)}
-:root[data-furl-theme=playful] #furl-app :is(svg.shard.selected,svg.shard.selected-expanded,#active-code-editor svg.shard.indicated)>path{fill:#e4ff00;stroke:#e4ff00;stroke-width:1.4px}
+:root[data-furl-theme=playful] #furl-app :is(svg.shard.selected,svg.shard.selected-expanded,#active-code-editor svg.shard.indicated):not(.buffer-unparsed){filter:drop-shadow(6px 3px 0 #9799f6);rotate:calc(var(--furl-jr,0deg) - 2deg)}
+:root[data-furl-theme=playful] #furl-app :is(svg.shard.selected,svg.shard.selected-expanded,#active-code-editor svg.shard.indicated):not(.buffer-unparsed)>path{fill:#e4ff00;stroke:#e4ff00;stroke-width:1.4px}
 :root[data-furl-theme=playful] #furl-app .code-text .token[data-furl-selected=true]{color:#443e54;text-shadow:none;rotate:calc(var(--furl-jr,0deg) - 2deg)}
 :root[data-furl-theme=playful] #furl-app .empty-hole path{stroke-width:2px}
 :root[data-furl-theme=playful] #furl-app .code-text .explicit-hole{rotate:none;translate:none}
