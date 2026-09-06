@@ -62,6 +62,12 @@ The bounded policies are explicit. Refactor moves simple irrefutable bindings ac
 
 Moves stay inside one owning let scope. Insertion works before its result, in an initially let-free function body, and in a match arm; alignment spacers and derived result labels are not editable bindings. Wires presently target expression holes and variable occurrences, and need a visible binder anchor. General token/form pickup, row copying, cross-scope movement and source-changing extraction remain separate work. `Row gestures` and `Connections` reproduce the standalone programs for direct comparison. `test-gestures.cjs` and `test-nested-gestures.cjs` exercise input/motion and native projection boundaries; native command tests cover identity, lexical/type checks, history and stale source.
 
+## Zen recording view
+
+`furl-zen.js` owns transient presentation state alongside the gesture adapter. F9 or the corner-brackets tool switches to a borderless, centered program with 64px vertical padding and generous responsive side margins. Header, example/view controls, inspector and help are hidden. The existing gesture toolbar becomes a fixed top dock: the top 24px reveals it, and leaving the dock hides it after 350ms. Shift+F9 reveals/focuses the dock for keyboard access; Escape dismisses it without leaving Zen. Hidden controls are inert and excluded from accessibility navigation. Tool changes restore row/code focus according to the chosen primacy.
+
+The mounted native editors are retained. Zen changes neither source, history, selection nor tool/policy state; changing presentation cancels an uncommitted gesture before its geometry moves. The independent compact width combines the existing source column plan with sampled values rendered to a bounded 24-character budget, avoiding a resize/abbreviation feedback loop. Long/wide programs scroll within the viewport, without scaling text or compressing the grid. Resize observation refreshes gap and cable geometry after recentering. The same local assets support development and Pages; the view resets to normal on reload.
+
 ## Integration sequence and next steps
 
 1. Render one let scope using Furl's grid and colors. Replace one expression field and one pattern field with Hazel editors. Retain one underlying program and lexical context so edits update the appropriate source occurrence.

@@ -87,6 +87,29 @@ let view =
     @ (model.expressions ? [string_of_int(exp_width) ++ "ch"] : [])
     @ (model.values ? [string_of_int(value_width) ++ "ch"] : []);
   let min_width = code_width + value_width;
+  /* Compact presentation width independent of the container's value budget:
+     resizing Zen must not feed its own abbreviated width back into layout. */
+  let zen_value_width =
+    model.values
+      ? List.fold_left(
+          (w, c) =>
+            max(
+              w,
+              2
+              + Util.Unicode.Width.columns_of_string(
+                  FurlValue.render(~columns=24, cell(c.target, model).value),
+                ),
+            ),
+          5,
+          visible,
+        )
+      : 0;
+  let zen_columns =
+    lanes(model, tree)
+    * (code_width + zen_value_width)
+    + max(0, lanes(model, tree) - 1)
+    * lane_gap;
+
   let editor = (view, target) => {
     let c = cell(target, model);
     let focus = () => inject(FocusView(target, view));
@@ -925,7 +948,9 @@ let view =
               FurlValue.observe_width(report_width),
               Attr.create(
                 "style",
-                "--columns:"
+                "--zen-columns:"
+                ++ string_of_int(zen_columns)
+                ++ ";--columns:"
                 ++ String.concat(" ", columns)
                 ++ ";--lane-width:"
                 ++ string_of_int(max(1, min_width))
@@ -977,7 +1002,7 @@ let view =
             ~attrs=[Attr.class_("furl-help")],
             [
               Node.text(
-                "Hover the tool icons for controls. Rows: drag anywhere, double-click to edit; gaps insert. Connect: pull a wire from a name, or click to pick/place. ⌘/Ctrl+Enter inserts a row; Escape cancels; Undo restores. Hold Option/Alt over a name for Connect, elsewhere for Rows. Edits are saved in this browser.",
+                "F9 toggles Zen mode; its top edge reveals tools (also Shift+F9). Hover icons for controls. Rows: drag anywhere, double-click to edit; gaps insert. Connect: pull a wire from a name, or click to pick/place. ⌘/Ctrl+Enter inserts a row; Escape cancels; Undo restores. Hold Option/Alt over a name for Connect, elsewhere for Rows. Edits are saved in this browser.",
               ),
             ],
           ),

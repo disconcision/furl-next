@@ -19,6 +19,7 @@
     links:
       "M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12ZM12 10a2 2 0 1 0 0 4a2 2 0 1 0 0-4",
     motion: "M2 7h7M2 12h4M2 17h7M14 6l7 6-7 6V6Z",
+    zen: "M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5",
   };
   window.createFurlGestures = (root) => {
     const program = $(".furl-program", root),
@@ -189,6 +190,20 @@
         wire.request();
       }
       refreshMode();
+    });
+    divider();
+    const zenButton = button("view", "zen", "Enter Zen mode (F9)", () =>
+      zen.toggle(),
+    );
+    const zen = window.createFurlZen(root, zenButton, {
+      beforeChange: () => {
+        cancel(false);
+        positions = null;
+      },
+      onLayout: () => {
+        placeGaps();
+        if (wire.connection) wire.request();
+      },
     });
     tools.setAttribute("role", "toolbar");
     tools.setAttribute(
@@ -1201,6 +1216,7 @@
       },
       destroy() {
         destroyed = true;
+        zen.destroy();
         ac.abort();
         cancelAnimationFrame(layoutFrame);
         wire.clear();

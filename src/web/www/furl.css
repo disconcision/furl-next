@@ -205,3 +205,20 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 .furl-view-options .furl-gesture-tools {margin-left:auto;border:0;padding:0;background:transparent;}
 /* Bound native text below its measured hit layer; menus still use the top layer. */
 #main.furl-main .furl-native-cell .code-editor {position:relative;z-index:0;}
+/* Borderless recording view. The dock overlays rather than displacing code. */
+#furl-app[data-zen=true] {--furl-paper:var(--furl-page);max-width:none;width:100%;min-height:100dvh;padding:64px clamp(20px,8vw,160px);box-sizing:border-box;display:flex;align-items:center;justify-content:center;}
+#furl-app[data-zen=true] .furl-header,
+#furl-app[data-zen=true] .furl-toolbar,
+#furl-app[data-zen=true] .furl-legend,
+#furl-app[data-zen=true] .furl-inspector,
+#furl-app[data-zen=true] .furl-help {display:none;}
+#furl-app[data-zen=true] #main {width:100%;min-width:0;}
+#furl-app[data-zen=true] .furl-program {box-sizing:border-box;margin-inline:auto;width:calc(var(--zen-columns)*1ch + var(--comb-gutter) + 18px);max-width:100%;max-height:calc(100dvh - 128px);border:0;overflow:auto;}
+#furl-app[data-zen=true] .furl-view-options {position:fixed;z-index:30;top:12px;left:50%;transform:translate(-50%,-6px);max-width:calc(100vw - 24px);width:max-content;box-sizing:border-box;padding:6px 8px;border:1px solid var(--furl-line);border-radius:5px;background:var(--furl-chrome);font-size:0;gap:0;opacity:0;visibility:hidden;pointer-events:none;transition:opacity 140ms,transform 140ms;}
+#furl-app[data-zen=true] .furl-view-options > button {display:none;}
+#furl-app[data-zen=true] .furl-gesture-tools {margin:0;font-size:12px;justify-content:center;}
+#furl-app[data-zen=true][data-zen-tools=true] .furl-view-options {opacity:1;visibility:visible;pointer-events:auto;transform:translate(-50%,0);}
+#furl-app[data-zen=true] .furl-gesture-status {position:fixed;bottom:16px;left:50%;transform:translateX(-50%);max-width:calc(100vw - 48px);padding:4px 10px;border-radius:3px;background:var(--furl-chrome);z-index:20;text-align:center;}
+@media (prefers-reduced-motion:reduce) {#furl-app[data-zen=true] .furl-view-options {transition:none;}}
+
+#furl-app[data-zen=true] .furl-program:focus {outline:none;}

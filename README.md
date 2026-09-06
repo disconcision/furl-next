@@ -13,6 +13,8 @@ The live **Row gestures** and **Connections** examples match the two standalone 
 - Connect: pull or click-pick a wire from a name. Refine fills compatible expression holes. Free edit also moves, replaces or unplugs existing variable uses. A missed drag of a use unplugs; click-away after click/keyboard pickup cancels without deleting. Hover links use word centers and the study’s spring renderer.
 - Hold Option/Alt for Connect over a name or Rows over other row space. Native typing is unrestricted by the structural policy. Moves currently remain within one let scope; Refactor checks binding identities, static errors, simple patterns and a conservative total expression fragment.
 
+**Zen recording view:** press **F9** or the corner-brackets icon to show just the program, centered horizontally and vertically with wide margins. Move the pointer to the top edge to reveal the existing tool icons and exit button; they hide again when you move away. **Shift+F9** reveals and focuses the tools by keyboard, and Escape dismisses that dock. Long programs scroll inside the available space. Zen is presentation state: native editing, selections, values, gestures and Undo remain available.
+
 The reference contains seven interactive design studies with preset values, including more developed function/match projections and call navigation. Each reference page is a self-contained HTML file that opens offline. The live app is a separate, compiled web application.
 
 ## Repository organization
@@ -76,6 +78,7 @@ TEST_URL=http://localhost:8000/live/ node furl/live/test-values.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-menu.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-gestures.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-nested-gestures.cjs
+TEST_URL=http://localhost:8000/live/ node furl/live/test-zen.cjs
 ```
 
 The first checks value inspection, caret restoration, branch gestures, nested call contexts, and control geometry. The second opens the study from `file://` with network requests blocked and exercises all three concepts. The inspector check covers caret/type/error information, shared-source error counts, holes, and evaluation feedback. The value check covers responsive structural abbreviation, bounded rows, shared branch widths, and call navigation. The menu check covers top-layer hit testing, active-cell positioning, viewport bounds, keyboard and clipboard commands, and dismissal. All save light/dark screenshots in a temporary directory.
