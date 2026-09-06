@@ -81,6 +81,370 @@ let tests = (
   "FurlDocument",
   [
     test_case(
+      "structural rows are one native edit with stable identities",
+      `Quick,
+      () => {
+        let m = start("let a = 2 in let b = 3 in let total = a + b in total");
+        let binder = name =>
+          switch (named(name, m).location) {
+          | Child(id, _) => id
+          | _ => assert(false)
+          };
+        let b = binder("b");
+        let moved =
+          update(
+            Structure(
+              m.document.segment,
+              "refactor",
+              MoveBinding(whole, b, Some(binder("a"))),
+            ),
+            m,
+          );
+        check(string, "same result", "5", result(moved));
+        check(int, "one history entry", 1, List.length(moved.undo));
+        check(
+          bool,
+          "binding address remains",
+          true,
+          rhs("b", moved) == rhs("b", m),
+        );
+        check(
+          string,
+          "undo exact source",
+          source(m),
+          source(update(Undo, moved)),
+        );
+        let blocked =
+          prepare_structure(
+            ~policy="refactor",
+            MoveBinding(whole, binder("total"), Some(binder("a"))),
+            m,
+          );
+        check(
+          bool,
+          "dependency break refused",
+          true,
+          switch (blocked) {
+          | Error(_) => true
+          | _ => false
+          },
+        );
+        let free =
+          update(
+            Structure(
+              m.document.segment,
+              "free",
+              MoveBinding(whole, binder("total"), Some(binder("a"))),
+            ),
+            m,
+          );
+        check(
+          bool,
+          "free edit reports scope errors",
+          true,
+          free.statics.error_ids != [],
+        );
+        let inserted =
+          update(
+            Structure(
+              m.document.segment,
+              "refine",
+              InsertBinding(whole, Some(b)),
+            ),
+            m,
+          );
+        check(
+          int,
+          "draft inserted",
+          4,
+          List.length(fst(let_prefix(inserted.document.segment))),
+        );
+        let draft = List.nth(fst(let_prefix(inserted.document.segment)), 1);
+        check(bool, "two holes", true, blank_binding(draft));
+        check(
+          string,
+          "focus new expression",
+          key(child(draft.id, 1)),
+          inserted.document.active,
+        );
+        let removed =
+          update(
+            Structure(
+              inserted.document.segment,
+              "refine",
+              DeleteBinding(whole, draft.id, true),
+            ),
+            inserted,
+          );
+        check(
+          string,
+          "empty deletion restores source",
+          source(m),
+          source(removed),
+        );
+        check(
+          string,
+          "stale transaction cancels",
+          source(inserted),
+          source(
+            update(
+              Structure(
+                m.document.segment,
+                "free",
+                DeleteBinding(whole, b, false),
+              ),
+              inserted,
+            ),
+          ),
+        );
+      },
+    ),
+    test_case(
+      "native connections respect lexical identity, holes, types and undo",
+      `Quick,
+      () => {
+        let m = start("let width = 6 in let height = 4 in ¿ * height");
+        let binder =
+          read(named("width", m), m.document.segment)
+          |> ScratchFocus.core_ws
+          |> List.hd
+          |> Piece.id;
+        let hole =
+          Id.Map.bindings(m.statics.info_map)
+          |> List.find_map(((id, info)) =>
+               switch (info) {
+               | Language.Info.InfoExp({user_term: {term: EmptyHole, _}, _}) =>
+                 Some(id)
+               | _ => None
+               }
+             )
+          |> Option.get;
+        let placed =
+          update(
+            Structure(
+              m.document.segment,
+              "refine",
+              ConnectReference(binder, None, Some(hole)),
+            ),
+            m,
+          );
+        check(string, "native evaluation", "24", result(placed));
+        check(int, "one undo", 1, List.length(placed.undo));
+        let use =
+          Id.Map.bindings(placed.statics.info_map)
+          |> List.find_map(((id, info)) =>
+               switch (info) {
+               | Language.Info.InfoExp({
+                   user_term: {term: Var("width"), _},
+                   _,
+                 }) =>
+                 Some(id)
+               | _ => None
+               }
+             )
+          |> Option.get;
+        let deleted =
+          update(
+            Structure(
+              placed.document.segment,
+              "free",
+              ConnectReference(binder, Some(use), None),
+            ),
+            placed,
+          );
+        check(
+          string,
+          "one undo restores exact program",
+          source(placed),
+          source(update(Undo, deleted)),
+        );
+        let shadowed = start("let x = 1 in let f = fun x -> ¿ in f(2)");
+        let outer = List.hd(fst(let_prefix(shadowed.document.segment)));
+        let binder =
+          read(child(outer.id, 0), shadowed.document.segment)
+          |> ScratchFocus.core_ws
+          |> List.hd
+          |> Piece.id;
+        let hole =
+          Id.Map.bindings(shadowed.statics.info_map)
+          |> List.find_map(((id, info)) =>
+               switch (info) {
+               | Language.Info.InfoExp({user_term: {term: EmptyHole, _}, _}) =>
+                 Some(id)
+               | _ => None
+               }
+             )
+          |> Option.get;
+        check(
+          bool,
+          "same spelling cannot capture",
+          true,
+          switch (
+            prepare_structure(
+              ~policy="free",
+              ConnectReference(binder, None, Some(hole)),
+              shadowed,
+            )
+          ) {
+          | Error(_) => true
+          | _ => false
+          },
+        );
+      },
+    ),
+    test_case(
+      "structural policies guard types and computations while allowing blank crossings",
+      `Quick,
+      () => {
+        let binder = (name, m) =>
+          read(named(name, m), m.document.segment)
+          |> ScratchFocus.core_ws
+          |> List.hd
+          |> Piece.id;
+        let hole = m =>
+          Id.Map.bindings(m.statics.info_map)
+          |> List.find_map(((id, info)) =>
+               switch (info) {
+               | Language.Info.InfoExp({user_term: {term: EmptyHole, _}, _}) =>
+                 Some(id)
+               | _ => None
+               }
+             )
+          |> Option.get;
+        let refused =
+          fun
+          | Error(_) => true
+          | Ok(_) => false;
+        let typed = start("let text = \"hello\" in ¿ + 1");
+        check(
+          bool,
+          "incompatible hole type refused",
+          true,
+          prepare_structure(
+            ~policy="refine",
+            ConnectReference(
+              binder("text", typed),
+              None,
+              Some(hole(typed)),
+            ),
+            typed,
+          )
+          |> refused,
+        );
+        let m = start("let bonus = 4 in let ¿ = ¿ in let ¿ = ¿ in bonus");
+        let first = List.hd(fst(let_prefix(m.document.segment)));
+        let moved =
+          update(
+            Structure(
+              m.document.segment,
+              "refactor",
+              MoveBinding(whole, first.id, None),
+            ),
+            m,
+          );
+        check(
+          bool,
+          "move across two blank scaffolds",
+          true,
+          moved.document.segment !== m.document.segment,
+        );
+        check(
+          string,
+          "blank crossing undo",
+          source(m),
+          source(update(Undo, moved)),
+        );
+        let unsafe =
+          start("let f = fun x -> x in let a = f(3) in let b = 4 in a + b");
+        let defs = fst(let_prefix(unsafe.document.segment));
+        check(
+          bool,
+          "call crossing not certified as a refactor",
+          true,
+          prepare_structure(
+            ~policy="refactor",
+            MoveBinding(
+              whole,
+              List.nth(defs, 2).id,
+              Some(List.nth(defs, 1).id),
+            ),
+            unsafe,
+          )
+          |> refused,
+        );
+        let flow = start("let width = 6 in let x = width in ¿");
+        let use =
+          Id.Map.bindings(flow.statics.info_map)
+          |> List.find_map(((id, info)) =>
+               switch (info) {
+               | Language.Info.InfoExp({
+                   user_term: {term: Var("width"), _},
+                   _,
+                 }) =>
+                 Some(id)
+               | _ => None
+               }
+             )
+          |> Option.get;
+        let moved =
+          update(
+            Structure(
+              flow.document.segment,
+              "free",
+              ConnectReference(
+                binder("width", flow),
+                Some(use),
+                Some(hole(flow)),
+              ),
+            ),
+            flow,
+          );
+        check(
+          bool,
+          "moved reference keeps occurrence ID",
+          true,
+          piece_by_id(use, moved.document.segment) != None,
+        );
+        check(string, "move returns real value", "6", result(moved));
+        check(
+          string,
+          "move undo exact",
+          source(flow),
+          source(update(Undo, moved)),
+        );
+      },
+    ),
+    test_case(
+      "nested row insertion stays within its defining subtree",
+      `Quick,
+      () => {
+        let m = start("let outer = let inner = 3 in inner + 1 in outer");
+        let scope = rhs("outer", m);
+        let n =
+          update(
+            Structure(
+              m.document.segment,
+              "refine",
+              InsertBinding(scope, None),
+            ),
+            m,
+          );
+        check(
+          int,
+          "outer let untouched",
+          1,
+          List.length(fst(let_prefix(n.document.segment))),
+        );
+        check(
+          int,
+          "inner scope gains row",
+          2,
+          List.length(fst(let_prefix(read(scope, n.document.segment)))),
+        );
+        check(string, "undo nested", source(m), source(update(Undo, n)));
+      },
+    ),
+    test_case(
       "probe abbreviation uses the available width without changing samples",
       `Quick,
       () => {

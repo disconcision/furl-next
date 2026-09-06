@@ -27,6 +27,8 @@ def main():
         shutil.copyfile(WWW / 'navigation.html', stage / 'navigation.html')
         shutil.copyfile(REPO / '_build/default/src/web/www/furl.js', stage / 'furl.js')
         shutil.copyfile(WWW / 'furl.css', stage / 'furl.css')
+        shutil.copyfile(WWW / 'furl-gestures.js', stage / 'furl-gestures.js')
+        shutil.copyfile(REPO / 'furl/interactions/wire.js', stage / 'furl-wire.js')
         # The root stylesheet's inherited pin icon path is relative to style/;
         # here the stylesheet itself lives at the app root.
         (stage / 'style.css').write_text((WWW / 'style.css').read_text().replace('../img/', 'img/'))

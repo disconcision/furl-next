@@ -16,3 +16,6 @@
    prebundle.js
    --bundle
    --outfile=bundled.js)))
+
+(rule
+ (copy ../../../furl/interactions/wire.js furl-wire.js))

@@ -172,6 +172,21 @@ first + 1|js},
   end in
 sum([2, 4, 6])|js},
   ),
+  (
+    "Row gestures",
+    {js|let n = 3 in
+let twice = n * 2 in
+let bonus = 4 in
+let total = twice + bonus in
+total|js},
+  ),
+  (
+    "Connections",
+    {js|let width = 6 in
+let height = 4 in
+let area = ¿ * ¿ in
+area|js},
+  ),
 |];
 
 [@deriving (show, sexp, yojson)]
@@ -786,6 +801,469 @@ let compatible_paths = (a, b) =>
       },
     a,
   );
+/* Source commands shared by pointer and keyboard. Previews never evaluate,
+   replace the document, or enter history. All addresses belong to this program. */
+[@deriving (show, sexp, yojson)]
+type structural_command =
+  | InsertBinding(target, option(Id.t))
+  | MoveBinding(target, Id.t, option(Id.t))
+  | DeleteBinding(target, Id.t, bool)
+  | ConnectReference(Id.t, option(Id.t), option(Id.t));
+type prepared = {
+  segment: Segment.t,
+  focus: option(target),
+};
+
+let analyse = segment =>
+  CachedStatics.init(
+    ~settings=settings.core,
+    ~is_dynamic_term=false,
+    ~stitch=x => x,
+    ~root=Sort.Exp,
+    Zipper.unzip(segment),
+  );
+let empty_piece = () =>
+  Piece.Grout({
+    id: Id.mk(),
+    shape: Convex,
+  });
+let blank = seg =>
+  switch (ScratchFocus.core_ws(seg)) {
+  | []
+  | [Grout(_)] => true
+  | _ => false
+  };
+let blank_binding = (tile: Base.tile) => List.for_all(blank, tile.children);
+
+/* Retain each let tile and its following trivia as one movable chunk. */
+let binding_chunks = (scope, segment) => {
+  let source = read(scope, segment);
+  let (defs, end_at) = let_prefix(source);
+  let ids = List.map((t: Base.tile) => t.id, defs);
+  let rec split = (pending, pieces, chunks) =>
+    switch (pieces) {
+    | [Piece.Tile(t), ...rest] when List.mem(t.id, ids) =>
+      let rec following = (acc, rest) =>
+        switch (rest) {
+        | [p, ...tail] when ScratchFocus.is_edge_ws(p) =>
+          following([p, ...acc], tail)
+        | _ => (List.rev(acc), rest)
+        };
+      let (ws, tail) = following([], rest);
+      split([], tail, chunks @ [(t, pending @ [Piece.Tile(t)] @ ws)]);
+    | [p, ...rest] when ScratchFocus.is_edge_ws(p) =>
+      split(pending @ [p], rest, chunks)
+    | _ => chunks
+    };
+  (
+    split([], ScratchFocus.take(end_at, source), []),
+    ScratchFocus.drop(end_at, source),
+  );
+};
+let binding_scope = (id, model) => {
+  let rec find =
+    fun
+    | Scope({target, rows, _}) => {
+        let (defs, _) = let_prefix(read(target, model.document.segment));
+        List.exists((t: Base.tile) => t.id == id, defs)
+          ? Some(target) : List.find_map(find, rows);
+      }
+    | Function({body, _}) => find(body)
+    | Match({branches, _}) => List.find_map(b => find(b.body), branches)
+    | Row(_) => None;
+  find(
+    project({
+      ...model,
+      closed: [],
+    }),
+  );
+};
+let rec replace_piece = (id, replacement, seg: Segment.t) =>
+  ScratchFocus.map_sharing(
+    (p: Piece.t) =>
+      Piece.id(p) == id
+        ? replacement
+        : (
+          switch (p) {
+          | Tile(t) =>
+            ScratchFocus.tile_sharing(
+              p,
+              t,
+              ScratchFocus.map_sharing(
+                replace_piece(id, replacement),
+                t.children,
+              ),
+            )
+          | _ => p
+          }
+        ),
+    seg,
+  );
+let rec piece_by_id = (id, seg: Segment.t) =>
+  List.find_map(
+    (p: Piece.t) =>
+      Piece.id(p) == id
+        ? Some(p)
+        : (
+          switch (p) {
+          | Tile(t) => List.find_map(piece_by_id(id), t.children)
+          | _ => None
+          }
+        ),
+    seg,
+  );
+let target_for_piece = (id, model) =>
+  List.find_map(
+    ((target, sort)) =>
+      sort == Sort.Exp
+      && ScratchFocus.seg_contains_id(
+           id,
+           read(target, model.document.segment),
+         )
+        ? Some(target) : None,
+    targets(project(model)),
+  );
+
+/* A deliberately narrow total fragment, in addition to lexical/type checks.
+   Moving calls or incomplete computations is available in Free edit. */
+let rec total_for_move = (exp: Language.Exp.t) =>
+  switch (exp.term) {
+  | Atom(_)
+  | Var(_)
+  | Fun(_) => true
+  | Parens(e)
+  | UnOp(_, e) => total_for_move(e)
+  | BinOp(
+      Int(Plus | Minus | Times) | Nat(Plus | Minus | Times) |
+      SInt(Plus | Minus | Times) |
+      Float(Plus | Minus | Times),
+      a,
+      b,
+    ) =>
+    total_for_move(a) && total_for_move(b)
+  | Tuple(es)
+  | ListLit(es) => List.for_all(total_for_move, es)
+  | _ => false
+  };
+let same_resolutions = (old, next) =>
+  Id.Map.for_all(
+    (id, info) =>
+      switch (info) {
+      | Language.Info.InfoExp({user_term: {term: Var(_), _}, _}) =>
+        switch (Language.Statics.Map.lookup(id, next)) {
+        | Some(other) =>
+          Language.Info.get_binding_site(info)
+          == Language.Info.get_binding_site(other)
+        | None => false
+        }
+      | _ => true
+      },
+    old,
+  );
+let prepare_structure = (~policy, command, model): result(prepared, string) => {
+  let refuse = message => failwith(message);
+  let known_policy = List.mem(policy, ["refactor", "refine", "free"]);
+  try(
+    {
+      if (!known_policy) {
+        refuse("Unknown editing policy.");
+      };
+      switch (command) {
+      | InsertBinding(scope, _)
+      | MoveBinding(scope, _, _)
+      | DeleteBinding(scope, _, _) =>
+        let (chunks, tail) = binding_chunks(scope, model.document.segment);
+        let contains = id =>
+          List.exists(((t: Base.tile, _)) => t.id == id, chunks);
+        let insert_at = (before, chunk, chunks) => {
+          let rec loop = (
+            fun
+            | [] => [chunk]
+            | [(t: Base.tile, _) as c, ...rest] as all =>
+              Some(t.id) == before ? [chunk, ...all] : [c, ...loop(rest)]
+          );
+          loop(chunks);
+        };
+        let (changed, focus, verify_move) =
+          switch (command) {
+          | InsertBinding(_, before) =>
+            if (Option.fold(~none=false, ~some=id => !contains(id), before)) {
+              refuse("That binding boundary no longer exists.");
+            };
+            let tile = List.hd(fst(let_prefix(parse("let ¿ = ¿ in 0"))));
+            let chunk = (
+              tile,
+              [
+                Piece.Tile(tile),
+                Piece.Secondary(Secondary.mk_newline(Id.mk())),
+              ],
+            );
+            (
+              insert_at(before, chunk, chunks),
+              Some(child(tile.id, 1)),
+              false,
+            );
+          | MoveBinding(_, id, before) =>
+            if (binding_scope(id, model) != Some(scope)) {
+              refuse("Move within the same let scope for now.");
+            };
+            if (Option.fold(~none=false, ~some=id => !contains(id), before)) {
+              refuse("That destination no longer exists.");
+            };
+            let chunk =
+              List.find(((t: Base.tile, _)) => t.id == id, chunks);
+            let changed =
+              before == Some(id)
+                ? chunks
+                : insert_at(
+                    before,
+                    chunk,
+                    List.filter(((t: Base.tile, _)) => t.id != id, chunks),
+                  );
+            if (policy != "free" && changed != chunks) {
+              let old_i =
+                Option.get(
+                  List.find_index(
+                    ((t: Base.tile, _)) => t.id == id,
+                    chunks,
+                  ),
+                );
+              let new_i =
+                Option.get(
+                  List.find_index(
+                    ((t: Base.tile, _)) => t.id == id,
+                    changed,
+                  ),
+                );
+              List.iteri(
+                (i, (t: Base.tile, _)) =>
+                  if (i >= min(old_i, new_i)
+                      && i <= max(old_i, new_i)
+                      && !blank_binding(t)) {
+                    let pat =
+                      MakeTerm.from_zip_for_pat(
+                        Zipper.unzip(
+                          ScratchFocus.core_ws(List.hd(t.children)),
+                        ),
+                      );
+                    switch (pat.term) {
+                    | Var(_)
+                    | Wild => ()
+                    | _ =>
+                      refuse(
+                        "Refactor currently moves simple, irrefutable bindings only.",
+                      )
+                    };
+                    if (List.exists(
+                          id =>
+                            ScratchFocus.seg_contains_id(
+                              id,
+                              List.nth(t.children, 1),
+                            ),
+                          model.statics.error_ids,
+                        )) {
+                      refuse(
+                        "Refactor cannot move a definition with a static error.",
+                      );
+                    };
+                    let info =
+                      MakeTerm.from_zip_for_sem(
+                        Zipper.unzip(
+                          ScratchFocus.core_ws(
+                            read(child(t.id, 1), model.document.segment),
+                          ),
+                        ),
+                        ~root=Sort.Exp,
+                      ).
+                        term;
+                    if (!total_for_move(info)) {
+                      refuse(
+                        "Refactor cannot yet justify moving this computation. Use Free edit.",
+                      );
+                    };
+                  },
+                chunks,
+              );
+            };
+            (changed, Some(child(id, 1)), policy != "free");
+          | DeleteBinding(_, id, empty_only) =>
+            if (binding_scope(id, model) != Some(scope)) {
+              refuse("Only a binding row can be deleted.");
+            };
+            let (tile, _) =
+              List.find(((t: Base.tile, _)) => t.id == id, chunks);
+            if (!blank_binding(tile) && (empty_only || policy != "free")) {
+              refuse(
+                "Populated row deletion needs Free edit; Backspace cleans up a two-hole row.",
+              );
+            };
+            let changed =
+              List.filter(((t: Base.tile, _)) => t.id != id, chunks);
+            let i =
+              Option.get(
+                List.find_index(((t: Base.tile, _)) => t.id == id, chunks),
+              );
+            let focus =
+              switch (List.nth_opt(changed, i)) {
+              | Some((t, _)) => child(t.id, 1)
+              | None => {
+                  ...scope,
+                  offset:
+                    scope.offset + List.length(List.concat_map(snd, changed)),
+                }
+              };
+            (changed, Some(focus), false);
+          | _ => assert(false)
+          };
+        let content = List.concat_map(snd, changed) @ tail;
+        let segment =
+          replace_at(
+            scope.location,
+            ScratchFocus.take(
+              scope.offset,
+              at(scope.location, model.document.segment),
+            )
+            @ content,
+            model.document.segment,
+          );
+        if (verify_move) {
+          let next = analyse(segment);
+          /* Existing blank scaffolds can be crossed, but never silently rebind a use. */
+          if (!same_resolutions(model.statics.info_map, next.info_map)) {
+            refuse(
+              "This move would change a reference's binding or leave it out of scope.",
+            );
+          };
+          if (List.exists(
+                id => !List.mem(id, model.statics.error_ids),
+                next.error_ids,
+              )) {
+            refuse("This move introduces a static error.");
+          };
+        };
+        Ok({
+          segment,
+          focus,
+        });
+      | ConnectReference(binder, source, destination) =>
+        let name =
+          switch (Language.Statics.Map.lookup(binder, model.statics.info_map)) {
+          | Some(InfoPat({user_term: {term: Var(name), _}, _})) => name
+          | _ => refuse("The original binding is no longer available.")
+          };
+        Option.iter(
+          id =>
+            switch (Language.Statics.Map.lookup(id, model.statics.info_map)) {
+            | Some(InfoExp({user_term: {term: Var(_), _}, _}) as info)
+                when Language.Info.get_binding_site(info) == Some(binder) =>
+              ()
+            | _ =>
+              refuse("The picked reference no longer names this binding.")
+            },
+          source,
+        );
+        if (source == destination && source != None) {
+          Ok({
+            segment: model.document.segment,
+            focus: Option.bind(source, id => target_for_piece(id, model)),
+          });
+        } else {
+          if (policy == "refactor") {
+            refuse("Connecting a reference needs Refine or Free edit.");
+          };
+          if (source != None && policy != "free") {
+            refuse("Moving or unplugging an existing use needs Free edit.");
+          };
+          let fresh =
+            switch (destination) {
+            | None => None
+            | Some(id) =>
+              let info =
+                switch (
+                  Language.Statics.Map.lookup(id, model.statics.info_map)
+                ) {
+                | Some(InfoExp(info)) => info
+                | _ =>
+                  refuse("Choose an expression hole or variable reference.")
+                };
+              let is_hole =
+                switch (info.user_term.term) {
+                | EmptyHole => true
+                | _ => false
+                };
+              if (!is_hole && policy != "free") {
+                refuse("Refine fills an empty expression hole.");
+              };
+              if (!is_hole) {
+                switch (info.user_term.term) {
+                | Var(_) => ()
+                | _ => refuse("Choose a hole or variable reference.")
+                };
+              };
+              let entry =
+                switch (Language.Ctx.lookup_var(info.ctx, name)) {
+                | Some(entry) when entry.id == binder => entry
+                | _ =>
+                  refuse(
+                    "That binding is outside this target's lexical scope or shadowed here.",
+                  )
+                };
+              if (policy == "refine"
+                  && !
+                       Language.Typ.is_consistent(
+                         info.ctx,
+                         entry.typ,
+                         info.ana,
+                       )) {
+                refuse(
+                  "That binding does not fit this hole's expected type.",
+                );
+              };
+              let copied =
+                switch (source) {
+                | Some(id) =>
+                  Option.get(piece_by_id(id, model.document.segment))
+                | None =>
+                  let original =
+                    Option.get(piece_by_id(binder, model.document.segment));
+                  let text = Printer.of_segment(~indent=" ", [original]);
+                  switch (ScratchFocus.core_ws(parse(text))) {
+                  | [Piece.Tile(t)] => Piece.Tile(t)
+                  | _ => refuse("This binder cannot yet be connected.")
+                  };
+                };
+              Some((id, copied));
+            };
+          let segment =
+            Option.fold(
+              ~none=model.document.segment,
+              ~some=
+                id =>
+                  replace_piece(id, empty_piece(), model.document.segment),
+              source,
+            );
+          let segment =
+            Option.fold(
+              ~none=segment,
+              ~some=((id, copied)) => replace_piece(id, copied, segment),
+              fresh,
+            );
+          Ok({
+            segment,
+            focus:
+              Option.bind(destination == None ? source : destination, id =>
+                target_for_piece(id, model)
+              ),
+          });
+        };
+      };
+    }
+  ) {
+  | Failure(message) => Error(message)
+  | Not_found => Error("That source target no longer exists.")
+  };
+};
+
 [@deriving (show, sexp, yojson)]
 type travel =
   | Across(Direction.t)
@@ -819,7 +1297,8 @@ type action =
   | Toggle(string)
   | Undo
   | Redo
-  | Reset;
+  | Reset
+  | Structure(Segment.t, string, structural_command);
 
 let rec update = (action, model) => {
   /* Inspecting a value is view focus, never part of the source or history.
@@ -835,6 +1314,61 @@ let rec update = (action, model) => {
     | _ => model
     };
   switch (action) {
+  | Structure(expected, policy, command) =>
+    if (expected !== model.document.segment) {
+      model;
+    } else {
+      switch (prepare_structure(~policy, command, model)) {
+      | Error(message) => {
+          ...model,
+          message,
+        }
+      | Ok({segment, focus: _})
+          when Segment.ptr_eq(segment, model.document.segment) => model
+      | Ok({segment, focus}) =>
+        let next =
+          calculate({
+            ...model,
+            document: {
+              ...model.document,
+              segment,
+              active: "",
+              active_view: "",
+            },
+            undo: [model.document, ...ScratchFocus.take(99, model.undo)],
+            redo: [],
+            expressions: true,
+            closed:
+              List.filter(
+                id =>
+                  !Option.fold(~none=false, ~some=t => id == key(t), focus),
+                model.closed,
+              ),
+          });
+        switch (focus) {
+        | Some(target) =>
+          let cells = nav_cells(next);
+          let dest =
+            switch (List.find_opt(c => c.target == target, cells)) {
+            | Some(_) as cell => cell
+            | None =>
+              /* A moved definition may be projected into a function or match;
+                 its RHS then has no single editor. Retain focus on its name. */
+              switch (target.location) {
+              | Child(id, 1) =>
+                List.find_opt(c => c.target.location == Child(id, 0), cells)
+              | _ => None
+              }
+            };
+          Option.fold(
+            ~none=next,
+            ~some=c => update(FocusView(c.target, c.view), next),
+            dest,
+          );
+        | None => next
+        };
+      };
+    }
   | SelectValue(selected_value) => {
       ...model,
       selected_value,

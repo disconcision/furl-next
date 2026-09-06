@@ -4,7 +4,14 @@ An environment for working with code, bindings, and the values they produce. Fur
 
 **[Try the live editor](https://andrewblinn.com/furl-next/live/)** · [Interactive reference](https://andrewblinn.com/furl-next/) · [Study switcher](https://andrewblinn.com/furl-next/studies.html) · [Interaction studies](https://andrewblinn.com/furl-next/interactions.html)
 
-The live study embeds Hazel's structural expression and pattern editors in Furl's grid. Editing a cell changes one underlying program, rechecks its lexical context, and updates dependent values using Hazel's evaluator and probes. Lets, function literals, and matches can be furled into rows or unfurled into source. Arrow keys move between editors: up/down preserve the intended column through short lines and nested indentation, and left/right cross cell boundaries. Undo/redo, display toggles, reset, and browser persistence work across four examples. Matches offer **All columns** and **One branch** views. In one-branch mode click the vertical match stem to cycle branches (Shift-click reverses); **Ctrl+Alt+Left/Right** switches branches in the focused match in either mode. Select a live value inside a function to reveal its call arrows; ←/→ steps through coherent parameter/body values, and Escape returns to code. These controls use the existing margins without adding rows. A [self-contained navigation study](https://andrewblinn.com/furl-next/live/navigation.html) compares three provisional branch gestures. Temporary Violet, Coral, and Teal controls let us compare caret colors.
+The live study embeds Hazel's structural expression and pattern editors in Furl's grid. Editing a cell changes one underlying program, rechecks its lexical context, and updates dependent values using Hazel's evaluator and probes. Lets, function literals, and matches can be furled into rows or unfurled into source. Arrow keys move between editors: up/down preserve the intended column through short lines and nested indentation, and left/right cross cell boundaries. Undo/redo, display toggles, reset, and browser persistence work across six examples. Matches offer **All columns** and **One branch** views. In one-branch mode click the vertical match stem to cycle branches (Shift-click reverses); **Ctrl+Alt+Left/Right** switches branches in the focused match in either mode. Select a live value inside a function to reveal its call arrows; ←/→ steps through coherent parameter/body values, and Escape returns to code. These controls use the existing margins without adding rows. A [self-contained navigation study](https://andrewblinn.com/furl-next/live/navigation.html) compares three provisional branch gestures. Temporary Violet, Coral, and Teal controls let us compare caret colors.
+
+The live **Row gestures** and **Connections** examples match the two standalone labs. Hover the new icon-only controls for Edit / Rows / Connect, Refactor / Refine / Free edit, Slot / Float, hover wires, and motion. The palette is provisional: source commands are independent of which button or modifier invokes them.
+
+- Rows: drag anywhere on a binding; double-click a cell/value to interact with it. Hover a boundary and click to insert. Slot keeps columns aligned; Float compares pointer-following motion. In Free edit, drop outside the code viewport to delete.
+- Keyboard: Cmd/Ctrl+Enter inserts below (Shift above). A focused row uses Space, arrows, Enter to move; Escape cancels. Backspace removes a two-hole row; Cmd/Ctrl+Shift+Backspace requests populated-row deletion. Native Undo/Redo includes structural commits.
+- Connect: pull or click-pick a wire from a name. Refine fills compatible expression holes. Free edit also moves, replaces or unplugs existing variable uses. A missed drag of a use unplugs; click-away after click/keyboard pickup cancels without deleting. Hover links use word centers and the study’s spring renderer.
+- Hold Option/Alt for Connect over a name or Rows over other row space. Native typing is unrestricted by the structural policy. Moves currently remain within one let scope; Refactor checks binding identities, static errors, simple patterns and a conservative total expression fragment.
 
 The reference contains seven interactive design studies with preset values, including more developed function/match projections and call navigation. Each reference page is a self-contained HTML file that opens offline. The live app is a separate, compiled web application.
 
@@ -67,6 +74,8 @@ node furl/live/test-navigation-study.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-inspector.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-values.cjs
 TEST_URL=http://localhost:8000/live/ node furl/live/test-menu.cjs
+TEST_URL=http://localhost:8000/live/ node furl/live/test-gestures.cjs
+TEST_URL=http://localhost:8000/live/ node furl/live/test-nested-gestures.cjs
 ```
 
 The first checks value inspection, caret restoration, branch gestures, nested call contexts, and control geometry. The second opens the study from `file://` with network requests blocked and exercises all three concepts. The inspector check covers caret/type/error information, shared-source error counts, holes, and evaluation feedback. The value check covers responsive structural abbreviation, bounded rows, shared branch widths, and call navigation. The menu check covers top-layer hit testing, active-cell positioning, viewport bounds, keyboard and clipboard commands, and dismissal. All save light/dark screenshots in a temporary directory.
@@ -77,7 +86,7 @@ Live values use the remaining column space, then Hazel’s structural probe abbr
 
 The footer follows the caret with Hazel's syntactic form, type, and error explanation. The right side counts whole-program errors, with holes and warnings shown separately when present.
 
-The live projection expands lets, function parameters/bodies, and match arms, including nesting. Repeated match inputs and result bindings share syntax/editor state with distinct visual focus. Branch navigation changes presentation; call navigation changes inspected samples. Syntax-moving gestures, cross-cell selections, and the reference's more advanced comb variations remain future work. Evaluation runs on the UI thread with a 20,000-step limit, suitable for these small studies. Undo history is session-local; each example's program is saved in browser storage. See the [architecture](furl/design/architecture.md), [layout invariants](furl/design/layout.md), and [source notes](furl/design/sources.md).
+The live projection expands lets, function parameters/bodies, and match arms, including nesting. Repeated match inputs and result bindings share syntax/editor state with distinct visual focus. Branch navigation changes presentation; call navigation changes inspected samples. The working row/reference gestures now operate on native source. Cross-scope movement, arbitrary-form gestures, cross-cell selections, and the reference's more advanced comb variations remain future work. Evaluation runs on the UI thread with a 20,000-step limit, suitable for these small studies. Undo history is session-local; each example's program is saved in browser storage. See the [architecture](furl/design/architecture.md), [layout invariants](furl/design/layout.md), and [source notes](furl/design/sources.md).
 
 The reference remains fast to change as this integration develops. Stable syntax identities, call identities, and grid constraints should be shared across both implementations; preset samples must not become a substitute evaluator.
 
@@ -85,7 +94,7 @@ Hazel build instructions are in [INSTALL.md](INSTALL.md), with tests in [test/RE
 
 ## Explore editing interactions
 
-The [interaction studies](https://andrewblinn.com/furl-next/interactions.html) inventory old Furl, the Big Book, and Hazel's refactorings branch. They include modal row insertion and movement, reference placement, and eight before/after transformations. These are isolated proposals; the live editor has not acquired these commands yet.
+The [interaction studies](https://andrewblinn.com/furl-next/interactions.html) inventory old Furl, the Big Book, and Hazel's refactorings branch. They include modal row insertion and movement, reference placement, and eight before/after transformations. The two labs remain fast standalone experiments; their working row/reference gestures are now also in the live Hazel editor. The transformation storyboards remain proposals.
 
 ```sh
 python3 furl/interactions/build.py

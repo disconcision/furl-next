@@ -8,6 +8,7 @@ let button = (~attrs=[], ~disabled=false, ~label, effect, text) =>
       Attr.type_("button"),
       disabled ? Attr.disabled : Attr.empty,
       Attr.create("aria-label", label),
+      Attr.title(label),
       Attr.on_click(_ => effect),
       ...attrs,
     ],
@@ -93,31 +94,45 @@ let view =
       Haz3lcore.ProbePerform.FocusEffect.schedule_cell();
       Effect.Many([focus(), inject(Navigate(target, direction))]);
     };
-    CodeEditable.View.view(
-      ~context_menu_attrs=
-        (point, metrics) =>
-          FurlMenu.attrs(
-            ~close=
-              inject(
-                EditView(target, view, ContextMenu(ContextMenu.Model.Close)),
+    Node.div(
+      ~attrs=[
+        Attr.class_("furl-native-cell"),
+        Attr.create("data-cell", key(target)),
+        Attr.create("data-view", view),
+      ],
+      [
+        CodeEditable.View.view(
+          ~context_menu_attrs=
+            (point, metrics) =>
+              FurlMenu.attrs(
+                ~close=
+                  inject(
+                    EditView(
+                      target,
+                      view,
+                      ContextMenu(ContextMenu.Model.Close),
+                    ),
+                  ),
+                point,
+                metrics,
               ),
-            point,
-            metrics,
-          ),
-      ~globals,
-      ~signal=_ => focus(),
-      ~edit_mode=
-        Editable({
-          inject: action => inject(EditView(target, view, action)),
-          escape: d => travel(Across(d)),
-          escape_vertical: Some((d, _) => travel(BetweenRows(d))),
-          take_focus: _ => focus(),
-          focus:
-            Option.fold(~none=false, ~some=c => c.view == view, active)
-              ? Some() : None,
-        }),
-      ~dynamics=model.samples,
-      c.editor,
+          ~globals,
+          ~signal=_ => focus(),
+          ~edit_mode=
+            Editable({
+              inject: action => inject(EditView(target, view, action)),
+              escape: d => travel(Across(d)),
+              escape_vertical: Some((d, _) => travel(BetweenRows(d))),
+              take_focus: _ => focus(),
+              focus:
+                Option.fold(~none=false, ~some=c => c.view == view, active)
+                  ? Some() : None,
+            }),
+          ~dynamics=model.samples,
+          c.editor,
+        ),
+        Node.div(~attrs=[Attr.class_("furl-hit-layer")], []),
+      ],
     );
   };
   let live_value = (id, owner, target) => {
@@ -267,6 +282,24 @@ let view =
           ++ (mark == "·" ? " furl-parameter" : ""),
         ),
         Attr.create("data-row", id),
+        Attr.create(
+          "data-binding-row",
+          Option.fold(
+            ~none="",
+            ~some=
+              p =>
+                switch (p.location) {
+                | Child(id, 0) =>
+                  switch (piece_by_id(id, model.document.segment)) {
+                  | Some(Tile(t)) when t.label == ["let", "=", "in"] =>
+                    Uuidm.to_string(id)
+                  | _ => ""
+                  }
+                | _ => ""
+                },
+            pattern,
+          ),
+        ),
         Attr.create(
           "data-expression",
           Option.fold(~none="", ~some=key, expression),
@@ -424,14 +457,50 @@ let view =
           Attr.create("data-scope", key(target)),
         ],
         comb(target, lane, rail, "let block", false)
-        @ List.map(projection(owner, false, lane, rail + 1), rows),
+        @ List.mapi(
+            (i, node) => {
+              let (defs, _) =
+                let_prefix(read(target, model.document.segment));
+              let binding = List.nth_opt(defs, i);
+              Node.div(
+                ~key=
+                  Option.fold(
+                    ~none="tail-" ++ key(target),
+                    ~some=(t: Haz3lcore.Base.tile) => Uuidm.to_string(t.id),
+                    binding,
+                  ),
+                ~attrs=[
+                  Attr.class_(binding == None ? "furl-tail" : "furl-binding"),
+                  Attr.create("data-owner", key(target)),
+                  Attr.create(
+                    "data-binding",
+                    Option.fold(
+                      ~none="",
+                      ~some=
+                        (t: Haz3lcore.Base.tile) => Uuidm.to_string(t.id),
+                      binding,
+                    ),
+                  ),
+                  Attr.create(
+                    "data-blank",
+                    string_of_bool(
+                      Option.fold(~none=false, ~some=blank_binding, binding),
+                    ),
+                  ),
+                ],
+                [projection(owner, false, lane, rail + 1, node)],
+              );
+            },
+            rows,
+          ),
       )
-    | Function({target, parameter, body_target: _, depth, body}) =>
+    | Function({target, parameter, body_target, depth, body}) =>
       Node.div(
         ~key="function-" ++ key(target),
         ~attrs=[
           Attr.class_("furl-function"),
           Attr.create("data-function", key(target)),
+          Attr.create("data-body", key(body_target)),
         ],
         [
           Node.div(
@@ -579,6 +648,17 @@ let view =
                     ~attrs=[
                       Attr.class_("furl-branch"),
                       Attr.create("data-branch", string_of_int(i)),
+                      Attr.create(
+                        "data-body",
+                        key(
+                          switch (b.body) {
+                          | Row({expression, _}) => expression
+                          | Scope({target, _})
+                          | Function({target, _})
+                          | Match({target, _}) => target
+                          },
+                        ),
+                      ),
                     ],
                     comb(
                       ~joined,
@@ -628,6 +708,7 @@ let view =
   Node.div(
     ~attrs=[
       Attr.id("furl-app"),
+      FurlGestures.hook(~model, ~metrics=font_metrics, ~inject),
       Attr.create("data-caret", model.caret_tone),
       Key.listener(~f=key =>
         switch (key) {
@@ -835,6 +916,7 @@ let view =
                 inject(MatchMode(false)),
                 "One branch",
               ),
+              Node.div(~attrs=[Attr.class_("furl-gesture-tools")], []),
             ],
           ),
           Node.div(
@@ -855,6 +937,7 @@ let view =
               ),
             ],
             [
+              Node.div(~attrs=[Attr.class_("furl-wire-layer")], []),
               Node.div(
                 ~attrs=[
                   Attr.class_("furl-program-content"),
@@ -874,12 +957,27 @@ let view =
               ),
             ],
           ),
+          Node.div(
+            ~attrs=[
+              Attr.class_("furl-gesture-overlay"),
+              Attr.create("aria-hidden", "true"),
+            ],
+            [],
+          ),
+          Node.div(
+            ~attrs=[
+              Attr.class_("furl-gesture-status"),
+              Attr.create("role", "status"),
+              Attr.create("aria-live", "polite"),
+            ],
+            [],
+          ),
           FurlInspector.view(~globals, model),
           Node.p(
             ~attrs=[Attr.class_("furl-help")],
             [
               Node.text(
-                "Click a pattern or expression to edit. ↑ ↓ keep your column between cells; ← → cross cell edges. Click a comb to reveal code; + brings back the rows. Edits are saved in this browser.",
+                "Hover the tool icons for controls. Rows: drag anywhere, double-click to edit; gaps insert. Connect: pull a wire from a name, or click to pick/place. ⌘/Ctrl+Enter inserts a row; Escape cancels; Undo restores. Hold Option/Alt over a name for Connect, elsewhere for Rows. Edits are saved in this browser.",
               ),
             ],
           ),
