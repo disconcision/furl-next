@@ -187,7 +187,6 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 .furl-value[data-cell-active=true] {user-select:text;cursor:text;}
 .furl-binding[data-picked=true] {z-index:10;background:color-mix(in srgb,var(--furl-scope) 9%,var(--furl-paper));}
 .furl-program {overflow-anchor:none;}
-.furl-preview .furl-value {visibility:hidden;}
 .furl-delete-preview {box-shadow:inset 0 0 0 2px var(--furl-coral);}
 .furl-delete-preview [data-picked=true] {opacity:.4;}
 .furl-gesture-overlay {position:fixed;inset:0;pointer-events:none;z-index:12;}
