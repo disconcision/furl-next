@@ -230,11 +230,16 @@
         refreshMode();
       },
     );
-    button("option", "links", "Show binding wires on hover", () => {
-      links = !links;
-      updateLink();
-      refreshMode();
-    });
+    button(
+      "option",
+      "links",
+      "Show binding wires on hover in Connect mode",
+      () => {
+        links = !links;
+        updateLink();
+        refreshMode();
+      },
+    );
     button("option", "motion", "Animate row movement and wires", () => {
       motion = !motion;
       if (!motion) {
@@ -265,6 +270,7 @@
     );
     function refreshMode() {
       const selected = effectiveMode();
+      const changed = root.dataset.tool !== selected;
       root.dataset.tool = selected;
       root.dataset.policy = policy;
       root.dataset.gesture = drag
@@ -311,6 +317,8 @@
           committing ||
           (!!drag && !placing);
       });
+      // Entering/leaving the modifier mode must update a stationary hover too.
+      if (changed) updateLink();
     }
     function request(command, commit = false) {
       try {
@@ -1091,12 +1099,13 @@
     function updateLink() {
       // A native edit may replace the target hole before its new use is measured.
       // Keep the last drag curve until finishLayout hands it to that use.
-      if (connection || referenceMotion || wire.retracting) return;
+      if (drag || connection || referenceMotion || wire.retracting) return;
+      const showLinks = links && effectiveMode() === "connect";
       const hovered =
-        links && inside(rect(program), pointer)
+        showLinks && inside(rect(program), pointer)
           ? hitAt(pointer.x, pointer.y)
           : null;
-      const focused = links
+      const focused = showLinks
         ? $(".furl-hit[data-kind=reference]:focus-visible", program)
         : null;
       const target =

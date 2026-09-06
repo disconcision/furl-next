@@ -16,7 +16,7 @@ const output = fs.mkdtempSync(
     const errors = [];
     page.on("pageerror", (e) => errors.push(String(e)));
     await page.goto(process.env.TEST_URL || "http://127.0.0.1:8876/live/");
-    await page.waitForSelector(".reference-wire");
+    await page.waitForSelector(".reference-wire", { state: "attached" });
     await page.getByRole("combobox", { name: "Example" }).selectOption("5");
     await page.locator("button[data-tool=connect]").click();
     const binder = (name) =>
