@@ -200,6 +200,111 @@ let tests = (
       },
     ),
     test_case(
+      "checked row movement crosses total nested definitions",
+      `Quick,
+      () => {
+        let m = start(snd(examples[0]));
+        let defs = fst(let_prefix(m.document.segment));
+        let area = List.nth(defs, 2).id;
+        let border = List.nth(defs, 3).id;
+        List.iter(
+          policy => {
+            let moved =
+              update(
+                Structure(
+                  m.document.segment,
+                  policy,
+                  MoveBinding(whole, area, None),
+                ),
+                m,
+              );
+            check(
+              int,
+              "nested-let crossing commits",
+              1,
+              List.length(moved.undo),
+            );
+            check(string, "results preserved", result(m), result(moved));
+            check(
+              bool,
+              "area now follows border",
+              true,
+              List.nth(fst(let_prefix(moved.document.segment)), 3).id
+              == area,
+            );
+            check(
+              bool,
+              "nested binding retains identity",
+              true,
+              rhs("twice", moved) == rhs("twice", m),
+            );
+            check(
+              string,
+              "exact undo",
+              source(m),
+              source(update(Undo, moved)),
+            );
+            let back =
+              update(
+                Structure(
+                  moved.document.segment,
+                  policy,
+                  MoveBinding(whole, area, Some(border)),
+                ),
+                moved,
+              );
+            check(
+              string,
+              "reverse crossing restores source",
+              source(m),
+              source(back),
+            );
+          },
+          ["refactor", "refine"],
+        );
+        let unsafe =
+          start("let a = 2 in let b = let x = a + 1 in x * 2 in a + b");
+        let a = List.hd(fst(let_prefix(unsafe.document.segment))).id;
+        check(
+          bool,
+          "nested dependency still protected",
+          true,
+          switch (
+            prepare_structure(
+              ~policy="refactor",
+              MoveBinding(whole, a, None),
+              unsafe,
+            )
+          ) {
+          | Error(_) => true
+          | Ok(_) => false
+          },
+        );
+        List.iter(
+          body => {
+            let m = start("let a = 2 in let b = " ++ body ++ " in a");
+            let a = List.hd(fst(let_prefix(m.document.segment))).id;
+            check(
+              bool,
+              "uncertified nested computation still refused",
+              true,
+              switch (
+                prepare_structure(
+                  ~policy="refactor",
+                  MoveBinding(whole, a, None),
+                  m,
+                )
+              ) {
+              | Error(_) => true
+              | Ok(_) => false
+              },
+            );
+          },
+          ["let x = ¿ in 4", "let f = fun x -> x in f(3)", "let 1 = 2 in 4"],
+        );
+      },
+    ),
+    test_case(
       "native connections respect lexical identity, holes, types and undo",
       `Quick,
       () => {

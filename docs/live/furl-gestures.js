@@ -59,7 +59,9 @@
       commitKind = "",
       referenceMotion = null,
       landing = null,
-      landingTimer = 0;
+      landingTimer = 0,
+      rowFrame = 0,
+      rowHover = null;
     let blockedClick = false,
       transactionRevision = null,
       lastLayout = "",
@@ -78,6 +80,17 @@
             easing: "cubic-bezier(.2,0,0,1)",
             ...options,
           });
+    function animateRow(n, frames) {
+      const a = animate(n, frames);
+      if (n.dataset.rowSettling) {
+        const done = () => delete n.dataset.rowSettling;
+        if (a) {
+          a.addEventListener("finish", done, { once: true });
+          a.addEventListener("cancel", done, { once: true });
+        } else done();
+      }
+      return a;
+    }
     const referenceAnimations = new Set(),
       referenceGhosts = new Set();
     function clearReferenceAnimations() {
@@ -489,10 +502,11 @@
             const dx = d.x - p.x,
               dy = d.y - p.y;
             if (Math.abs(dy) + Math.abs(dx) > 0.1)
-              animate(n, [
+              animateRow(n, [
                 { transform: `translate(${dx}px,${dy}px)` },
                 { transform: "none" },
               ]);
+            else delete n.dataset.rowSettling;
           } else animate(n, [{ opacity: 0 }, { opacity: 1 }]);
         }
       }
@@ -549,7 +563,11 @@
       });
       $$(".furl-binding", program).forEach((n) => {
         n.tabIndex = 0;
-        n.setAttribute("aria-label", "Binding row");
+        const rows = $$(".furl-row", n).length;
+        n.setAttribute(
+          "aria-label",
+          `${bindingName(n)} binding${rows > 1 ? `, including ${rows} display rows` : ""}`,
+        );
       });
     }
     function syncBoundaries() {
@@ -618,14 +636,44 @@
       if (activeCell) delete activeCell.dataset.cellActive;
       activeCell = cell;
       if (activeCell) activeCell.dataset.cellActive = "true";
+      if (activeCell) hoverRow();
       refreshMode();
     }
     function bindingFor(target) {
       if (target.matches(".furl-binding")) return target;
       const id = target.closest(".furl-row")?.dataset.bindingRow;
-      return id
-        ? $$(".furl-binding", program).find((n) => n.dataset.binding === id)
-        : null;
+      // Stay in this projection instance when a match echoes a binding.
+      for (
+        let n = target.closest(".furl-binding");
+        n;
+        n = n.parentElement.closest(".furl-binding")
+      )
+        if (n.dataset.binding === id) return n;
+      return null;
+    }
+    function hoverRow(target = null) {
+      const next =
+        target && effectiveMode() === "rows" && !drag && !activeCell
+          ? bindingFor(target)
+          : null;
+      if (rowHover === next) return;
+      if (rowHover) delete rowHover.dataset.rowHover;
+      rowHover = next;
+      if (rowHover) rowHover.dataset.rowHover = "true";
+    }
+    function bindingName(member) {
+      return (
+        $$(".furl-row", member)
+          .find((n) => n.dataset.bindingRow === member.dataset.binding)
+          ?.querySelector(".furl-pattern .code")
+          ?.textContent.trim() || "This binding"
+      );
+    }
+    function scopeMessage(d) {
+      const owner = d.member.parentElement.closest(".furl-binding");
+      return owner
+        ? `${bindingName(d.member)} belongs to ${bindingName(owner)}. Moving it outside that definition needs a scope-changing move, which is not implemented yet.`
+        : "Move within the same let scope for now.";
     }
     function insertionTarget(row, above) {
       if (!row) return null;
@@ -687,15 +735,19 @@
       return true;
     }
     function clearRows(animateBack = true) {
+      cancelAnimationFrame(rowFrame);
+      rowFrame = 0;
       if (!drag) return;
       for (const member of drag.members) {
         const old = rect(member);
         member.getAnimations().forEach((a) => a.cancel());
         member.style.transform = "";
+        if (animateBack && member.dataset.picked)
+          member.dataset.rowSettling = "true";
         member.removeAttribute("data-picked");
         if (animateBack) {
           const next = rect(member);
-          animate(member, [
+          animateRow(member, [
             {
               transform: `translate(${old.left - next.left}px,${old.top - next.top}px)`,
             },
@@ -710,6 +762,7 @@
       referenceMotion = null;
       clearReferenceAnimations();
       pending = null;
+      hoverRow();
       clearRows();
       drag = null;
       if (connection) {
@@ -727,6 +780,7 @@
     }
     function beginRow(member, keyboard = false, grab = pointer) {
       activate(null);
+      hoverRow();
       clearLanding();
       wire.clear();
       const parent = member.parentElement,
@@ -749,6 +803,21 @@
         index: members.indexOf(member),
         scope: member.dataset.owner,
         offset: { x: grab.x - source.left, y: grab.y - source.top },
+        height: source.height,
+        motion: new Map(
+          members.map((n) => [
+            n,
+            {
+              x: start.get(n).left - base.get(n).left,
+              y: start.get(n).top - base.get(n).top,
+              vx: 0,
+              vy: 0,
+              tx: 0,
+              ty: 0,
+            },
+          ]),
+        ),
+        clock: performance.now(),
         lastGood: members.indexOf(member),
         off: false,
         cache: new Map(),
@@ -757,16 +826,44 @@
       member.dataset.picked = "true";
       program.classList.add("furl-preview");
       member.focus({ preventScroll: true });
-      for (const n of members) {
-        const old = start.get(n),
-          end = base.get(n);
-        if (Math.abs(old.top - end.top) > 0.1)
-          animate(n, [
-            { transform: `translateY(${old.top - end.top}px)` },
-            { transform: "none" },
-          ]);
-      }
       previewRow(drag.index);
+    }
+    // A critically damped spring retains velocity across new candidate slots.
+    // Unlike restarting an ease-out on each pointer event, reversals and Float
+    // neighbor reflow stay continuous and independent of event frequency.
+    function paintRows(now) {
+      rowFrame = 0;
+      if (!drag) return;
+      const dt = Math.max(0, Math.min((now - drag.clock) / 1000, 0.05));
+      drag.clock = now;
+      let moving = false;
+      for (const [n, s] of drag.motion) {
+        const immediate =
+          !motion ||
+          media.matches ||
+          (n === drag.member && style === "float" && !drag.keyboard);
+        for (const axis of ["x", "y"]) {
+          const target = s["t" + axis],
+            velocity = "v" + axis;
+          const delta = s[axis] - target;
+          if (
+            immediate ||
+            (Math.abs(delta) < 0.02 && Math.abs(s[velocity]) < 0.2)
+          ) {
+            s[axis] = target;
+            s[velocity] = 0;
+          } else {
+            const omega = 18,
+              decay = Math.exp(-omega * dt);
+            const c = s[velocity] + omega * delta;
+            s[axis] = target + (delta + c * dt) * decay;
+            s[velocity] = (s[velocity] - omega * c * dt) * decay;
+            moving = true;
+          }
+        }
+        n.style.transform = `translate(${s.x}px,${s.y}px)`;
+      }
+      if (moving) rowFrame = requestAnimationFrame(paintRows);
     }
     function rowCommand(index, remove = false) {
       const others = drag.members.filter((n) => n !== drag.member);
@@ -794,16 +891,24 @@
       if (!allowed.ok) {
         say(allowed.message);
       } else {
-        say(drag.off ? "Release to delete this binding." : "");
+        say(
+          drag.off
+            ? "Release to delete this binding."
+            : drag.outsideScope
+              ? scopeMessage(drag)
+              : "",
+        );
         drag.lastGood = index;
       }
       drag.command = cmd;
-      drag.valid = allowed.ok;
+      drag.valid = allowed.ok && !drag.outsideScope;
       const others = drag.members.filter((n) => n !== drag.member);
       const order = [...others];
       order.splice(allowed.ok ? index : drag.lastGood, 0, drag.member);
-      const old = new Map(drag.members.map((n) => [n, rect(n).toJSON()]));
-      drag.members.forEach((n) => n.getAnimations().forEach((a) => a.cancel()));
+      // Advance toward the old targets first. Time spent resting in a slot
+      // must not be counted as elapsed motion toward a just-selected target.
+      cancelAnimationFrame(rowFrame);
+      paintRows(performance.now());
       let y = Math.min(...[...drag.base.values()].map((r) => r.top));
       for (const n of order) {
         const original = drag.base.get(n);
@@ -813,41 +918,57 @@
           dx = pointer.x - drag.offset.x - original.left;
           dy = pointer.y - drag.offset.y - original.top;
         }
-        n.style.transform = `translate(${dx}px,${dy}px)`;
-        const prior = old.get(n),
-          next = { left: original.left + dx, top: original.top + dy };
-        if (n !== drag.member || style === "slot" || drag.keyboard) {
-          if (
-            Math.abs(prior.top - next.top) + Math.abs(prior.left - next.left) >
-            0.1
-          )
-            animate(n, [
-              {
-                transform: `translate(${prior.left - original.left}px,${prior.top - original.top}px)`,
-              },
-              { transform: `translate(${dx}px,${dy}px)` },
-            ]);
-        }
+        const s = drag.motion.get(n);
+        s.tx = dx;
+        s.ty = dy;
         y += original.height;
       }
       drag.order = order;
       drag.index = index;
       program.classList.toggle("furl-delete-preview", drag.off);
+      cancelAnimationFrame(rowFrame);
+      paintRows(drag.clock);
     }
     function updateRow() {
       const d = drag;
       if (!d) return;
       d.off = !inside(rect(program), pointer);
+      const nested = d.member.parentElement.closest(".furl-binding");
+      const outsideScope =
+        !d.off && !!nested && !inside(rect(d.member.parentElement), pointer);
       const others = d.members.filter((n) => n !== d.member);
-      let index = 0,
-        y = Math.min(...[...d.base.values()].map((r) => r.top));
+      const centers = [];
+      let y =
+        Math.min(...[...d.base.values()].map((r) => r.top)) + d.height / 2;
+      centers.push(y);
       for (const n of others) {
-        const h = d.base.get(n).height;
-        if (pointer.y > y + h / 2) index++;
-        y += h;
+        y += d.base.get(n).height;
+        centers.push(y);
       }
-      if (index !== d.index || d.wasOff !== d.off || style === "float") {
+      // Compare candidate centers to the *grabbed row's* center. Collapsing the
+      // source's gap made a horizontal pickup move down a slot; using raw pointer
+      // y made a tall definition jump when grabbed near its bottom.
+      const center = pointer.y - d.offset.y + d.height / 2;
+      let index = d.index;
+      const hysteresis = 3;
+      while (
+        index < centers.length - 1 &&
+        center > (centers[index] + centers[index + 1]) / 2 + hysteresis
+      )
+        index++;
+      while (
+        index > 0 &&
+        center < (centers[index - 1] + centers[index]) / 2 - hysteresis
+      )
+        index--;
+      if (
+        index !== d.index ||
+        d.wasOff !== d.off ||
+        outsideScope !== d.outsideScope ||
+        style === "float"
+      ) {
         d.wasOff = d.off;
+        d.outsideScope = outsideScope;
         previewRow(index);
       }
     }
@@ -856,15 +977,17 @@
       if (!d) return;
       const before = capture();
       clearRows(false);
+      // Keep the moving row above its neighbors until it settles. Otherwise
+      // dropping mid-flight superimposes their glyphs during the final reflow.
+      d.member.dataset.rowSettling = "true";
       drag = null;
-      if (d.valid) {
-        const result = doCommit(d.command);
-        if (result) positions = before;
+      if (d.valid && doCommit(d.command)) {
+        positions = before;
       } else {
         for (const n of d.members) {
           const old = before.get(identity(n)),
             now = rect(n);
-          animate(n, [
+          animateRow(n, [
             {
               transform: `translate(${old.left - now.left}px,${old.top - now.top}px)`,
             },
@@ -1051,7 +1174,15 @@
             if (gap.dataset.scope !== drag.scope) {
               say("Move within the same let scope for now.");
             } else {
-              updateRow();
+              const before = gap.dataset.before;
+              const others = drag.members.filter((n) => n !== drag.member);
+              const index =
+                before === drag.member.dataset.binding
+                  ? drag.members.indexOf(drag.member)
+                  : before
+                    ? others.findIndex((n) => n.dataset.binding === before)
+                    : others.length;
+              previewRow(index);
               dropRow();
             }
           } else {
@@ -1112,6 +1243,7 @@
           updateConnection();
         } else {
           refreshMode();
+          hoverRow(e.target);
           updateLink();
         }
       },

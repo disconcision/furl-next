@@ -943,6 +943,16 @@ let rec total_for_move = (exp: Language.Exp.t) =>
     total_for_move(a) && total_for_move(b)
   | Tuple(es)
   | ListLit(es) => List.for_all(total_for_move, es)
+  | Let(p, definition, body) =>
+    /* A nested let is just as movable as its total definition and body.
+       Keep refutable patterns, calls and incomplete computations excluded. */
+    let irrefutable =
+      switch (p.term) {
+      | Var(_)
+      | Wild => true
+      | _ => false
+      };
+    irrefutable && total_for_move(definition) && total_for_move(body);
   | _ => false
   };
 let same_resolutions = (old, next) =>

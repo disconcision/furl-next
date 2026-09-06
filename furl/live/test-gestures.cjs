@@ -42,6 +42,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-native-gestures-"));
     };
     const fresh = async () => {
       await p.goto(url);
+      await p.locator(".reference-wire").waitFor({ state: "attached" });
       await settle();
     };
     await fresh();
@@ -92,7 +93,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-native-gestures-"));
     for (const old of initial) {
       assert.ok(
         Math.abs(inserted.find((n) => n.id === old.id).y - old.y) < 1,
-        "existing row starts at its old painted position",
+        `existing row starts at its old painted position: ${JSON.stringify({ old, next: inserted.find((n) => n.id === old.id) })}`,
       );
     }
     await p.evaluate(() => {

@@ -178,14 +178,15 @@ body {margin:0;background:var(--furl-page);color:var(--furl-ink);font:14px/1.5 v
 .furl-unplugging {background:color-mix(in srgb,var(--furl-paper) 70%,transparent);}
 .furl-exiting-reference {position:absolute;display:block;pointer-events:none;user-select:none;color:var(--furl-ink);font:14px/22px var(--code-font);white-space:pre;transform-origin:left center;}
 #furl-app[data-tool=rows] .furl-row {cursor:grab;}
-#furl-app[data-tool=rows] .furl-row:hover {background:color-mix(in srgb,var(--furl-scope) 5%,transparent);}
-#furl-app[data-tool=rows] .furl-binding:focus {outline:none;background:color-mix(in srgb,var(--furl-scope) 7%,transparent);}
+#furl-app[data-tool=rows] .furl-binding[data-row-hover=true] {background:color-mix(in srgb,var(--furl-scope) 5%,transparent);}
+#furl-app[data-tool=rows] .furl-binding:focus {outline:none;}
+#furl-app[data-tool=rows] .furl-binding:focus-visible:not([data-picked]) {box-shadow:inset 2px 0 color-mix(in srgb,var(--furl-scope) 35%,transparent);}
 #furl-app[data-tool=rows] .code-editor {cursor:grab;}
 #furl-app[data-tool=rows] #caret {visibility:hidden;}
 #furl-app[data-tool=rows] [data-cell-active=true] #caret {visibility:visible;}
 #furl-app[data-tool=rows] [data-cell-active=true] .code-editor {cursor:text;}
 .furl-value[data-cell-active=true] {user-select:text;cursor:text;}
-.furl-binding[data-picked=true] {z-index:10;background:color-mix(in srgb,var(--furl-scope) 9%,var(--furl-paper));}
+.furl-binding[data-picked=true],.furl-binding[data-row-settling=true] {z-index:10;background:color-mix(in srgb,var(--furl-scope) 9%,var(--furl-paper));}
 .furl-program {overflow-anchor:none;}
 .furl-delete-preview {box-shadow:inset 0 0 0 2px var(--furl-coral);}
 .furl-delete-preview [data-picked=true] {opacity:.4;}

@@ -20,7 +20,7 @@
   {
     "action": "Insert or move a binding row",
     "status": "Animated",
-    "current": "New rows fade in while existing rows move. Slot/Float previews and cancellation use the same row reflow.",
+    "current": "New rows fade in while existing rows move. Live Slot/Float previews use damped motion that retains velocity through reversals, with stable grab-relative targets. The study and live insertion, commit and cancellation retain the original short reflow.",
     "next": "Reuse the behavior for future copy and cross-scope operations."
   },
   {
