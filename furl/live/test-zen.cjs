@@ -43,11 +43,11 @@ const fs = require("node:fs"),
     assert.equal(await p.locator(".furl-header").isVisible(), false);
     assert.equal(await p.locator(".furl-inspector").isVisible(), false);
     let box = await program.boundingBox();
-    assert.ok(Math.abs(box.x + box.width / 2 - 640) < 1, JSON.stringify(box));
-    assert.ok(Math.abs(box.y + box.height / 2 - 450) < 1, JSON.stringify(box));
+    assert.ok(box.x >= 160 && box.x <= 180, JSON.stringify(box));
+    assert.ok(Math.abs(box.y - box.x) < 1, JSON.stringify(box));
     assert.ok(
-      box.width < 600 && box.x > 300,
-      "wide margins around a compact program",
+      box.width < 600 && box.x > 150,
+      "fixed upper-left margins around a compact program",
     );
     assert.equal(
       await p.evaluate(
@@ -90,13 +90,52 @@ const fs = require("node:fs"),
     await p.waitForTimeout(550);
     assert.equal(await dock.evaluate((n) => n.inert), true);
     assert.equal(await root.getAttribute("data-zen-tools"), "false");
-    // Insertion boundaries follow the centered program and retain native Undo.
+    // Width edits grow rightward and retain the viewport and expression origins.
+    await p.keyboard.press("Shift+F9");
+    await tool("edit").click();
+    await p.mouse.move(1100, 650);
+    await p.waitForTimeout(550);
+    await expr().click();
+    await settle();
+    await p.keyboard.press("Meta+a");
+    const origin = await expr().boundingBox();
+    await p.keyboard.type("123456789 + 123456789 + 123456789");
+    await settle();
+    const expanded = await program.boundingBox(),
+      wideOrigin = await expr().boundingBox();
+    assert.ok(
+      expanded.width > box.width + 50,
+      "exercise an actual width change",
+    );
+    assert.ok(
+      Math.abs(expanded.x - box.x) < 1 && Math.abs(expanded.y - box.y) < 1,
+    );
+    assert.ok(
+      Math.abs(wideOrigin.x - origin.x) < 1 &&
+        Math.abs(wideOrigin.y - origin.y) < 1,
+    );
+    // Restore the fixture without relying on native typing history grouping.
+    await p.keyboard.press("Meta+a");
+    await p.keyboard.type("3");
+    await settle();
+    await p.keyboard.press("Shift+F9");
+    await tool("rows").click();
+    await p.mouse.move(1100, 650);
+    await p.waitForTimeout(550);
+    // Insertion boundaries follow the anchored program and retain native Undo.
     const gap = p.locator(".furl-gap").nth(1);
     const gapBox = await gap.boundingBox();
     assert.ok(gapBox.y > box.y && gapBox.y < box.y + box.height);
     await gap.click();
     await settle();
     assert.equal(await rows().count(), 5);
+    const taller = await program.boundingBox();
+    assert.ok(
+      taller.height > box.height &&
+        Math.abs(taller.x - box.x) < 1 &&
+        Math.abs(taller.y - box.y) < 1,
+      "row insertion preserves origin",
+    );
     await p.keyboard.press("Meta+z");
     await settle();
     assert.equal(await rows().count(), 4);
@@ -133,8 +172,7 @@ const fs = require("node:fs"),
     await p.setViewportSize({ width: 390, height: 844 });
     await settle();
     box = await program.boundingBox();
-    assert.ok(Math.abs(box.x + box.width / 2 - 195) < 1);
-    assert.ok(Math.abs(box.y + box.height / 2 - 422) < 1);
+    assert.ok(Math.abs(box.x - 20) < 1 && Math.abs(box.y - 64) < 1);
     assert.ok(
       await p.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -185,7 +223,10 @@ const fs = require("node:fs"),
       scroll: n.scrollHeight,
     }));
     assert.ok(
-      tall.scroll > tall.height && tall.r.top >= 63 && tall.r.bottom <= 837,
+      tall.scroll > tall.height &&
+        tall.r.top >= 160 &&
+        tall.r.top <= 180 &&
+        tall.r.bottom <= 877,
       JSON.stringify(tall),
     );
     await program.evaluate((n) => (n.scrollTop = n.scrollHeight));
@@ -195,7 +236,7 @@ const fs = require("node:fs"),
     await p.screenshot({ path: path.join(output, "zen-tall.png") });
     assert.deepEqual(errors, []);
     console.log(
-      "PASS Zen: centered compact program, mounted editor/selection/history preservation, hover/keyboard dock, gesture geometry, native Undo, icon entry/exit, responsive and tall scrolling.",
+      "PASS Zen: fixed origin across width/height edits, mounted editor/selection/history preservation, hover/keyboard dock, gesture geometry, native Undo, icon entry/exit, responsive and tall scrolling.",
     );
     console.log("Screenshots:", output);
   } finally {
