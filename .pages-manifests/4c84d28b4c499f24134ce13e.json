@@ -1,0 +1,20 @@
+{
+  "app": "furl",
+  "branch": "main",
+  "revision": "migrated-existing-main-build",
+  "prefix": "classic",
+  "files": [
+    "classic/dune",
+    "classic/fonts/FiraCode-Bold.woff2",
+    "classic/fonts/FiraCode-Regular.woff2",
+    "classic/fonts/HelveticaNeue-Bold.woff2",
+    "classic/fonts/HelveticaNeue-Regular.woff2",
+    "classic/fonts/SourceCodePro-Black.otf.woff2",
+    "classic/fonts/SourceCodePro-Bold.otf.woff2",
+    "classic/fonts/SourceCodePro-Regular.otf.woff2",
+    "classic/furl.js",
+    "classic/index.html",
+    "classic/style.css",
+    "classic/test-meeee.m4a"
+  ]
+}

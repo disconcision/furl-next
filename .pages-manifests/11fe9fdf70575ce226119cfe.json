@@ -1,0 +1,20 @@
+{
+  "app": "furl",
+  "branch": "cursor-animation",
+  "revision": "migrated-existing-build",
+  "prefix": "classic/cursor-animation",
+  "files": [
+    "classic/cursor-animation/dune",
+    "classic/cursor-animation/fonts/FiraCode-Bold.woff2",
+    "classic/cursor-animation/fonts/FiraCode-Regular.woff2",
+    "classic/cursor-animation/fonts/HelveticaNeue-Bold.woff2",
+    "classic/cursor-animation/fonts/HelveticaNeue-Regular.woff2",
+    "classic/cursor-animation/fonts/SourceCodePro-Black.otf.woff2",
+    "classic/cursor-animation/fonts/SourceCodePro-Bold.otf.woff2",
+    "classic/cursor-animation/fonts/SourceCodePro-Regular.otf.woff2",
+    "classic/cursor-animation/furl.js",
+    "classic/cursor-animation/index.html",
+    "classic/cursor-animation/style.css",
+    "classic/cursor-animation/test-meeee.m4a"
+  ]
+}
