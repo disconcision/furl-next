@@ -13,3 +13,5 @@ The repository secret `PAGES_DEPLOY_KEY` is an SSH deploy key with write access 
 Personal-site URLs are redirects only. They must not receive app build artifacts again.
 
 Furl Next continues to publish its committed `docs/live/` release package. After editing native app sources, run `python3 furl/live/build.py` with the Hazel toolchain and commit the generated output, as before. Publication does not recompile Hazel. The live editor is served at the domain root; its reference and study pages are included beside it.
+
+The inherited `dev` branch predates the live Furl package. It must gain a `docs/live/index.html` and compiled `furl.js` before it can publish a Furl preview; missing packages fail safely. Branches created from `furl` inherit the working package and publisher.

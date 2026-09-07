@@ -2,9 +2,9 @@
 
 An environment for working with code, bindings, and the values they produce. Furl owns the interface; Hazel supplies the language and structural editing foundation.
 
-**[Try the live editor](https://andrewblinn.com/furl-next/live/)** · [Interactive reference](https://andrewblinn.com/furl-next/) · [Study switcher](https://andrewblinn.com/furl-next/studies.html) · [Interaction studies](https://andrewblinn.com/furl-next/interactions.html) · [Offside / palette](https://andrewblinn.com/furl-next/offside.html) · [Appearance](https://andrewblinn.com/furl-next/appearance.html)
+**[Try the live editor](https://furl.farm/)** · [Interactive reference](https://furl.farm/reference.html) · [Study switcher](https://furl.farm/comb-studies.html) · [Interaction studies](https://furl.farm/interactions.html) · [Offside / palette](https://furl.farm/offside.html) · [Appearance](https://furl.farm/appearance.html)
 
-The live study embeds Hazel's structural expression and pattern editors in Furl's grid. Editing a cell changes one underlying program, rechecks its lexical context, and updates dependent values using Hazel's evaluator and probes. Lets, function literals, and matches can be furled into rows or unfurled into source. Arrow keys move between editors: up/down preserve the intended column through short lines and nested indentation, and left/right cross cell boundaries. Undo/redo, display toggles, reset, and browser persistence work across six examples. Matches offer **All columns** and **One branch** views. In one-branch mode click the vertical match stem to cycle branches (Shift-click reverses); **Ctrl+Alt+Left/Right** switches branches in the focused match in either mode. Select a live value inside a function to reveal its call arrows; ←/→ steps through coherent parameter/body values, and Escape returns to code. These controls use the existing margins without adding rows. A [self-contained navigation study](https://andrewblinn.com/furl-next/live/navigation.html) compares three provisional branch gestures. Temporary Violet, Coral, and Teal controls let us compare caret colors.
+The live study embeds Hazel's structural expression and pattern editors in Furl's grid. Editing a cell changes one underlying program, rechecks its lexical context, and updates dependent values using Hazel's evaluator and probes. Lets, function literals, and matches can be furled into rows or unfurled into source. Arrow keys move between editors: up/down preserve the intended column through short lines and nested indentation, and left/right cross cell boundaries. Undo/redo, display toggles, reset, and browser persistence work across six examples. Matches offer **All columns** and **One branch** views. In one-branch mode click the vertical match stem to cycle branches (Shift-click reverses); **Ctrl+Alt+Left/Right** switches branches in the focused match in either mode. Select a live value inside a function to reveal its call arrows; ←/→ steps through coherent parameter/body values, and Escape returns to code. These controls use the existing margins without adding rows. A [self-contained navigation study](https://furl.farm/navigation.html) compares three provisional branch gestures. Temporary Violet, Coral, and Teal controls let us compare caret colors.
 
 The live tools are **Edit / Move / Copy**, independent of **Refactor / Refine / Free**. Hover the icon-only controls for their names. Move and Copy share targeting; the earlier Rows / Connect labs remain design records.
 
@@ -51,7 +51,7 @@ python3 -m http.server 8000 --directory docs
 
 Open `http://localhost:8000/`, or open `docs/index.html` directly. The build needs only Python's standard library. It inlines the CSS, JavaScript, and Hazel mark; the interactive page makes no external resource requests.
 
-Edit the sources in `furl/reference/`, rebuild, and commit both sources and generated HTML. Push to `furl` to publish `/docs` through GitHub Pages. Generated output is committed so publication does not depend on a Hazel compilation. The original Hazel documentation also remains in `docs/`.
+Edit the sources in `furl/reference/`, rebuild, and commit both sources and generated HTML. Push to `furl` to publish the committed `docs/live/` package at `furl.farm`. The original app is assembled under `/classic/`, with other branches in their own folders. See [DEPLOYMENT.md](DEPLOYMENT.md). Generated output is committed so publication does not depend on a Hazel compilation. The original Hazel documentation also remains in `docs/`.
 
 Inherited workflows are preserved under `.github/upstream-workflows/`. The Furl reference check runs separately; Hazel's deployment to `hazelgrove/build` is not used by this fork.
 
@@ -111,7 +111,7 @@ Hazel build instructions are in [INSTALL.md](INSTALL.md), with tests in [test/RE
 
 ## Explore editing interactions
 
-The [interaction studies](https://andrewblinn.com/furl-next/interactions.html) inventory old Furl, the Big Book, and Hazel's refactorings branch. They include modal row insertion and movement, reference placement, and eight before/after transformations. The two labs remain fast standalone experiments; their working row/reference gestures are now also in the live Hazel editor. The transformation storyboards remain proposals.
+The [interaction studies](https://furl.farm/interactions.html) inventory old Furl, the Big Book, and Hazel's refactorings branch. They include modal row insertion and movement, reference placement, and eight before/after transformations. The two labs remain fast standalone experiments; their working row/reference gestures are now also in the live Hazel editor. The transformation storyboards remain proposals.
 
 ```sh
 python3 furl/interactions/build.py
