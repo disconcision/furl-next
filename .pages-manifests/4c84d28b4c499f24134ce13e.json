@@ -1,7 +1,7 @@
 {
   "app": "furl",
   "branch": "main",
-  "revision": "migrated-existing-main-build",
+  "revision": "5a93508c5aa2f7e57186acc297591aea69676ed4",
   "prefix": "classic",
   "files": [
     "classic/dune",
