@@ -15,6 +15,7 @@ const output = fs.mkdtempSync(
     });
     const errors = [];
     page.on("pageerror", (e) => errors.push(String(e)));
+    await require("./full-view.cjs")(page);
     await page.goto(process.env.TEST_URL || "http://127.0.0.1:8876/live/");
     await page.waitForSelector(".reference-wire", { state: "attached" });
     await page.getByRole("combobox", { name: "Example" }).selectOption("5");

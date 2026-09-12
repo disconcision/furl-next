@@ -7,6 +7,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), 'furl-menu-'));
   const page = await browser.newPage({viewport: {width: 1280, height: 900}, colorScheme: 'dark'});
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   const settle = () => page.waitForTimeout(200);
+  await require("./full-view.cjs")(page);
   await page.goto(process.env.TEST_URL || 'http://127.0.0.1:8766/furl.html');
   await page.waitForTimeout(500);
   const menu = page.locator('.context-menu');

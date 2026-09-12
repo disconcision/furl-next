@@ -4,6 +4,7 @@
   const key = "furl.preferences.v1";
   const defaults = {
     appearance: "plain",
+    zen: true,
     mode: "edit",
     policy: "refine",
     style: "slot",
@@ -51,6 +52,7 @@
   function paint() {
     document.documentElement.dataset.furlTheme = state.appearance;
     document.documentElement.dataset.furlMotion = String(state.motion);
+    document.documentElement.dataset.furlZen = String(state.zen);
   }
   function update(patch) {
     state = { ...state, ...validated(patch) };

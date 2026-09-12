@@ -9,6 +9,7 @@ const assert = require("node:assert/strict");
     });
     const errors = [];
     p.on("pageerror", (e) => errors.push(String(e)));
+    await require("./full-view.cjs")(p);
     await p.goto(process.env.TEST_URL || "http://127.0.0.1:8877/live/");
     await p.locator(".reference-wire").waitFor({ state: "attached" });
     const settle = () => p.waitForTimeout(250);

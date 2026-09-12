@@ -60,6 +60,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-native-gestures-"));
       await settle();
     };
     const fresh = async () => {
+      await require("./full-view.cjs")(p);
       await p.goto(url);
       await p.locator(".reference-wire").waitFor({ state: "attached" });
       await settle();

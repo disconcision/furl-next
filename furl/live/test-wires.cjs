@@ -14,6 +14,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-wire-landing-"));
     });
     const errors = [];
     page.on("pageerror", (e) => errors.push(String(e)));
+    await require("./full-view.cjs")(page);
     await page.goto(process.env.TEST_URL || "http://127.0.0.1:8876/live/");
     await page.waitForSelector(".reference-wire", { state: "attached" });
     await require("../interactions/wire-physics-test.cjs")(page);

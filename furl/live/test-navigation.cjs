@@ -7,6 +7,7 @@ const b=await chromium.launch({channel:'chrome',headless:true});
 const p=await b.newPage({viewport:{width:1280,height:900},colorScheme:'dark'});
 const errors=[];p.on('pageerror',e=>errors.push(e.message));
 const settle=()=>p.waitForTimeout(300);
+await require("./full-view.cjs")(p);
 await p.goto(process.env.TEST_URL||'http://127.0.0.1:8766/furl.html');await p.waitForTimeout(500);
 await p.getByRole('combobox',{name:'Example'}).selectOption('3');await p.waitForSelector('.furl-match');await settle();
 assert.equal(await p.locator('.furl-context').count(),0);

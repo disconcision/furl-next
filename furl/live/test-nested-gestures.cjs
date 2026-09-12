@@ -9,6 +9,7 @@ const { chromium } = require("playwright"),
       }),
       errors = [];
     p.on("pageerror", (e) => errors.push(e.stack));
+    await require("./full-view.cjs")(p);
     await p.goto(process.env.TEST_URL || "http://127.0.0.1:8876/live/");
     const settle = () => p.waitForTimeout(240);
     await settle();

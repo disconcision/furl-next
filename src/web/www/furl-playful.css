@@ -5,7 +5,7 @@
 :root[data-furl-theme=playful] .code-text .token{ text-shadow:1px 1px #fff9}
 :root[data-furl-theme=playful] .furl-value .token{text-shadow:1px 1px #c9f5e8}
 :root[data-furl-theme=playful] #furl-app .furl-powered img{filter:brightness(.6)}
-:root[data-furl-theme=playful] #furl-app[data-zen=true] .furl-program{box-shadow:none}
+:root[data-furl-theme=playful][data-furl-zen=true] #furl-app .furl-program{box-shadow:none}
 /* Closer to the original palette and its intentionally exuberant highlights. */
 :root[data-furl-theme=playful]{--furl-paper:#e8e2ff;--furl-ink:#194b57;--furl-binding:#f56197;--furl-value:#2cd2c4;--furl-selection:#e4ff00;--furl-quiet:#77739c;--shard-caret-pat:#e1d8fd;--empty-hole-fill:#443e54;--empty-hole-stroke:#a9a1cd;--shadow-selected:#9799f6}
 :root[data-furl-theme=playful] #furl-app .furl-value,:root[data-furl-theme=playful] #furl-app .furl-value *{color:var(--furl-value)}

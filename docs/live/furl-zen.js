@@ -1,4 +1,4 @@
-/* Presentation-only state: keep the mounted native editor and its history. */
+/* Persist the presentation choice; keep the mounted native editor and history. */
 window.createFurlZen = (root, button, { beforeChange, onLayout }) => {
   const program = root.querySelector(".furl-program");
   const dock = root.querySelector(".furl-view-options");
@@ -6,7 +6,7 @@ window.createFurlZen = (root, button, { beforeChange, onLayout }) => {
   const ac = new AbortController();
   const on = (node, event, fn, capture = false) =>
     node.addEventListener(event, fn, { capture, signal: ac.signal });
-  let enabled = false,
+  let enabled = window.FurlPreferences.read().zen,
     shown = false,
     hideTimer = 0,
     frame = 0;
@@ -54,18 +54,22 @@ window.createFurlZen = (root, button, { beforeChange, onLayout }) => {
     if (!pointerNear && !keyboard)
       hideTimer = setTimeout(() => reveal(false), 350);
   }
+  function paint() {
+    root.dataset.zen = String(enabled);
+    button.setAttribute("aria-pressed", String(enabled));
+    const title = (enabled ? "Exit" : "Enter") + " Zen mode (F9)";
+    button.title = title;
+    button.setAttribute("aria-label", title);
+  }
   function set(next) {
     beforeChange();
     clearTimeout(hideTimer);
     if (next) scroll = { x: window.scrollX, y: window.scrollY };
     enabled = next;
+    window.FurlPreferences.update({ zen: enabled });
     keyboard = false;
     pointerNear = false;
-    root.dataset.zen = String(next);
-    button.setAttribute("aria-pressed", String(next));
-    const title = (next ? "Exit" : "Enter") + " Zen mode (F9)";
-    button.title = title;
-    button.setAttribute("aria-label", title);
+    paint();
     reveal(false);
     if (next) {
       window.scrollTo(0, 0);
@@ -154,9 +158,11 @@ window.createFurlZen = (root, button, { beforeChange, onLayout }) => {
   });
   const observer = new ResizeObserver(layout);
   observer.observe(program);
-  button.title = "Enter Zen mode (F9)";
-  button.setAttribute("aria-label", button.title);
-  button.setAttribute("aria-pressed", "false");
+  // Apply the stored choice without cancelling gestures or moving focus during
+  // the parent adapter's construction. Preboot CSS already has the same state.
+  paint();
+  reveal(false);
+  layout();
   return {
     toggle: () => set(!enabled),
     destroy: () => {

@@ -100,18 +100,20 @@ placeholder; there is no minimum wait or artificial loading delay.
 
 Display toggles, caret tone and match-column mode persist through FurlApp; the
 input adapter persists the selected tool, policy, row-motion variant, hover wires
-and animation choice. Both merge through the same preference store. These are
+and animation choice. Zen also persists through the same preference store, with
+`true` as the default when no choice is saved. Its root CSS state is restored
+before native mounting, so the full toolbar does not flash during startup. These are
 presentation settings, separate from the per-example structured programs and
-their Undo history. Temporary modifier modes, selection, previews and Zen do not
+their Undo history. Temporary modifier modes, selection, previews and the revealed Zen dock do not
 persist. `furl/live/test-loading.cjs` checks the pre-native loader, simulated and
 real letter hover, both color schemes, small screens, reduced motion, native
 control restoration and unavailable/corrupt storage.
 
 ## Zen recording view
 
-`furl-zen.js` owns transient presentation state alongside the gesture adapter. F9 or the corner-brackets tool switches to a borderless program anchored near the upper left with fixed 20ch top and left margins, reduced on small screens. Header, example/view controls, inspector and help are hidden. The existing gesture toolbar becomes a fixed top dock: the top 24px reveals it, and leaving the dock hides it after 350ms. Shift+F9 reveals/focuses the dock for keyboard access; Escape dismisses it without leaving Zen. Hidden controls are inert and excluded from accessibility navigation. Tool changes restore row/code focus according to the chosen primacy.
+`furl-zen.js` owns presentation state alongside the gesture adapter. Fresh visits open the Bindings example in Zen; an explicit saved Zen choice overrides that default. F9 or the corner-brackets tool switches to a borderless program anchored near the upper left with fixed 20ch top and left margins, reduced on small screens. The Furl wordmark and powered-by-Hazel link remain at the top; the header border and navigation, example/view controls, inspector and help are hidden. The brand sits outside code flow so its height cannot shift the program origin. The existing gesture toolbar becomes a fixed top dock: the top 24px reveals it, and leaving the dock hides it after 350ms. Shift+F9 reveals/focuses the dock for keyboard access; Escape dismisses it without leaving Zen. Hidden controls are inert and excluded from accessibility navigation. Tool changes restore row/code focus according to the chosen primacy.
 
-The mounted native editors are retained. Zen changes neither source, history, selection nor tool/policy state; changing presentation cancels an uncommitted gesture before its geometry moves. The independent compact width combines the existing source column plan with sampled values rendered to a bounded 24-character budget, avoiding a resize/abbreviation feedback loop. Editing can grow the program to the right or down without moving its origin. Long/wide programs scroll within the viewport, without scaling text or compressing the grid. Resize observation refreshes gap and cable geometry after layout changes. The same local assets support development and Pages; the view resets to normal on reload.
+The mounted native editors are retained. Zen changes neither source, history, selection nor tool/policy state; changing presentation cancels an uncommitted gesture before its geometry moves. The independent compact width combines the existing source column plan with sampled values rendered to a bounded 24-character budget, avoiding a resize/abbreviation feedback loop. Editing can grow the program to the right or down without moving its origin. Long/wide programs scroll within the viewport, without scaling text or compressing the grid. Resize observation refreshes gap and cable geometry after layout changes. Local development and the deployed site use identical defaults, with separate preferences per browser origin. Turning Zen off or on survives reload; saved program edits are not reset by the startup presentation.
 
 ## Integration sequence and next steps
 
@@ -139,7 +141,7 @@ The comb is not uniformly redundant. Parameter dots and arity marks identify fun
 
 ## Publication
 
-GitHub Pages publishes the `furl` branch's `/docs` directory to `https://andrewblinn.com/furl-next/`. The generated documents use relative links. The fork inherits the account's existing Pages domain; it does not alter the personal site's repository or domain settings.
+The `Publish app` workflow publishes the `furl` branch's committed `docs/live/` package to `https://furl.farm/`, through the combined `gh-pages` branch. The generated documents use relative links. The manifest-based publisher preserves other apps and branch previews; see `DEPLOYMENT.md`. Personal-site URLs are redirects, not publication destinations.
 
 The reference build is independent of Hazel compilation. Original upstream workflows are archived in `.github/upstream-workflows/`; they are available when establishing Furl's live build checks, but must not deploy this fork into Hazel's build repository.
 

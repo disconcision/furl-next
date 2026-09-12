@@ -13,8 +13,67 @@ const fs = require("node:fs"),
       }),
       errors = [];
     p.on("pageerror", (e) => errors.push(e.stack));
-    await p.goto(process.env.TEST_URL || "http://127.0.0.1:8876/live/");
+    await p.goto(process.env.TEST_URL || "http://127.0.0.1:8877/live/");
     const settle = () => p.waitForTimeout(280);
+    const waitZen = (value) =>
+      p.waitForFunction(
+        (value) =>
+          document.querySelector("#furl-app")?.dataset.zen === String(value),
+        value,
+      );
+    await waitZen(true);
+    await p.waitForSelector(".furl-hit");
+    assert.equal(
+      await p
+        .getByRole("combobox", { name: "Example", includeHidden: true })
+        .inputValue(),
+      "0",
+      "Bindings is the startup program",
+    );
+    assert.equal(await p.locator(".furl-wordmark").isVisible(), true);
+    assert.equal(await p.locator(".furl-powered").isVisible(), true);
+    for (const selector of [
+      ".furl-header nav",
+      ".furl-toolbar",
+      ".furl-legend",
+      ".furl-inspector",
+      ".furl-help",
+    ])
+      for (const node of await p.locator(selector).all())
+        assert.equal(await node.isVisible(), false);
+    assert.equal(
+      await p
+        .locator(".furl-header")
+        .evaluate((n) => getComputedStyle(n).borderBottomWidth),
+      "0px",
+    );
+    assert.equal(
+      await p.locator(".furl-view-options").evaluate((n) => n.inert),
+      true,
+    );
+    await p.screenshot({ path: path.join(output, "startup-bindings.png") });
+    // Explicit opt-out survives reload. Opt-in does too, with the dock hidden.
+    await p.keyboard.press("F9");
+    await waitZen(false);
+    assert.equal(
+      await p.evaluate(
+        () => JSON.parse(localStorage.getItem("furl.preferences.v1")).zen,
+      ),
+      false,
+    );
+    await p.reload();
+    await waitZen(false);
+    assert.equal(await p.locator(".furl-toolbar").isVisible(), true);
+    await p.keyboard.press("F9");
+    await waitZen(true);
+    await p.reload();
+    await waitZen(true);
+    assert.equal(
+      await p.locator(".furl-view-options").evaluate((n) => n.inert),
+      true,
+    );
+    await p.keyboard.press("F9");
+    await waitZen(false);
     await settle();
     await p.getByRole("combobox", { name: "Example" }).selectOption("4");
     await settle();
@@ -40,7 +99,8 @@ const fs = require("node:fs"),
     await settle();
     assert.equal(await root.getAttribute("data-zen"), "true");
     assert.equal(await dock.evaluate((n) => n.inert), true);
-    assert.equal(await p.locator(".furl-header").isVisible(), false);
+    assert.equal(await p.locator(".furl-header").isVisible(), true);
+    assert.equal(await p.locator(".furl-header nav").isVisible(), false);
     assert.equal(await p.locator(".furl-inspector").isVisible(), false);
     let box = await program.boundingBox();
     assert.ok(box.x >= 160 && box.x <= 180, JSON.stringify(box));
@@ -173,6 +233,8 @@ const fs = require("node:fs"),
     await settle();
     box = await program.boundingBox();
     assert.ok(Math.abs(box.x - 20) < 1 && Math.abs(box.y - 64) < 1);
+    const brand = await p.locator(".furl-header").boundingBox();
+    assert.ok(brand.y + brand.height < box.y, "mobile brand clears the code");
     assert.ok(
       await p.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -236,7 +298,7 @@ const fs = require("node:fs"),
     await p.screenshot({ path: path.join(output, "zen-tall.png") });
     assert.deepEqual(errors, []);
     console.log(
-      "PASS Zen: fixed origin across width/height edits, mounted editor/selection/history preservation, hover/keyboard dock, gesture geometry, native Undo, icon entry/exit, responsive and tall scrolling.",
+      "PASS Zen: default Bindings and minimal brand, persisted opt-in/opt-out, fixed origin across width/height edits, mounted editor/selection/history preservation, hover/keyboard dock, gesture geometry, native Undo, icon entry/exit, responsive and tall scrolling.",
     );
     console.log("Screenshots:", output);
   } finally {

@@ -13,6 +13,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-style-motion-"));
       }),
       errors = [];
     p.on("pageerror", (e) => errors.push(e.stack));
+    await require("./full-view.cjs")(p);
     await p.goto(process.env.TEST_URL || "http://127.0.0.1:8877/live/");
     await p.waitForSelector(".furl-hit");
     const settle = () => p.waitForTimeout(320),

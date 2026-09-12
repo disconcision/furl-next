@@ -13,6 +13,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), "furl-row-drag-audit-"));
     });
     const errors = [];
     p.on("pageerror", (e) => errors.push(String(e)));
+    await require("./full-view.cjs")(p);
     await p.goto(process.env.TEST_URL || "http://127.0.0.1:8876/live/");
     await p.locator(".reference-wire").waitFor({ state: "attached" });
     const settle = () => p.waitForTimeout(350);

@@ -18,6 +18,7 @@ const output = fs.mkdtempSync(path.join(os.tmpdir(), 'furl-inspector-'));
     }), source);
     await page.keyboard.press('Meta+v'); await settle();
   }
+  await require("./full-view.cjs")(page);
   await page.goto(process.env.TEST_URL || 'http://127.0.0.1:8766/furl.html');
   await page.waitForTimeout(400);
   assert.match(await details.innerText(), /Select a term/);

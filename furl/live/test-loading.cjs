@@ -38,13 +38,15 @@ const key = "furl.preferences.v1";
     );
   }
   const at = (p, ms) =>
-    p.evaluate((ms) => {
-      for (const a of document
+    p.evaluate(async (ms) => {
+      const animations = document
         .querySelector(".furl-loading")
-        .getAnimations({ subtree: true })) {
+        .getAnimations({ subtree: true });
+      for (const a of animations) {
         a.pause();
         a.currentTime = ms;
       }
+      await Promise.all(animations.map((a) => a.ready));
       return [...document.querySelectorAll(".furl-loading-logo > span")].map(
         (n) => +getComputedStyle(n).getPropertyValue("--furl-logo-active"),
       );
@@ -142,6 +144,10 @@ const key = "furl.preferences.v1";
     const p = await page({ colorScheme: "dark" });
     await p.goto(url);
     await p.waitForSelector(".furl-hit");
+    await p.keyboard.press("F9");
+    await p.waitForFunction(
+      () => document.querySelector("#furl-app").dataset.zen === "false",
+    );
     assert.equal(
       await p.locator(".furl-loading").count(),
       0,
@@ -165,6 +171,7 @@ const key = "furl.preferences.v1";
       await p.locator(selector).click();
     const expected = {
       appearance: "playful",
+      zen: false,
       mode: "copy",
       policy: "free",
       style: "float",
@@ -312,6 +319,7 @@ const key = "furl.preferences.v1";
     );
     await blocked.goto(url);
     await blocked.waitForSelector(".furl-hit");
+    await blocked.keyboard.press("F9");
     await blocked.locator("[data-view=theme]").click();
     await blocked.locator(".furl-toggle.indentation").click();
     await blocked.waitForFunction(
